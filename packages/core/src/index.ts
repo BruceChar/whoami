@@ -39,3 +39,10 @@ export * from "./outputs/lifeDesign";
 
 // 服务层
 export * from "./services/profileService";
+
+// LLM（pi-ai 集成）
+export * from "./llm/types";
+export * from "./llm/json";
+export * from "./llm/piAiProvider";
+export * from "./llm/registry";
+export * from "./llm/scriptedProvider";

@@ -4,7 +4,9 @@
   "description": "delphi 核心引擎：思维分析三层模式、思维漏洞检测、认知档案、方法论工具库、个人画像（纯 TypeScript，零运行时依赖）",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "tsc -p tsconfig.test.json && node --test dist-test/test/*.test.js"
@@ -12,5 +14,8 @@
   "engines": {
     "node": ">=20"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@earendil-works/pi-ai": "^0.84.2"
+  }
 }
