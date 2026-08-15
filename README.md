@@ -59,24 +59,27 @@ delphi
 ```
 whoami/
 ├── packages/
-│   ├── core/                    # 核心引擎（零运行时依赖，CLI/Web 共享）
-│   │   └── src/
-│   │       ├── models/types.ts       # 统一数据模型（文档第九章）
-│   │       ├── storage/store.ts      # JSON 文件存储（本地隐私优先）
-│   │       ├── analyzer/             # 认知标记 / 7 种偏差 / 归因 / 抽象层级
-│   │       ├── engine/               # 三层模式 + 模式切换器
-│   │       ├── frameworks/           # 回馈/VTD/SIGN/SWOT/成就/兴趣矩阵
-│   │       ├── profiler/             # 成长追踪 + 转折点检测
-│   │       ├── persona/              # 认知指纹 / 能量地图 / 画像组装
-│   │       ├── outputs/              # 从业分析 / 人生设计
-│   │       └── services/             # 档案服务编排
-│   └── cli/                      # CLI 本地模式（Commander + readline + chalk）
+│   └── core/                    # 核心引擎（CLI/Web 共享）
 │       └── src/
-│           ├── commands/             # chat/daily/vtd/swot/sign/career/lifeDesign/persona...
-│           ├── commands/space/       # dashboard/timeline/archive/insights/lab/settings
-│           └── ui/                   # 盒式边框/进度条/火花线/输入助手
+│           ├── models/types.ts       # 统一数据模型（文档第九章）
+│           ├── storage/store.ts      # JSON 文件存储（本地隐私优先）
+│           ├── analyzer/             # 认知标记 / 7 种偏差 / 归因 / 抽象层级
+│           ├── engine/               # 三层模式 + 模式切换器
+│           ├── llm/                  # LLM Provider 抽象 + pi-ai 接入 + Agent 工具
+│           ├── frameworks/           # 回馈/VTD/SIGN/SWOT/成就/兴趣矩阵
+│           ├── profiler/             # 成长追踪 + 转折点检测
+│           ├── persona/              # 认知指纹 / 能量地图 / 画像组装
+│           ├── outputs/              # 从业分析 / 人生设计
+│           └── services/             # 档案服务编排
+├── apps/
+│   ├── cli/                      # CLI 本地模式（Commander + readline + chalk）
+│   │   └── src/
+│   │       ├── commands/             # chat/daily/vtd/swot/sign/career/lifeDesign/persona...
+│   │       ├── commands/space/       # dashboard/timeline/archive/insights/lab/settings
+│   │       └── ui/                   # 盒式边框/进度条/火花线/输入助手
+│   └── web/                      # Web 端（Next.js，待实现）
 ├── tsconfig.base.json
-└── package.json                  # npm workspaces
+└── package.json                  # pnpm workspace
 ```
 
 ## 设计原则的实现
