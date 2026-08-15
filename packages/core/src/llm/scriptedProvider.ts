@@ -4,6 +4,7 @@
  */
 import { LLMCompleteOptions, LLMJSONOptions, LLMProvider, LLMResult } from "./types";
 import { extractJSONAs } from "./json";
+import { AgentToolDef, LLMAgent, LLMAgentResult } from "./agent";
 
 export interface ScriptedResponse {
   text: string;
@@ -11,11 +12,13 @@ export interface ScriptedResponse {
   when?: string;
 }
 
-export class ScriptedLLMProvider implements LLMProvider {
+export class ScriptedLLMProvider implements LLMProvider, LLMAgent {
   readonly id = "scripted";
   readonly model = "scripted-1";
   private responses: ScriptedResponse[] = [];
   calls: Array<{ messages: LLMCompleteOptions["messages"]; json?: boolean }> = [];
+  /** agentChat 中执行过的工具 */
+  executedTools: string[] = [];
 
   constructor(responses: ScriptedResponse[] = []) {
     this.responses = responses;
@@ -54,5 +57,41 @@ export class ScriptedLLMProvider implements LLMProvider {
     const lastUser = [...opts.messages].reverse().find((m) => m.role === "user")?.content || "";
     const text = this.pick(lastUser);
     return extractJSONAs<T>(text);
+  }
+
+  // -------------------------------------------------------------------------
+  // LLMAgent：脚本化工具循环
+  // 响应文本以 "TOOL:<name>" 开头时视为请求工具调用；
+  // 随后脚本中的下一条响应作为工具结果后的最终回复。
+  // -------------------------------------------------------------------------
+
+  async agentChat(opts: {
+    messages: LLMCompleteOptions["messages"];
+    system?: string;
+    tools?: AgentToolDef[];
+    executeTool?: (name: string, args: Record<string, unknown>) => Promise<string>;
+    maxToolRounds?: number;
+  }): Promise<LLMAgentResult> {
+    this.calls.push({ messages: opts.messages });
+    const lastUser = [...opts.messages].reverse().find((m) => m.role === "user")?.content || "";
+    const executed: string[] = [];
+    let text = this.pick(lastUser);
+
+    const toolMarker = /^TOOL:(\w+)/;
+    const match = toolMarker.exec(text);
+    if (match && opts.executeTool) {
+      const name = match[1];
+      executed.push(name);
+      const result = await opts.executeTool(name, {});
+      // 工具结果已执行，取脚本下一条作为最终回复
+      text = this.pick(result);
+    }
+    this.executedTools.push(...executed);
+    return {
+      text,
+      usage: { input: 10, output: 5, totalTokens: 15, cost: 0 },
+      model: this.model,
+      toolCalls: executed,
+    };
   }
 }

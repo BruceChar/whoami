@@ -8,6 +8,7 @@
  *   <PROVIDER>_API_KEY   pi-ai 鉴权（如 DEEPSEEK_API_KEY / OPENROUTER_API_KEY）
  */
 import { LLMProvider } from "./types";
+import { LLMAgent } from "./agent";
 import { PiAiProvider } from "./piAiProvider";
 
 export const SUPPORTED_PROVIDERS = ["deepseek", "openai", "anthropic", "openrouter", "google"] as const;
@@ -45,10 +46,10 @@ export function resolveLLMConfig(): LLMConfig | null {
   return null;
 }
 
-let cachedProvider: LLMProvider | null | undefined;
+let cachedProvider: (LLMProvider & LLMAgent) | null | undefined;
 
 /** 获取 LLM Provider 单例；未配置时返回 null（走规则引擎） */
-export function getLLMProvider(): LLMProvider | null {
+export function getLLMProvider(): (LLMProvider & LLMAgent) | null {
   if (cachedProvider !== undefined) return cachedProvider;
   const config = resolveLLMConfig();
   cachedProvider = config ? new PiAiProvider({ providerId: config.provider, modelId: config.model }) : null;

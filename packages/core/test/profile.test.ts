@@ -28,15 +28,15 @@ test("ProfileStore 创建/保存/读取往返", () => {
   assert.ok(fs.existsSync(path.join(dir, "profile.json")));
 });
 
-test("对话 → 会话记录 → 指标重算 → 档案更新", () => {
+test("对话 → 会话记录 → 指标重算 → 档案更新", async () => {
   const store = new ProfileStore({ dataDir: tmpDir() });
   const profile = store.get();
 
   const session = beginSession(profile, "stealth", "测试会话");
   const engine = new ThinkingEngine("stealth");
-  const r1 = engine.process("我总是很焦虑，所有人都觉得我不行");
+  const r1 = await engine.process("我总是很焦虑，所有人都觉得我不行");
   appendMessage(session, { role: "user", text: "我总是很焦虑，所有人都觉得我不行", timestamp: new Date().toISOString(), markers: r1.markers });
-  const r2 = engine.process("但后来我发现其实我也可以");
+  const r2 = await engine.process("但后来我发现其实我也可以");
   appendMessage(session, { role: "user", text: "但后来我发现其实我也可以", timestamp: new Date().toISOString(), markers: r2.markers });
 
   afterProfileUpdate(profile);

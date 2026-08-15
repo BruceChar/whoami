@@ -9,6 +9,7 @@ import {
   beginSession,
   afterProfileUpdate,
   BIAS_LABELS,
+  getLLMProvider,
 } from "@delphi/core";
 import { askLine, closeRl, EOF_INPUT } from "../ui/ask";
 import { c, hr } from "../ui/render";
@@ -31,10 +32,17 @@ export const CHAT_HELP = [
 
 export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; quiet?: boolean } = {}): Promise<void> {
   const profile = store.get();
-  const engine = new ThinkingEngine(opts.mode || profile.settings.defaultMode);
+  const llm = getLLMProvider();
+  const engine = new ThinkingEngine(opts.mode || profile.settings.defaultMode, llm ? { llm } : {});
+  engine.llmProfile = profile;
 
   if (!opts.quiet) {
     console.log(BANNER.join("\n"));
+    if (llm) {
+      console.log(c.green(`⚡ LLM Agent 已接入（${llm.id} / ${llm.model}）——由真实模型驱动，可调用档案工具`));
+    } else {
+      console.log(c.dim("▸ 规则引擎模式（未检测到 LLM 配置。设置 DEEPSEEK_API_KEY 等环境变量 + DELPHI_LLM_PROVIDER 启用）"));
+    }
     console.log(`当前模式: ${c.cyan(engine.getMode())}  | 输入 /help 查看命令`);
     console.log("");
   }
@@ -62,7 +70,7 @@ export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; 
       continue;
     }
 
-    const result = engine.process(input);
+    const result = await engine.process(input);
     appendMessage(session, {
       role: "user",
       text: input,
@@ -74,6 +82,18 @@ export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; 
       console.log(c.dim(`〔${result.modeChangeReason}〕`));
     }
     console.log(`delphi> ${result.reply}`);
+
+    // LLM 元信息（用量 / 工具调用 / 失败回退）
+    if (result.llmGenerated) {
+      const parts: string[] = [];
+      if (result.usage) parts.push(`${result.usage.totalTokens} tokens · $${result.usage.cost.toFixed(4)}`);
+      if (result.llmModel) parts.push(result.llmModel);
+      const tools = engine.getLastToolCalls();
+      if (tools.length > 0) parts.push(`工具: ${tools.join(", ")}`);
+      console.log(c.dim(`  ↳ [llm-agent ${parts.join(" · ")}]`));
+    } else if (llm && engine.getLLMErrorNote()) {
+      console.log(c.dim(`  ↳ [llm 失败，已回退规则引擎] ${engine.getLLMErrorNote()}`));
+    }
 
     // 显式模式下偏差统计（思维快照已由 engine 渲染）
     if (result.markers.biases.length > 0 && engine.getMode() === "meta_guide") {

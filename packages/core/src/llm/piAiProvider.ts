@@ -10,6 +10,7 @@
 import { LLMCompleteOptions, LLMError, LLMJSONOptions, LLMMessage, LLMProvider, LLMResult } from "./types";
 import { extractJSONAs } from "./json";
 import { dynamicImport } from "./dynamicImport";
+import { AgentToolDef, LLMAgent, LLMAgentResult } from "./agent";
 
 type AnyModels = any;
 
@@ -49,7 +50,7 @@ export interface PiAiProviderOptions {
   resolveModel?: (models: AnyModels, providerId: string, modelId: string | undefined) => Promise<unknown> | unknown;
 }
 
-export class PiAiProvider implements LLMProvider {
+export class PiAiProvider implements LLMProvider, LLMAgent {
   readonly id: string;
   readonly model: string;
   private readonly opts: PiAiProviderOptions;
@@ -194,5 +195,127 @@ export class PiAiProvider implements LLMProvider {
     } catch {
       return null;
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // LLMAgent：工具调用循环（complete → toolCall → toolResult → complete）
+  // -------------------------------------------------------------------------
+
+  async agentChat(opts: {
+    messages: LLMMessage[];
+    system?: string;
+    tools?: AgentToolDef[];
+    executeTool?: (name: string, args: Record<string, unknown>) => Promise<string>;
+    maxToolRounds?: number;
+  }): Promise<LLMAgentResult> {
+    const models = await this.models();
+    const model = await this.resolveModel();
+    const maxRounds = opts.maxToolRounds ?? 3;
+    const { Type } = await dynamicImport("@earendil-works/pi-ai");
+
+    const context: any = {
+      systemPrompt: opts.system || undefined,
+      messages: opts.messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+        timestamp: Date.now(),
+      })),
+      tools: opts.tools?.map((t) => ({
+        name: t.name,
+        description: t.description,
+        parameters: jsonSchemaToTypeBox(Type, t.parameters),
+      })),
+    };
+
+    const executedTools: string[] = [];
+    let lastText = "";
+
+    for (let round = 0; round <= maxRounds; round++) {
+      let response;
+      try {
+        response = await models.complete(model, context);
+      } catch (err) {
+        throw new LLMError(`LLM Agent 调用失败: ${(err as Error).message}`, err);
+      }
+      if (response.errorMessage) {
+        throw new LLMError(`LLM Agent 返回错误: ${response.errorMessage}`);
+      }
+
+      const text = (response.content || [])
+        .filter((b: any) => b.type === "text")
+        .map((b: any) => b.text)
+        .join("")
+        .trim();
+      if (text) lastText = text;
+
+      const toolCalls: any[] = (response.content || []).filter((b: any) => b.type === "toolCall");
+      if (toolCalls.length === 0 || round === maxRounds) {
+        const usage = response.usage
+          ? {
+              input: response.usage.input ?? 0,
+              output: response.usage.output ?? 0,
+              totalTokens: response.usage.totalTokens ?? 0,
+              cost: response.usage.cost?.total ?? 0,
+            }
+          : undefined;
+        if (!lastText && toolCalls.length > 0) {
+          throw new LLMError("LLM Agent 工具调用后未返回文本");
+        }
+        return {
+          text: lastText || "（模型未返回内容）",
+          usage,
+          model: response.model || this.model,
+          toolCalls: executedTools,
+        };
+      }
+
+      // 执行工具并把结果回灌上下文
+      context.messages.push(response);
+      for (const call of toolCalls) {
+        executedTools.push(call.name);
+        let resultText: string;
+        try {
+          resultText = opts.executeTool
+            ? await opts.executeTool(call.name, call.arguments || {})
+            : JSON.stringify({ error: "无工具执行器" });
+        } catch (err) {
+          resultText = JSON.stringify({ error: (err as Error).message });
+        }
+        context.messages.push({
+          role: "toolResult",
+          toolCallId: call.id,
+          toolName: call.name,
+          content: [{ type: "text", text: resultText }],
+          isError: false,
+          timestamp: Date.now(),
+        });
+      }
+    }
+    throw new LLMError("LLM Agent 工具循环超过上限");
+  }
+}
+
+/** JSON Schema（子集）→ TypeBox TSchema（pi-ai 工具参数需要） */
+function jsonSchemaToTypeBox(Type: any, schema: import("./agent").JsonSchema): any {
+  switch (schema.type) {
+    case "string":
+      return Type.String(schema.description ? { description: schema.description } : undefined);
+    case "number":
+      return Type.Number(schema.description ? { description: schema.description } : undefined);
+    case "integer":
+      return Type.Integer(schema.description ? { description: schema.description } : undefined);
+    case "boolean":
+      return Type.Boolean(schema.description ? { description: schema.description } : undefined);
+    case "array":
+      return Type.Array(jsonSchemaToTypeBox(Type, schema.items || { type: "string" }));
+    case "object": {
+      const props: Record<string, any> = {};
+      for (const [key, sub] of Object.entries(schema.properties || {})) {
+        props[key] = jsonSchemaToTypeBox(Type, sub);
+      }
+      return Type.Object(props, { additionalProperties: false });
+    }
+    default:
+      return Type.Any();
   }
 }
