@@ -250,6 +250,13 @@ export class ThinkingEngine {
     return this.llmErrorNote;
   }
 
+  /** 注入历史消息（仅用于 LLM 上下文，不重新分析、不重复计数） */
+  rememberHistory(messages: Array<{ role: "user" | "agent"; text: string }>): void {
+    for (const m of messages.slice(-24)) {
+      this.history.push({ role: m.role, text: m.text, timestamp: new Date().toISOString() });
+    }
+  }
+
   /** 会话结束时的摘要 */
   sessionSummary(): string[] {
     return this.analyzer.sessionSummary();

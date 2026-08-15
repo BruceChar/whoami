@@ -16,18 +16,40 @@
 ```bash
 pnpm install
 pnpm build                 # 构建 core + cli
-pnpm test                  # 运行核心引擎单元测试（node:test，27 项）
+pnpm test                  # 运行核心引擎单元测试（node:test，49 项）
 
-# 方式一：直接运行
+# CLI：直接运行
 pnpm run delphi
 
-# 方式二：全局安装命令
+# CLI：全局安装命令
 pnpm run link:global       # 之后可以直接敲 delphi
 delphi
+
+# Web：开发 / 构建 / 生产
+pnpm web                   # http://localhost:3088
+pnpm web:build
 ```
 
 数据保存在 `~/.delphi/profile.json`（一个 JSON 文件包含全部认知档案，可随时导出/备份/恢复）。
-可用环境变量 `DELPHI_DATA_DIR` 指定数据目录（便于测试隔离）。
+可用环境变量 `DELPHI_DATA_DIR` 指定数据目录（便于测试隔离，CLI 与 Web 共享同一档案）。
+
+## LLM Agent（pi-ai 接入）
+
+delphi 通过 [@earendil-works/pi-ai](https://github.com/earendil-works/pi)（Unified LLM API）接入真实大模型：
+
+| 环境变量 | 说明 |
+| --- | --- |
+| `DELPHI_LLM_PROVIDER` | `deepseek` / `openai` / `anthropic` / `openrouter` / `google`；缺省自动探测已配置 Key 的提供商 |
+| `DELPHI_LLM_MODEL` | 模型 id（缺省用各提供商默认模型，如 deepseek-v4-flash） |
+| `<PROVIDER>_API_KEY` | 鉴权（如 `DEEPSEEK_API_KEY`、`OPENROUTER_API_KEY`） |
+| `DELPHI_LLM_DISABLED` | `1` 强制回退规则引擎 |
+| `DELPHI_LLM_DEEP_ANALYZE` | `1` 开启逐条消息 LLM 标记增强（耗 token） |
+
+**LLM 能力**：
+- 对话回复由真实模型生成（工具调用循环：`get_cognitive_profile` / `search_memory` 读取你的认知档案）
+- 会话结束自动深度分析：摘要 + 自动洞察（⭐）
+- 个人画像六维自然语言叙事、从业分析综合评述
+- 全部 LLM 功能在未配置 Key 时自动回退规则引擎（离线可用）
 
 ## 功能一览（对照文档）
 
@@ -77,7 +99,10 @@ whoami/
 │   │       ├── commands/             # chat/daily/vtd/swot/sign/career/lifeDesign/persona...
 │   │       ├── commands/space/       # dashboard/timeline/archive/insights/lab/settings
 │   │       └── ui/                   # 盒式边框/进度条/火花线/输入助手
-│   └── web/                      # Web 端（Next.js，待实现）
+│   └── web/                      # Web 端（Next.js 14 App Router + Tailwind）
+│       ├── app/                      # 仪表盘 / 对话 / 画像 / 时间线 + API 路由
+│       ├── components/               # Nav / Chat / MetricBar / Sparkline
+│       └── lib/server.ts             # 服务端共享（core 引擎 + 档案 + LLM）
 ├── tsconfig.base.json
 └── package.json                  # pnpm workspace
 ```
@@ -98,7 +123,7 @@ whoami/
 | ----------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------- |
 | SQLite (better-sqlite3) | JSON 单文件档案（`store.ts`，原子写入） | 零原生依赖、跨平台零编译、可直接导出/备份/恢复；SQLite 可后续无缝替换                     |
 | Ink (React for CLI)     | readline + chalk（ASCII 艺术）            | Ink 依赖 yoga 原生模块且难以脚本化测试；当前实现全部命令均可管道输入自动化验证            |
-| compromise.js (NLP)     | 中文优先的规则词库（`lexicons.ts`）     | 完全离线、可解释；`MessageMarkers` 数据结构已预留，后续可换 LLM/NLP Provider 而不改模型 |
+| compromise.js (NLP)     | 中文规则词库 + pi-ai LLM 双引擎        | 离线零成本规则引擎兜底；配置 API Key 后由真实模型深度分析（可解释、可降级）             |
 | Turborepo               | pnpm workspaces                          | 减少工具链复杂度；构建为`tsc` 项目引用，可随时升级 turbo                                |
 
 ## 测试

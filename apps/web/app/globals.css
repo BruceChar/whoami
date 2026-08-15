@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background:
+    radial-gradient(1200px 500px at 20% -10%, rgba(125, 211, 252, 0.08), transparent),
+    radial-gradient(900px 400px at 90% 10%, rgba(167, 139, 250, 0.06), transparent),
+    #0a0e14;
+}
+
+.mirror-card {
+  @apply rounded-xl border border-slate-700/60 bg-ink-900/80 p-5 shadow-lg shadow-black/20;
+}
+
+.mirror-title {
+  @apply text-sm font-medium uppercase tracking-widest text-mirror/90;
+}
