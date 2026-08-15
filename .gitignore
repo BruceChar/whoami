@@ -6,3 +6,4 @@ dist/
 coverage/
 dist-test/
 package-lock.json
+.next/
