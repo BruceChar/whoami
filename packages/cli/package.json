@@ -1,0 +1,22 @@
+{
+  "name": "@delphi/cli",
+  "version": "0.1.0",
+  "description": "delphi CLI 本地模式 —— 完全离线，隐私优先",
+  "bin": {
+    "delphi": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@delphi/core": "*",
+    "chalk": "^4.1.2",
+    "commander": "^11.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,463 @@
+/**
+ * delphi —— 统一数据模型（对应 whoami.md 第九章）
+ *
+ * 所有方法论工具、自由对话的产出都汇入 UserCognitiveProfile，
+ * 交叉验证、演化追踪，最终驱动个人画像 / 从业分析 / 人生设计。
+ */
+
+// ---------------------------------------------------------------------------
+// 基础类型
+// ---------------------------------------------------------------------------
+
+export type AnalysisMode = "stealth" | "transparent" | "meta_guide";
+
+export type FrameworkSource =
+  | "free_chat"
+  | "vtd"
+  | "swot"
+  | "daily_feedback"
+  | "achievement"
+  | "interest_matrix"
+  | "sign"
+  | "feedback";
+
+export type GrowthStage = "exploration" | "consolidation" | "breakthrough" | "integration";
+
+// ---------------------------------------------------------------------------
+// 认知指标点（17 项核心指标 + 练习效应标记）
+// ---------------------------------------------------------------------------
+
+export interface CognitiveMetricPoint {
+  timestamp: string; // ISO 8601
+  sessionId: string;
+  source: FrameworkSource;
+
+  // 元认知能力维度（↑ 越高越好）
+  selfReflectionDepth: number; // 0-1
+  emotionFactClarity: number; // 0-1
+  attributionFlexibility: number; // 0-1
+  abstractionBalance: number; // 0-1
+  uncertaintyTolerance: number; // 0-1
+
+  // 思维净化维度（↓ 越低越好）
+  shouldTyrannyFreq: number;
+  catastrophizingFreq: number;
+  mindReadingFreq: number;
+  confirmationBiasFreq: number;
+  overgeneralizationFreq: number;
+
+  // 自我认知清晰度维度（↑ 越高越好）
+  valueClarity: number; // 0-1
+  talentRecognition: number; // 0-1
+  dreamPurity: number; // 0-1
+  selfExternalAlignment: number; // 0-1
+
+  // 能量管理维度（↑ 越高越好）
+  energyClarity: number; // 0-1
+  decisionSatisfactionRate: number; // 0-1
+  intrinsicDriveRatio: number; // 0-1
+
+  // 练习效应标记
+  practiceEffectEstimate: number; // 0-1
+}
+
+export type BiasType =
+  | "should_tyranny" // 应该暴政
+  | "catastrophizing" // 灾难化想象
+  | "mind_reading" // 读心术
+  | "confirmation_bias" // 确认偏误
+  | "overgeneralization" // 过度概括 / 绝对化
+  | "emotional_reasoning" // 情绪推理
+  | "all_or_nothing"; // 非黑即白
+
+export type AttributionType = "internal" | "external" | "situational";
+
+// ---------------------------------------------------------------------------
+// 单条消息的认知标记（隐式分析的最小产出）
+// ---------------------------------------------------------------------------
+
+export interface MessageMarkers {
+  biases: Array<{ type: BiasType; keyword: string; quote: string }>;
+  attribution: AttributionType | null;
+  certainty: number; // 0-1，确定性用语比例
+  timeOrientation: { past: number; present: number; future: number };
+  emotionTone: Record<string, number>; // 情绪词 → 次数
+  selfReflection: boolean; // 是否出现自我反思信号
+  abstractionJump: boolean; // 是否出现抽象层级跳跃
+  isQuestion: boolean;
+}
+
+export interface ChatMessage {
+  role: "user" | "agent";
+  text: string;
+  timestamp: string;
+  markers?: MessageMarkers; // 仅 user 消息有
+}
+
+export interface SessionRecord {
+  id: string;
+  startedAt: string;
+  endedAt: string;
+  mode: AnalysisMode;
+  messages: ChatMessage[];
+  metricPoint?: CognitiveMetricPoint;
+  title?: string;
+}
+
+// ---------------------------------------------------------------------------
+// 转折点
+// ---------------------------------------------------------------------------
+
+export type InflectionType =
+  | "milestone"
+  | "bias_breakthrough"
+  | "cognitive_reconstruction"
+  | "external_validation"
+  | "energy_shift"
+  | "prototype_insight"
+  | "crisis_recovery";
+
+export interface InflectionPoint {
+  timestamp: string;
+  type: InflectionType;
+  title: string;
+  description: string;
+  relatedSessions: string[];
+  dimensionsAffected: string[];
+  beforeSnapshot: Record<string, number>;
+  afterSnapshot: Record<string, number>;
+  userMarked: boolean;
+  agentDetected: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// 洞察收藏
+// ---------------------------------------------------------------------------
+
+export interface Insight {
+  id: string;
+  timestamp: string;
+  source: string; // 来源会话/工具
+  quote: string; // 原始对话片段
+  analysis: string; // Agent 解读
+  note: string; // 用户个人备注（可编辑）
+  tags: string[]; // 用户自定义标签
+  userMarked: boolean;
+  agentDetected: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// 原型实验室
+// ---------------------------------------------------------------------------
+
+export interface PrototypeTrial {
+  id: string;
+  createdAt: string;
+  idea: string;
+  assumptions: string[];
+  actions: Array<{ step: string; done: boolean; result?: string }>;
+  status: "unverified" | "confirmed" | "refuted";
+  reflection: string;
+}
+
+// ---------------------------------------------------------------------------
+// 方法论工具数据
+// ---------------------------------------------------------------------------
+
+export interface DailyFeedbackEntry {
+  date: string;
+  satisfied: { event: string; reason: string };
+  unsatisfied: { event: string; reason: string };
+  themes: string[];
+}
+
+export interface VTDData {
+  values: { anchors: string[]; conflicts: string[] };
+  talents: { signSignals: Record<string, string[]> };
+  dreams: { pureDrives: string[]; externalMotivesFiltered: string[] };
+}
+
+export interface SWOTData {
+  strengths: string[];
+  weaknesses: string[];
+  opportunities: string[];
+  threats: string[];
+  /** 控制圈分离结果：不可控威胁（重力问题） */
+  gravityProblems: string[];
+  /** 可控威胁（锚定问题） */
+  anchorProblems: string[];
+}
+
+export interface AchievementEntry {
+  eventId: string;
+  star: { situation: string; task: string; action: string; result: string };
+  skills: string[];
+  energyLevel: "high" | "medium" | "low";
+}
+
+export interface InterestRatingData {
+  creative: number;
+  analytical: number;
+  independent: number;
+  social: number;
+}
+
+export interface InterestMatrixData {
+  highEnergyQuadrants: string[];
+  conflicts: string[];
+  rating: InterestRatingData;
+}
+
+export interface FeedbackData {
+  externalPerception: string[];
+  selfExternalGaps: string[];
+}
+
+export interface FrameworkData {
+  vtd: VTDData;
+  swot: SWOTData;
+  achievements: AchievementEntry[];
+  interestMatrix: InterestMatrixData;
+  feedback: FeedbackData;
+  dailyFeedback: DailyFeedbackEntry[];
+  sign: { signals: Record<string, string> };
+}
+
+// ---------------------------------------------------------------------------
+// 成长追踪
+// ---------------------------------------------------------------------------
+
+export interface DimensionTracking {
+  currentLevel: number;
+  trendSlope: number;
+  adjustedTrendSlope: number;
+  volatility: number;
+  dataPoints: CognitiveMetricPoint[];
+}
+
+export interface GrowthTracking {
+  growthStage: GrowthStage;
+  practiceEffectBaseline: Record<string, number>;
+  dimensions: Record<string, DimensionTracking>;
+  inflectionPoints: InflectionPoint[];
+  crossDimensionCoupling: Record<string, Record<string, number>>;
+}
+
+// ---------------------------------------------------------------------------
+// 个人画像（PersonaSnapshot，对应文档 8.x）
+// ---------------------------------------------------------------------------
+
+export interface PersonaSnapshot {
+  version: string;
+  generatedAt: string;
+  basedOnSessions: number;
+
+  cognitiveFingerprint: {
+    attributionPattern: { internal: number; external: number; situational: number };
+    abstractionTendency: number;
+    certaintyLevel: number;
+    timeOrientation: { past: number; present: number; future: number };
+    emotionalTone: Record<string, number>;
+  };
+
+  energyMap: {
+    sources: string[];
+    blackHoles: string[];
+    disguises: Array<{ activity: string; perceived: "charging"; actual: "draining" }>;
+    fluctuations: Array<{ period: string; pattern: string }>;
+  };
+
+  thinkingTerrain: {
+    highlands: string[];
+    lowlands: string[];
+    canyons: Array<{ tension: string; description: string }>;
+    recurringThemes: string[];
+  };
+
+  relationalPattern: {
+    selfBoundary: "clear" | "moderate" | "fuzzy";
+    coreNeeds: string[];
+    conflictReaction: string;
+    givingValue: string[];
+  };
+
+  decisionStyle: {
+    speed: "fast" | "moderate" | "slow";
+    infoPreference: "breadth" | "depth" | "intuition";
+    riskTendency: "adventurous" | "moderate" | "conservative";
+    regretPattern: "action" | "inaction" | "mixed";
+    decisionAnchors: string[];
+  };
+
+  growthTrajectory: {
+    currentStage: GrowthStage;
+    growthSpeed: number;
+    fastestDimension: string;
+    currentBottleneck: string;
+    breakthroughSuggestion: string;
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 分析输出
+// ---------------------------------------------------------------------------
+
+export interface CareerAnalysis {
+  workForm: string;
+  contentDirection: string[];
+  avoid: string[];
+  riskProfile: string;
+  reasoning: string[];
+}
+
+export interface LifeDesignData {
+  connectTheDots: {
+    belief: string;
+    workView: string;
+    identity: string;
+    alignmentScore: number;
+    gaps: string[];
+  };
+  gravityProblems: string[];
+  multipleLives: {
+    commonElements: string[];
+    coreDrive: string;
+  };
+  prototypeStatus: Array<{
+    idea: string;
+    tested: boolean;
+    assumptions: string[];
+  }>;
+}
+
+export interface AnalysisOutputs {
+  careerAnalysis: CareerAnalysis | null;
+  lifeDesign: LifeDesignData | null;
+}
+
+// ---------------------------------------------------------------------------
+// 认知档案（顶层）
+// ---------------------------------------------------------------------------
+
+export interface CognitiveMarkers {
+  attributionPattern: { internal: number; external: number; situational: number };
+  certaintyIndex: number;
+  abstractionJumpsPerSession: number;
+  selfReflectionRatio: number;
+  emotionFactRatio: number;
+  biasFrequency: Record<BiasType, number>;
+}
+
+export interface Settings {
+  dataDir: string;
+  defaultMode: AnalysisMode;
+  biasSensitivity: "low" | "medium" | "high";
+  practiceEffectCorrection: boolean;
+  autoDetectInflections: boolean;
+  reminderFrequency: "never" | "daily" | "weekly";
+}
+
+export interface UserCognitiveProfile {
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+
+  cognitiveMarkers: CognitiveMarkers;
+
+  frameworkData: FrameworkData;
+
+  growthTracking: GrowthTracking;
+
+  personaHistory: PersonaSnapshot[];
+  currentPersona: PersonaSnapshot | null;
+
+  analysisOutputs: AnalysisOutputs;
+
+  sessions: SessionRecord[];
+  insights: Insight[];
+  prototypes: PrototypeTrial[];
+
+  settings: Settings;
+}
+
+// ---------------------------------------------------------------------------
+// 工厂函数
+// ---------------------------------------------------------------------------
+
+export function createEmptyFrameworkData(): FrameworkData {
+  return {
+    vtd: { values: { anchors: [], conflicts: [] }, talents: { signSignals: {} }, dreams: { pureDrives: [], externalMotivesFiltered: [] } },
+    swot: { strengths: [], weaknesses: [], opportunities: [], threats: [], gravityProblems: [], anchorProblems: [] },
+    achievements: [],
+    interestMatrix: { highEnergyQuadrants: [], conflicts: [], rating: { creative: 0, analytical: 0, independent: 0, social: 0 } },
+    feedback: { externalPerception: [], selfExternalGaps: [] },
+    dailyFeedback: [],
+    sign: { signals: {} },
+  };
+}
+
+export function createEmptyGrowthTracking(): GrowthTracking {
+  const dimensionKeys = [
+    "selfReflectionDepth", "emotionFactClarity", "attributionFlexibility", "abstractionBalance", "uncertaintyTolerance",
+    "shouldTyrannyFreq", "catastrophizingFreq", "mindReadingFreq", "confirmationBiasFreq", "overgeneralizationFreq",
+    "valueClarity", "talentRecognition", "dreamPurity", "selfExternalAlignment",
+    "energyClarity", "decisionSatisfactionRate", "intrinsicDriveRatio",
+  ];
+  const dimensions: Record<string, DimensionTracking> = {};
+  for (const key of dimensionKeys) {
+    dimensions[key] = {
+      currentLevel: 0.5,
+      trendSlope: 0,
+      adjustedTrendSlope: 0,
+      volatility: 0,
+      dataPoints: [],
+    };
+  }
+  return {
+    growthStage: "exploration",
+    practiceEffectBaseline: {},
+    dimensions,
+    inflectionPoints: [],
+    crossDimensionCoupling: {},
+  };
+}
+
+export function createDefaultSettings(dataDir: string): Settings {
+  return {
+    dataDir,
+    defaultMode: "stealth",
+    biasSensitivity: "medium",
+    practiceEffectCorrection: true,
+    autoDetectInflections: true,
+    reminderFrequency: "never",
+  };
+}
+
+export function createEmptyProfile(userId: string, dataDir: string): UserCognitiveProfile {
+  const now = new Date().toISOString();
+  return {
+    userId,
+    createdAt: now,
+    updatedAt: now,
+    cognitiveMarkers: {
+      attributionPattern: { internal: 0, external: 0, situational: 0 },
+      certaintyIndex: 0,
+      abstractionJumpsPerSession: 0,
+      selfReflectionRatio: 0,
+      emotionFactRatio: 0,
+      biasFrequency: {
+        should_tyranny: 0, catastrophizing: 0, mind_reading: 0,
+        confirmation_bias: 0, overgeneralization: 0, emotional_reasoning: 0, all_or_nothing: 0,
+      },
+    },
+    frameworkData: createEmptyFrameworkData(),
+    growthTracking: createEmptyGrowthTracking(),
+    personaHistory: [],
+    currentPersona: null,
+    analysisOutputs: { careerAnalysis: null, lifeDesign: null },
+    sessions: [],
+    insights: [],
+    prototypes: [],
+    settings: createDefaultSettings(dataDir),
+  };
+}
