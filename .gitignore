@@ -5,3 +5,4 @@ dist/
 .delphi/
 coverage/
 dist-test/
+package-lock.json

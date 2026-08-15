@@ -9,7 +9,7 @@ import {
   detectCommonElements,
   afterProfileUpdate,
 } from "@delphi/core";
-import { askLine } from "../ui/ask";
+import { askLine, EOF_INPUT } from "../ui/ask";
 import { c, section } from "../ui/render";
 
 export async function runLifeDesign(store: ProfileStore): Promise<void> {
@@ -23,6 +23,7 @@ export async function runLifeDesign(store: ProfileStore): Promise<void> {
     console.log("");
     console.log("[1] 多重人生推演  [2] 添加原型试验  [3] 原型实验室  [q] 返回");
     const choice = await askLine("> ");
+    if (choice === EOF_INPUT) break;
     switch (choice.trim().toLowerCase()) {
       case "1":
         await runMultipleLives(store);

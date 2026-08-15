@@ -2,7 +2,7 @@
  * delphi —— 方法论流程的交互驱动（CLI 侧）
  */
 import { FlowRunner } from "@delphi/core";
-import { askLine } from "../ui/ask";
+import { askLine, EOF_INPUT } from "../ui/ask";
 import { c, section } from "../ui/render";
 
 export interface RunFlowOptions {
@@ -24,7 +24,7 @@ export async function runFlow(runner: FlowRunner, opts: RunFlowOptions): Promise
     console.log("");
     console.log(c.cyan(`[${index + 1}/${total}]`) + " " + step.prompt);
     const answer = await askLine(c.dim("> ") as string);
-    if (answer.toLowerCase() === "/cancel") {
+    if (answer === EOF_INPUT || answer.toLowerCase() === "/cancel") {
       console.log(c.yellow("已取消本次流程。"));
       opts.onCancel?.();
       return false;

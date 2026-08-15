@@ -2,7 +2,7 @@
  * delphi —— 原型实验室（文档 7.6）
  */
 import { ProfileStore } from "@delphi/core";
-import { askLine } from "../../ui/ask";
+import { askLine, EOF_INPUT } from "../../ui/ask";
 import { c, box } from "../../ui/render";
 
 const STATUS_LABEL = { unverified: "待验证", confirmed: "✓ 证实", refuted: "✗ 证伪" } as const;
@@ -16,6 +16,7 @@ export async function runLab(store: ProfileStore): Promise<void> {
     console.log("");
     console.log("[1] 添加试验  [2] 记录行动  [3] 标记结果  [4] 反思  [q] 返回");
     const choice = await askLine("> ");
+    if (choice === EOF_INPUT) break;
     switch (choice.trim().toLowerCase()) {
       case "1":
         await addTrial(store);

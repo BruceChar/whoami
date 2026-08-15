@@ -10,7 +10,7 @@ import {
   afterProfileUpdate,
   BIAS_LABELS,
 } from "@delphi/core";
-import { askLine, closeRl } from "../ui/ask";
+import { askLine, closeRl, EOF_INPUT } from "../ui/ask";
 import { c, hr } from "../ui/render";
 
 const BANNER = [
@@ -49,6 +49,7 @@ export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; 
   let running = true;
   while (running) {
     const input = await askLine(c.cyan("你> "));
+    if (input === EOF_INPUT) break; // 输入耗尽 → 结束对话
     if (input === "") continue;
     const lower = input.toLowerCase();
 

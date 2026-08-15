@@ -8,6 +8,9 @@ import * as readline from "readline";
 let rl: readline.Interface | null = null;
 let pipedLines: string[] | null = null;
 
+/** EOF 哨兵：管道输入耗尽时 askLine 返回该值，菜单式循环应将其视为退出 */
+export const EOF_INPUT = "\u0000__EOF__";
+
 function isPiped(): boolean {
   return !process.stdin.isTTY;
 }
@@ -25,12 +28,13 @@ async function ensurePipedLines(): Promise<void> {
   }
 }
 
-/** 询问一行输入（显示提示语） */
+/** 询问一行输入（显示提示语）；管道输入耗尽后返回 EOF_INPUT */
 export async function askLine(prompt: string): Promise<string> {
   if (isPiped()) {
     await ensurePipedLines();
     const line = pipedLines!.shift();
-    return (line ?? "").trim();
+    if (line === undefined) return EOF_INPUT;
+    return line.trim();
   }
   return new Promise((resolve) => {
     if (!rl) {

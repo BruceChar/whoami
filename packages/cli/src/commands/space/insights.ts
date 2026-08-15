@@ -2,7 +2,7 @@
  * delphi —— 洞察收藏夹（文档 7.5）
  */
 import { ProfileStore, newInsightId } from "@delphi/core";
-import { askLine } from "../../ui/ask";
+import { askLine, EOF_INPUT } from "../../ui/ask";
 import { c, box } from "../../ui/render";
 
 export async function runInsights(store: ProfileStore): Promise<void> {
@@ -14,6 +14,7 @@ export async function runInsights(store: ProfileStore): Promise<void> {
     console.log("");
     console.log("[1] 添加洞察  [2] 添加备注  [3] 删除  [q] 返回");
     const choice = await askLine("> ");
+    if (choice === EOF_INPUT) break;
     switch (choice.trim().toLowerCase()) {
       case "1":
         await addInsight(store);

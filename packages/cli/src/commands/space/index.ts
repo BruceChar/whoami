@@ -2,7 +2,7 @@
  * delphi —— 用户空间入口（文档 10.2）
  */
 import { ProfileStore } from "@delphi/core";
-import { askLine } from "../../ui/ask";
+import { askLine, EOF_INPUT } from "../../ui/ask";
 import { c, box } from "../../ui/render";
 
 export async function runSpace(store: ProfileStore, sub?: string): Promise<void> {
@@ -41,6 +41,7 @@ export async function runSpace(store: ProfileStore, sub?: string): Promise<void>
       "[6] 设置与隐私  — 数据管理与导出",
     ], 56));
     const choice = (await askLine("\n> ")).trim();
+    if (choice === EOF_INPUT) break; // 管道输入耗尽 → 退出
     switch (choice) {
       case "1": {
         const { runDashboard } = await import("./dashboard");

@@ -11,7 +11,7 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@delphi/core": "*",
+    "@delphi/core": "workspace:*",
     "chalk": "^4.1.2",
     "commander": "^11.1.0"
   },

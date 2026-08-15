@@ -11,22 +11,23 @@
 
 ## 快速开始
 
-要求：Node.js 20+
+要求：Node.js 20+、pnpm 9+
 
 ```bash
-npm install
-npm run build          # 构建 core + cli
-npm test               # 运行核心引擎单元测试（node:test，27 项）
+pnpm install
+pnpm build                 # 构建 core + cli
+pnpm test                  # 运行核心引擎单元测试（node:test，27 项）
 
 # 方式一：直接运行
-npm run delphi
+pnpm run delphi
 
 # 方式二：全局安装命令
-npm run link:global    # 之后可以直接敲 delphi
+pnpm run link:global       # 之后可以直接敲 delphi
 delphi
 ```
 
 数据保存在 `~/.delphi/profile.json`（一个 JSON 文件包含全部认知档案，可随时导出/备份/恢复）。
+可用环境变量 `DELPHI_DATA_DIR` 指定数据目录（便于测试隔离）。
 
 ## 功能一览（对照文档）
 
@@ -95,24 +96,16 @@ whoami/
 | SQLite (better-sqlite3) | JSON 单文件档案（`store.ts`，原子写入） | 零原生依赖、跨平台零编译、可直接导出/备份/恢复；SQLite 可后续无缝替换                     |
 | Ink (React for CLI)     | readline + chalk（ASCII 艺术）            | Ink 依赖 yoga 原生模块且难以脚本化测试；当前实现全部命令均可管道输入自动化验证            |
 | compromise.js (NLP)     | 中文优先的规则词库（`lexicons.ts`）     | 完全离线、可解释；`MessageMarkers` 数据结构已预留，后续可换 LLM/NLP Provider 而不改模型 |
-| Turborepo               | npm workspaces                            | 减少工具链复杂度；构建为`tsc` 项目引用，可随时升级 turbo                                |
+| Turborepo               | pnpm workspaces                          | 减少工具链复杂度；构建为`tsc` 项目引用，可随时升级 turbo                                |
 
 ## 测试
 
 ```bash
-npm test    # 27 项单元测试（偏差检测/认知标记/模式切换/框架/画像/存储）
+pnpm test    # 27 项单元测试（偏差检测/认知标记/模式切换/框架/画像/存储）
 ```
 
 CLI 全部交互命令支持管道输入，可脚本化冒烟测试：
 
 ```bash
-printf '今天很累，老板总是加需求\n/quit\n' | HOME=/tmp/t delphi chat
+printf '今天很累，老板总是加需求\n/quit\n' | DELPHI_DATA_DIR=/tmp/t pnpm run delphi chat
 ```
-
->>>>>>> fc14f41 (basic cli)
->>>>>>>
->>>>>>
->>>>>
->>>>
->>>
->>

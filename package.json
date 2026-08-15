@@ -2,17 +2,18 @@
   "name": "delphi",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.3.0",
   "description": "delphi —— 一面照向内心的镜子。自我认知 Agent（CLI 本地模式）",
-  "workspaces": [
-    "packages/*"
-  ],
   "scripts": {
-    "build": "npm run build -w @delphi/core && npm run build -w @delphi/cli",
-    "test": "npm test -w @delphi/core",
-    "build:test": "npm run build && npm test",
+    "build": "pnpm --filter @delphi/core build && pnpm --filter @delphi/cli build",
+    "test": "pnpm --filter @delphi/core test",
+    "build:test": "pnpm build && pnpm test",
     "delphi": "node packages/cli/dist/index.js",
     "dev": "node packages/cli/dist/index.js",
-    "link:global": "npm link -w @delphi/cli"
+    "link:global": "pnpm --filter @delphi/cli link --global"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0"
   },
   "engines": {
     "node": ">=20"

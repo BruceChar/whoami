@@ -2,7 +2,7 @@
  * delphi —— 设置与隐私（文档 7.7）
  */
 import { ProfileStore, AnalysisMode } from "@delphi/core";
-import { askLine } from "../../ui/ask";
+import { askLine, EOF_INPUT } from "../../ui/ask";
 import { c, box } from "../../ui/render";
 import * as fs from "fs";
 
@@ -23,6 +23,7 @@ export async function runSettings(store: ProfileStore): Promise<void> {
     console.log("");
     console.log("[1] 导出档案 JSON  [2] 备份  [3] 导入  [4] 切换默认模式  [5] 切换偏差敏感度  [6] 清空数据  [q] 返回");
     const choice = await askLine("> ");
+    if (choice === EOF_INPUT) break;
     switch (choice.trim().toLowerCase()) {
       case "1": {
         const dest = store.exportJson();

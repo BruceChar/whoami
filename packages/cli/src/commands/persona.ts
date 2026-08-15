@@ -10,7 +10,7 @@ import {
   describeEmotionalTone,
   EMOTION_LABELS,
 } from "@delphi/core";
-import { askLine } from "../ui/ask";
+import { askLine, EOF_INPUT } from "../ui/ask";
 import { c, box, hr, progressBar } from "../ui/render";
 
 export async function runPersona(store: ProfileStore): Promise<void> {
@@ -36,6 +36,7 @@ export async function runPersona(store: ProfileStore): Promise<void> {
     console.log("");
     console.log("[1] 导出画像报告  [2] 对比历史版本  [3] 查看详细数据  [q] 返回");
     const choice = await askLine("> ");
+    if (choice === EOF_INPUT) break;
     switch (choice.trim().toLowerCase()) {
       case "1":
         store.backup("persona");

@@ -21,6 +21,19 @@ export interface StoreOptions {
   userId?: string;
 }
 
+/**
+ * 数据目录解析优先级：
+ * 1. 显式传入 opts.dataDir
+ * 2. 环境变量 DELPHI_DATA_DIR（便于测试与多实例隔离）
+ * 3. 默认 ~/.delphi
+ */
+export function resolveDataDir(opts?: StoreOptions): string {
+  if (opts?.dataDir) return opts.dataDir;
+  const env = process.env.DELPHI_DATA_DIR;
+  if (env && env.trim()) return env.trim();
+  return DEFAULT_DATA_DIR;
+}
+
 export class ProfileStore {
   readonly dataDir: string;
   readonly userId: string;
@@ -28,7 +41,7 @@ export class ProfileStore {
   private profile: UserCognitiveProfile;
 
   constructor(opts: StoreOptions = {}) {
-    this.dataDir = opts.dataDir || DEFAULT_DATA_DIR;
+    this.dataDir = resolveDataDir(opts);
     this.userId = opts.userId || "local-user";
     this.profilePath = path.join(this.dataDir, "profile.json");
     fs.mkdirSync(this.dataDir, { recursive: true });

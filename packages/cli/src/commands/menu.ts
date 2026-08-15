@@ -2,7 +2,7 @@
  * delphi —— 主菜单（启动场景，文档 10.1）
  */
 import { ProfileStore, AnalysisMode } from "@delphi/core";
-import { askLine } from "../ui/ask";
+import { askLine, EOF_INPUT } from "../ui/ask";
 import { c, box, hr } from "../ui/render";
 
 export async function runMenu(store: ProfileStore, quiet = false): Promise<void> {
@@ -37,7 +37,9 @@ export async function runMenu(store: ProfileStore, quiet = false): Promise<void>
     ], 56));
     console.log(c.dim("  [q] 退出"));
 
-    const choice = (await askLine("\n> ")).trim().toLowerCase();
+    const raw = await askLine("\n> ");
+    if (raw === EOF_INPUT) break; // 管道输入耗尽 → 退出
+    const choice = raw.trim().toLowerCase();
     switch (choice) {
       case "d": {
         const { runDaily } = await import("./daily");
