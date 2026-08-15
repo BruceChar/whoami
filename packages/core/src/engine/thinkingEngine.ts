@@ -20,6 +20,7 @@ import {
 } from "./transparent";
 import { LLMAgent, runChatAgent } from "../llm/agent";
 import { LLMError, LLMUsage } from "../llm/types";
+import { llmExtractMarkers, mergeMarkers } from "../llm/enhancedAnalysis";
 import { BIAS_LABELS } from "../analyzer/biasDetector";
 
 export interface EngineTurnResult {
@@ -48,6 +49,8 @@ export interface EngineOptions {
   lightTouch?: boolean; // 隐式模式下第 4 轮起是否轻量标记
   /** LLM Agent（pi-ai）；缺省时走规则引擎 */
   llm?: LLMAgent;
+  /** 逐条消息 LLM 标记增强（较耗 token，默认关；会话级深度分析不受此开关影响） */
+  deepAnalyze?: boolean;
 }
 
 const COMMANDS = new Set([
@@ -123,6 +126,7 @@ export class ThinkingEngine {
       sensitivity: opts.sensitivity || "medium",
       lightTouch: opts.lightTouch !== undefined ? opts.lightTouch : true,
       llm: opts.llm,
+      deepAnalyze: opts.deepAnalyze || false,
     };
   }
 
@@ -151,7 +155,18 @@ export class ThinkingEngine {
     }
 
     // 2. 规则分析（始终运行，产出认知标记）
-    const markers = analyzeMessage(trimmed, { sensitivity: this.opts.sensitivity });
+    let markers = analyzeMessage(trimmed, { sensitivity: this.opts.sensitivity });
+
+    // 2.1 可选：LLM 逐条标记增强（deepAnalyze 开关）
+    if (this.opts.deepAnalyze && this.opts.llm) {
+      try {
+        const llmMarkers = await llmExtractMarkers(this.opts.llm, trimmed);
+        if (llmMarkers) markers = mergeMarkers(markers, llmMarkers);
+      } catch {
+        // 增强失败不影响主流程
+      }
+    }
+
     this.analyzer.observe(trimmed, markers);
     this.history.push({ role: "user", text: trimmed, timestamp: new Date().toISOString(), markers });
 

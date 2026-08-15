@@ -4,7 +4,7 @@
  * 让对话真正"知道"用户是谁，而不是空泛的聊天。
  */
 import { ChatMessage, UserCognitiveProfile } from "../models/types";
-import { LLMMessage, LLMUsage } from "./types";
+import { LLMMessage, LLMProvider, LLMUsage } from "./types";
 import { DIMENSION_LABELS, UP_IS_GOOD } from "../profiler/growthTracker";
 import { PERSONA_STAGE_LABELS } from "../persona/persona";
 import { EMOTION_LABELS } from "../persona/fingerprint";
@@ -39,10 +39,7 @@ export interface LLMAgentResult {
 }
 
 /** 具备工具调用能力的 LLM Agent 接口（pi-ai 实现 + 测试实现） */
-export interface LLMAgent {
-  readonly id: string;
-  readonly model: string;
-  isConfigured(): Promise<boolean>;
+export interface LLMAgent extends LLMProvider {
   agentChat(opts: {
     messages: LLMMessage[];
     system?: string;

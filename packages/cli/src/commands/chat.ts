@@ -10,6 +10,8 @@ import {
   afterProfileUpdate,
   BIAS_LABELS,
   getLLMProvider,
+  llmAnalyzeSession,
+  applySessionDeepAnalysis,
 } from "@delphi/core";
 import { askLine, closeRl, EOF_INPUT } from "../ui/ask";
 import { c, hr } from "../ui/render";
@@ -109,6 +111,25 @@ export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; 
     console.log(c.dim("本次对话小结："));
     for (const line of summary) console.log(c.dim(line));
   }
+
+  // LLM 深度分析（隐式后台分析升级版）：会话摘要 + 自动洞察
+  if (llm && session.messages.some((m) => m.role === "user")) {
+    console.log(c.dim("\n⚡ 正在深度分析这次对话（LLM）..."));
+    try {
+      const deep = await llmAnalyzeSession(llm, profile, session);
+      if (deep) {
+        const created = applySessionDeepAnalysis(profile, session, deep);
+        console.log(c.cyan("深度分析："));
+        console.log(`  ${deep.summary}`);
+        for (const ins of created) {
+          console.log(c.green(`  ⭐ 自动洞察: ${ins.analysis}`));
+        }
+      }
+    } catch (err) {
+      console.log(c.dim(`  ↳ 深度分析失败（不影响已保存内容）: ${(err as Error).message.slice(0, 80)}`));
+    }
+  }
+
   afterProfileUpdate(profile);
   store.save();
   console.log(c.green("\n✓ 对话已记录到你的认知档案。"));

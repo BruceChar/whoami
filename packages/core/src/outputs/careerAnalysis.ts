@@ -120,7 +120,7 @@ export function buildCareerAnalysis(profile: UserCognitiveProfile): CareerAnalys
   };
 }
 
-export function formatCareerReport(c: CareerAnalysis): string {
+export function formatCareerReport(c: CareerAnalysis, withNarrative = false): string {
   const lines: string[] = [];
   lines.push("📊 从业分析报告");
   lines.push("");
@@ -135,5 +135,10 @@ export function formatCareerReport(c: CareerAnalysis): string {
   for (const a of c.avoid) lines.push(`  • ${a}`);
   lines.push("");
   lines.push(`【风险耐受度】${c.riskProfile}`);
+  if (withNarrative && c.llmNarrative) {
+    lines.push("");
+    lines.push("【LLM 综合评述】");
+    lines.push(`  ${c.llmNarrative}`);
+  }
   return lines.join("\n");
 }

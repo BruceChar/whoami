@@ -9,6 +9,8 @@ import {
   PERSONA_STAGE_LABELS,
   describeEmotionalTone,
   EMOTION_LABELS,
+  getLLMProvider,
+  llmEnrichPersona,
 } from "@delphi/core";
 import { askLine, EOF_INPUT } from "../ui/ask";
 import { c, box, hr, progressBar } from "../ui/render";
@@ -25,6 +27,21 @@ export async function runPersona(store: ProfileStore): Promise<void> {
   if (!profile.currentPersona) {
     updatePersona(profile);
     store.save();
+  }
+
+  // LLM 画像叙事增强（已生成过则跳过）
+  const llm = getLLMProvider();
+  if (llm && profile.currentPersona && !profile.currentPersona.narratives) {
+    console.log(c.dim("\n⚡ 正在生成画像叙事（LLM）..."));
+    try {
+      const narratives = await llmEnrichPersona(llm, profile, profile.currentPersona);
+      if (narratives) {
+        profile.currentPersona.narratives = narratives;
+        store.save();
+      }
+    } catch (err) {
+      console.log(c.dim(`  ↳ 叙事生成失败（画像本身不受影响）: ${(err as Error).message.slice(0, 80)}`));
+    }
   }
 
   let running = true;
@@ -122,6 +139,17 @@ export function renderPersona(p: import("@delphi/core").PersonaSnapshot, profile
   lines.push(`  最快成长: ${p.growthTrajectory.fastestDimension}`);
   lines.push(`  当前瓶颈: ${p.growthTrajectory.currentBottleneck}`);
   lines.push(`  突破建议: ${p.growthTrajectory.breakthroughSuggestion}`);
+
+  if (p.narratives) {
+    lines.push("");
+    lines.push("【LLM 叙事】");
+    if (p.narratives.fingerprint) lines.push(`  🧠 ${p.narratives.fingerprint}`);
+    if (p.narratives.energyMap) lines.push(`  ⚡ ${p.narratives.energyMap}`);
+    if (p.narratives.terrain) lines.push(`  ⛰️ ${p.narratives.terrain}`);
+    if (p.narratives.relationship) lines.push(`  🤝 ${p.narratives.relationship}`);
+    if (p.narratives.decision) lines.push(`  🧭 ${p.narratives.decision}`);
+    if (p.narratives.growth) lines.push(`  📈 ${p.narratives.growth}`);
+  }
 
   if (profile.personaHistory.length >= 2) {
     lines.push("");

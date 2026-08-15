@@ -48,3 +48,4 @@ export * from "./llm/piAiProvider";
 export * from "./llm/registry";
 export * from "./llm/scriptedProvider";
 export * from "./llm/agent";
+export * from "./llm/enhancedAnalysis";

@@ -7,6 +7,8 @@ import {
   buildCareerAnalysis,
   formatCareerReport,
   afterProfileUpdate,
+  getLLMProvider,
+  llmRefineCareer,
 } from "@delphi/core";
 import { c } from "../ui/render";
 
@@ -24,10 +26,31 @@ export async function runCareer(store: ProfileStore): Promise<void> {
   }
 
   const report = buildCareerAnalysis(profile);
+
+  // LLM 综合评述增强
+  const llm = getLLMProvider();
+  if (llm) {
+    console.log(c.dim("\n⚡ 正在生成从业分析评述（LLM）..."));
+    try {
+      const refined = await llmRefineCareer(llm, profile, report);
+      if (refined) {
+        report.llmNarrative = refined.narrative;
+        for (const d of refined.extraDirections) {
+          if (!report.contentDirection.includes(d)) report.contentDirection.push(d);
+        }
+        for (const a of refined.extraAvoid) {
+          if (!report.avoid.includes(a)) report.avoid.push(a);
+        }
+      }
+    } catch (err) {
+      console.log(c.dim(`  ↳ 评述生成失败（规则分析仍可用）: ${(err as Error).message.slice(0, 80)}`));
+    }
+  }
+
   profile.analysisOutputs.careerAnalysis = report;
   afterProfileUpdate(profile);
   store.save();
 
-  console.log("\n" + formatCareerReport(report));
+  console.log("\n" + formatCareerReport(report, true));
   console.log(c.dim("\n（已保存到档案，数据更新后自动重算）"));
 }

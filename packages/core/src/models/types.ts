@@ -102,6 +102,8 @@ export interface SessionRecord {
   messages: ChatMessage[];
   metricPoint?: CognitiveMetricPoint;
   title?: string;
+  /** LLM 深度分析生成的会话摘要 */
+  summary?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -296,6 +298,16 @@ export interface PersonaSnapshot {
     currentBottleneck: string;
     breakthroughSuggestion: string;
   };
+
+  /** LLM 生成的自然语言叙事（可选增强，规则引擎模式缺省） */
+  narratives?: {
+    fingerprint?: string;
+    energyMap?: string;
+    terrain?: string;
+    relationship?: string;
+    decision?: string;
+    growth?: string;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -308,6 +320,8 @@ export interface CareerAnalysis {
   avoid: string[];
   riskProfile: string;
   reasoning: string[];
+  /** LLM 生成的综合评述（可选） */
+  llmNarrative?: string;
 }
 
 export interface LifeDesignData {
@@ -332,8 +346,7 @@ export interface LifeDesignData {
 
 export interface AnalysisOutputs {
   careerAnalysis: CareerAnalysis | null;
-  lifeDesign: LifeDesignData | null;
-}
+  lifeDesign: LifeDesignData | null;}
 
 // ---------------------------------------------------------------------------
 // 认知档案（顶层）
