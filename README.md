@@ -1,8 +1,5 @@
-<<<<<<< HEAD
-# whoami
-know youself
-=======
-# delphi 🪞 —— 一面照向内心的镜子
+
+# whoami (delphi )🪞 —— 一面照向内心的镜子
 
 > Be water my friend.
 
@@ -33,26 +30,26 @@ delphi
 
 ## 功能一览（对照文档）
 
-| 文档章节 | 功能 | 命令 |
-| --- | --- | --- |
-| 三、3.1-3.3 | 三层思维分析模式（隐式/显式/引导式） | `delphi chat`，对话内 `/stealth` `/transparent` `/guide` `/analyze` |
-| 四、4.1.1 | 回馈分析法（每日满意/不满意） | `delphi daily` |
-| 四、4.1.2 | 自由对话（隐式分析主战场） | `delphi chat` |
-| 四、4.2.1 | V-T-D 价值观-天赋-梦想 | `delphi vtd` |
-| 四、4.2.2 | SIGN 天赋信号探测 | `delphi sign` |
-| 四、4.3.1 | SWOT 分析（Agent 增强：优势阴影/劣势再框定/控制圈分离） | `delphi swot` |
-| 四、4.3.3 | 成就事件萃取（STAR） | `delphi achievement` |
-| 四、4.4.1 | 兴趣矩阵（四象限能量评分） | `delphi interest` |
-| 五 | 从业分析引擎 | `delphi career` |
-| 六 | 人生设计引擎（Connect The Dots / 重力问题 / 多重人生 / 原型设计） | `delphi life` |
-| 七、7.2 | 认知仪表盘 | `delphi space dashboard` |
-| 七、7.3 | 成长时间线（17 指标 + 转折点 + 练习效应校正） | `delphi space timeline` |
-| 七、7.4 | 思维档案库 | `delphi space archive` |
-| 七、7.5 | 洞察收藏夹 | `delphi space insights` |
-| 七、7.6 | 原型实验室 | `delphi space lab` |
-| 七、7.7 | 设置与隐私（导出/备份/导入/清空） | `delphi space settings` |
-| 八、8.x | 个人画像（认知指纹 + 能量地图 + 六维活画像，版本化） | `delphi persona` |
-| 九 | 统一数据模型（`UserCognitiveProfile`） | 全部命令汇入同一档案 |
+| 文档章节    | 功能                                                              | 命令                                                                          |
+| ----------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| 三、3.1-3.3 | 三层思维分析模式（隐式/显式/引导式）                              | `delphi chat`，对话内 `/stealth` `/transparent` `/guide` `/analyze` |
+| 四、4.1.1   | 回馈分析法（每日满意/不满意）                                     | `delphi daily`                                                              |
+| 四、4.1.2   | 自由对话（隐式分析主战场）                                        | `delphi chat`                                                               |
+| 四、4.2.1   | V-T-D 价值观-天赋-梦想                                            | `delphi vtd`                                                                |
+| 四、4.2.2   | SIGN 天赋信号探测                                                 | `delphi sign`                                                               |
+| 四、4.3.1   | SWOT 分析（Agent 增强：优势阴影/劣势再框定/控制圈分离）           | `delphi swot`                                                               |
+| 四、4.3.3   | 成就事件萃取（STAR）                                              | `delphi achievement`                                                        |
+| 四、4.4.1   | 兴趣矩阵（四象限能量评分）                                        | `delphi interest`                                                           |
+| 五          | 从业分析引擎                                                      | `delphi career`                                                             |
+| 六          | 人生设计引擎（Connect The Dots / 重力问题 / 多重人生 / 原型设计） | `delphi life`                                                               |
+| 七、7.2     | 认知仪表盘                                                        | `delphi space dashboard`                                                    |
+| 七、7.3     | 成长时间线（17 指标 + 转折点 + 练习效应校正）                     | `delphi space timeline`                                                     |
+| 七、7.4     | 思维档案库                                                        | `delphi space archive`                                                      |
+| 七、7.5     | 洞察收藏夹                                                        | `delphi space insights`                                                     |
+| 七、7.6     | 原型实验室                                                        | `delphi space lab`                                                          |
+| 七、7.7     | 设置与隐私（导出/备份/导入/清空）                                 | `delphi space settings`                                                     |
+| 八、8.x     | 个人画像（认知指纹 + 能量地图 + 六维活画像，版本化）              | `delphi persona`                                                            |
+| 九          | 统一数据模型（`UserCognitiveProfile`）                          | 全部命令汇入同一档案                                                          |
 
 启动 `delphi`（无参数）即进入文档 10.1 的交互主菜单。
 
@@ -93,12 +90,12 @@ whoami/
 
 ## 与文档的工程取舍（说明）
 
-| 文档建议 | 本实现 | 原因 |
-| --- | --- | --- |
-| SQLite (better-sqlite3) | JSON 单文件档案（`store.ts`，原子写入） | 零原生依赖、跨平台零编译、可直接导出/备份/恢复；SQLite 可后续无缝替换 |
-| Ink (React for CLI) | readline + chalk（ASCII 艺术） | Ink 依赖 yoga 原生模块且难以脚本化测试；当前实现全部命令均可管道输入自动化验证 |
-| compromise.js (NLP) | 中文优先的规则词库（`lexicons.ts`） | 完全离线、可解释；`MessageMarkers` 数据结构已预留，后续可换 LLM/NLP Provider 而不改模型 |
-| Turborepo | npm workspaces | 减少工具链复杂度；构建为 `tsc` 项目引用，可随时升级 turbo |
+| 文档建议                | 本实现                                    | 原因                                                                                      |
+| ----------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------- |
+| SQLite (better-sqlite3) | JSON 单文件档案（`store.ts`，原子写入） | 零原生依赖、跨平台零编译、可直接导出/备份/恢复；SQLite 可后续无缝替换                     |
+| Ink (React for CLI)     | readline + chalk（ASCII 艺术）            | Ink 依赖 yoga 原生模块且难以脚本化测试；当前实现全部命令均可管道输入自动化验证            |
+| compromise.js (NLP)     | 中文优先的规则词库（`lexicons.ts`）     | 完全离线、可解释；`MessageMarkers` 数据结构已预留，后续可换 LLM/NLP Provider 而不改模型 |
+| Turborepo               | npm workspaces                            | 减少工具链复杂度；构建为`tsc` 项目引用，可随时升级 turbo                                |
 
 ## 测试
 
@@ -111,4 +108,11 @@ CLI 全部交互命令支持管道输入，可脚本化冒烟测试：
 ```bash
 printf '今天很累，老板总是加需求\n/quit\n' | HOME=/tmp/t delphi chat
 ```
+
 >>>>>>> fc14f41 (basic cli)
+>>>>>>>
+>>>>>>
+>>>>>
+>>>>
+>>>
+>>
