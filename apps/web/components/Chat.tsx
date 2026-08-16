@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import InsightsPanel from "./InsightsPanel";
 import Logo from "./Logo";
+import { InsightsIcon } from "./icons";
 
 interface Msg {
   role: "user" | "assistant";
@@ -18,20 +19,6 @@ interface ToolMeta {
   emoji: string;
   description: string;
 }
-
-type Mode = "stealth" | "transparent" | "meta_guide";
-
-const MODE_LABELS: Record<Mode, string> = {
-  stealth: "隐式",
-  transparent: "显式",
-  meta_guide: "引导式",
-};
-
-const REASONING_LABELS: Record<string, string> = {
-  low: "低",
-  medium: "中",
-  high: "高",
-};
 
 /** Approximate context window used for the usage ring. */
 const CONTEXT_WINDOW = 64000;
@@ -50,10 +37,8 @@ export default function Chat() {
   const router = useRouter();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
-  const [mode, setMode] = useState<Mode>("stealth");
   const [busy, setBusy] = useState(false);
   const [llmModel, setLlmModel] = useState<string | null>(null);
-  const [reasoning, setReasoning] = useState("medium");
   const [contextTokens, setContextTokens] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [tools, setTools] = useState<ToolMeta[]>([]);
@@ -77,7 +62,6 @@ export default function Chat() {
         .then((r) => r.json())
         .then((s) => {
           setConfigured(s.configured);
-          setReasoning(s.reasoning || "medium");
           setLlmModel((prev) => prev || s.model || s.provider || null);
         })
         .catch(() => setConfigured(false));
@@ -200,7 +184,7 @@ export default function Chat() {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: content, mode, toolId, sessionId: sessionId || undefined }),
+          body: JSON.stringify({ message: content, mode: "stealth", toolId, sessionId: sessionId || undefined }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "请求失败");
@@ -225,7 +209,7 @@ export default function Chat() {
         setBusy(false);
       }
     },
-    [input, busy, mode, sessionId]
+    [input, busy, sessionId]
   );
 
   // Show the tool menu only while the input is exactly "/".
@@ -321,7 +305,7 @@ export default function Chat() {
                 <div
                   className={`break-words rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed ${
                     m.role === "user"
-                      ? "w-full max-w-[78%] bg-mirror-500 text-white"
+                      ? "w-fit max-w-[78%] bg-mirror-500 text-white"
                       : "w-fit max-w-[78%] bg-surface text-ink-800 shadow-soft"
                   }`}
                 >
@@ -392,31 +376,23 @@ export default function Chat() {
               className="max-h-[180px] w-full resize-none bg-transparent px-4 pt-3 text-[15px] text-ink-800 outline-none placeholder:text-ink-300"
             />
             <div className="flex items-center justify-between gap-3 px-3 pb-2 pt-1">
-              {/* left: three conversation modes */}
+              {/* left: currently only stealth mode is open */}
               <div className="flex items-center gap-0.5 rounded-lg bg-ink-100 p-0.5 text-xs">
-                {(Object.keys(MODE_LABELS) as Mode[]).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setMode(m)}
-                    className={`rounded-md px-2.5 py-1 transition ${
-                      mode === m ? "bg-surface text-ink-900 shadow-soft" : "text-ink-500 hover:text-ink-700"
-                    }`}
-                    title={MODE_LABELS[m]}
-                  >
-                    {MODE_LABELS[m]}
-                  </button>
-                ))}
+                <span className="rounded-md bg-surface px-2.5 py-1 text-ink-900 shadow-soft" title="当前仅开放隐式模式">
+                  隐式
+                </span>
               </div>
 
-              {/* right: model · reasoning · context ring · send */}
+              {/* right: model · context ring · send */}
               <div className="flex items-center gap-3 text-[11px] text-ink-400">
-                <span className="hidden max-w-40 truncate sm:inline" title={llmModel || undefined}>
+                <span className="hidden max-w-44 truncate sm:inline" title={llmModel || undefined}>
                   {llmModel || "未连接模型"}
                 </span>
-                <span className="hidden sm:inline">推理 · {REASONING_LABELS[reasoning] || "中"}</span>
-                <span className="flex items-center gap-1" title={`上下文约 ${contextPct}%`}>
+                <span className="group relative flex items-center gap-1">
                   <ContextRing pct={contextPct} />
-                  {contextPct}%
+                  <span className="pointer-events-none absolute bottom-full right-0 z-30 mb-1.5 hidden whitespace-nowrap rounded-lg border border-ink-200 bg-surface px-2 py-1 text-[10px] text-ink-500 shadow-soft group-hover:block">
+                    上下文 {contextPct}% · {contextTokens.toLocaleString()} / {CONTEXT_WINDOW.toLocaleString()} tokens
+                  </span>
                 </span>
                 <button
                   onClick={() => send(undefined, activeTool?.id)}
@@ -453,9 +429,9 @@ export default function Chat() {
         <button
           onClick={() => setPanelOpen((v) => !v)}
           title={panelOpen ? "收起洞察" : "展开洞察"}
-          className="absolute right-0 top-1/2 z-30 flex h-24 w-6 -translate-y-1/2 items-center justify-center rounded-l-lg border border-r-0 border-ink-200 bg-surface text-xs text-ink-400 shadow-soft transition hover:border-mirror-300 hover:text-mirror-600"
+          className="absolute right-0 top-1/2 z-30 flex h-24 w-6 -translate-y-1/2 items-center justify-center rounded-l-lg border border-r-0 border-ink-200 bg-surface text-ink-400 shadow-soft transition hover:border-mirror-300 hover:text-mirror-600"
         >
-          {panelOpen ? "›" : "📊"}
+          {panelOpen ? "›" : <InsightsIcon size={14} />}
         </button>
       </div>
 

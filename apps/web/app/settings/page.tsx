@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { SettingsIcon } from "@/components/icons";
 
 interface ProviderStatus {
   configured: boolean;
@@ -137,7 +138,10 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-xl space-y-6 px-6 py-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-ink-900">⚙️ 设置</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-bold text-ink-900">
+          <SettingsIcon size={22} className="text-mirror-600" />
+          设置
+        </h1>
         <span
           className={`rounded-full border px-3 py-1 text-xs ${
             status?.configured

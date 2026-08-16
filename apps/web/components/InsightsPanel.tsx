@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { InsightsIcon } from "./icons";
 
 interface InsightItem {
   id: string;
@@ -55,7 +56,10 @@ export default function InsightsPanel({ onClose }: { onClose?: () => void }) {
   return (
     <aside className="flex h-full w-80 shrink-0 flex-col border-l border-ink-200/70 bg-surface/70">
       <div className="flex items-center justify-between border-b border-ink-200/70 px-4 py-3">
-        <span className="text-sm font-semibold text-ink-800">📊 洞察</span>
+        <span className="flex items-center gap-1.5 text-sm font-semibold text-ink-800">
+          <InsightsIcon size={16} className="text-mirror-600" />
+          洞察
+        </span>
         <div className="flex items-center gap-1.5">
           <Link
             href="/insights"
