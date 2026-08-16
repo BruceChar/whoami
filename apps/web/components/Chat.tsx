@@ -60,7 +60,7 @@ export default function Chat() {
         .then((r) => r.json())
         .then((s) => {
           setConfigured(s.configured);
-          setLlmModel((prev) => prev || s.model || s.provider || null);
+          setLlmModel((prev) => prev || s.effectiveModel || s.model || null);
           if (typeof s.contextWindow === "number") setContextWindow(s.contextWindow);
         })
         .catch(() => setConfigured(false));
@@ -378,15 +378,8 @@ export default function Chat() {
               placeholder={activeTool ? `Continue ${activeTool.label}… (answer the LLM's question)` : "Type a message… (/ for tools, Enter to send, Shift+Enter for newline)"}
               className="max-h-[180px] w-full resize-none bg-transparent px-4 pt-3 text-[15px] text-ink-800 outline-none placeholder:text-ink-300"
             />
-            <div className="flex items-center justify-between gap-3 px-3 pb-2 pt-1">
-              {/* left: currently only stealth mode is open */}
-              <div className="flex items-center gap-0.5 rounded-lg bg-ink-100 p-0.5 text-xs">
-                <span className="rounded-md bg-surface px-2.5 py-1 text-ink-900 shadow-soft" title="Only stealth mode is open for now">
-                  Stealth
-                </span>
-              </div>
-
-              {/* right: model · context ring · send */}
+            <div className="flex items-center justify-end gap-3 px-3 pb-2 pt-1">
+              {/* model · context ring · send (stealth mode is default and fixed) */}
               <div className="flex items-center gap-3 text-[11px] text-ink-400">
                 <span className="hidden max-w-44 truncate sm:inline" title={llmModel || undefined}>
                   {llmModel || "No model connected"}

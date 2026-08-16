@@ -30,10 +30,11 @@ export async function GET() {
   const file = loadLLMConfigFile(dataDir);
   // context window of the currently configured model (for the usage ring)
   let contextWindow: number | undefined;
+  let effectiveModel: string | undefined;
   if (status.provider) {
-    const model = file?.model || DEFAULT_MODEL_CANDIDATES[status.provider]?.[0];
-    if (model) {
-      const info = await getModelInfo(status.provider, model);
+    effectiveModel = file?.model || DEFAULT_MODEL_CANDIDATES[status.provider]?.[0];
+    if (effectiveModel) {
+      const info = await getModelInfo(status.provider, effectiveModel);
       contextWindow = info?.contextWindow || PROVIDER_DEFAULT_CONTEXT[status.provider];
     }
   }
@@ -42,6 +43,7 @@ export async function GET() {
     supportedProviders: SUPPORTED_PROVIDERS,
     modelPlaceholder: file?.model || "deepseek-v4-flash (leave empty for default)",
     contextWindow,
+    effectiveModel,
   });
 }
 
