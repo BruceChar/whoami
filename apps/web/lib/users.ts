@@ -6,7 +6,7 @@
 import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
-import { resolveDataDir } from "@delphi/core";
+import { resolveDataDir, ProfileStore } from "@delphi/core";
 import { hashPassword, verifyPassword } from "./auth";
 
 export interface UserAccount {
@@ -102,7 +102,30 @@ export function createLocalUser(input: { username: string; password: string; nic
   if (isFirstUser) {
     migrateLegacyProfile(user.userId);
   }
+  // The nickname was already given at account creation — mirror it into the
+  // user's profile so the first login doesn't ask for it again.
+  ensureProfileNickname(user.userId);
   return { ok: true, user };
+}
+
+/**
+ * Sync the account nickname into the user's profile (only when the profile
+ * has no nickname yet). Called on registration and on login, so new accounts
+ * are never prompted again for a name they already provided.
+ */
+export function ensureProfileNickname(userId: string): void {
+  const user = findUserById(userId);
+  if (!user) return;
+  try {
+    const store = new ProfileStore({ dataDir: userDir(userId) });
+    const profile = store.get();
+    if (!profile.userInfo?.nickname) {
+      profile.userInfo = { ...profile.userInfo, nickname: user.nickname };
+      store.save();
+    }
+  } catch {
+    // non-fatal: the profile will sync on the next login
+  }
 }
 
 /** First registration: import the legacy single-user profile (if any) into the new user's dir. */

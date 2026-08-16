@@ -1,6 +1,6 @@
 /** POST /api/auth/login — verify local credentials and set the session cookie. */
 import { NextRequest, NextResponse } from "next/server";
-import { verifyLocalLogin, publicUser } from "@/lib/users";
+import { verifyLocalLogin, publicUser, ensureProfileNickname } from "@/lib/users";
 import { signSession, sessionCookieOptions, SESSION_COOKIE } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -16,6 +16,8 @@ export async function POST(req: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Invalid username or password." }, { status: 401 });
   }
+  // mirror the account nickname into the profile if it's still empty
+  ensureProfileNickname(user.userId);
   const res = NextResponse.json({ ok: true, user: publicUser(user) });
   res.cookies.set(SESSION_COOKIE, signSession(user.userId), sessionCookieOptions());
   return res;
