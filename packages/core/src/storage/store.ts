@@ -113,6 +113,7 @@ function mergeProfile(base: UserCognitiveProfile, incoming: Partial<UserCognitiv
   const merged: UserCognitiveProfile = {
     ...base,
     ...incoming,
+    userInfo: { ...base.userInfo, ...(incoming.userInfo || {}) },
     settings: { ...base.settings, ...(incoming.settings || {}) },
     cognitiveMarkers: { ...base.cognitiveMarkers, ...(incoming.cognitiveMarkers || {}) },
     frameworkData: {

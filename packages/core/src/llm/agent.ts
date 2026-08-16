@@ -75,6 +75,13 @@ export function buildProfileSummaryJSON(profile: UserCognitiveProfile): string {
     .map(([k, v]) => `${k}:${v}`);
 
   const summary = {
+    user: {
+      nickname: profile.userInfo?.nickname || "",
+      occupation: profile.userInfo?.occupation || undefined,
+      age: profile.userInfo?.age ?? undefined,
+      gender: profile.userInfo?.gender || undefined,
+      interests: profile.userInfo?.interests || [],
+    },
     growthStage: g.growthStage,
     sessionCount: profile.sessions.length,
     attributionPattern: {
