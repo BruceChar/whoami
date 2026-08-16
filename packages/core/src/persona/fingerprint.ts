@@ -1,4 +1,4 @@
-/** delphi — attribution / abstraction / certainty / time orientation / emotional tone */
+/** delphi — cognitive fingerprint (attribution / abstraction / certainty / time / emotion). */
 import { UserCognitiveProfile } from "../models/types";
 
 export interface CognitiveFingerprint {
@@ -9,20 +9,10 @@ export interface CognitiveFingerprint {
   emotionalTone: Record<string, number>;
 }
 
-export const EMOTION_LABELS: Record<string, string> = {
-  joy: "喜悦",
-  frustration: "挫败",
-  anxiety: "焦虑",
-  anger: "愤怒",
-  sadness: "悲伤",
-  reflection: "反思",
-  resignation: "无奈",
-};
-
 export function computeFingerprint(profile: UserCognitiveProfile): CognitiveFingerprint {
   const markers = profile.cognitiveMarkers;
 
-    // time fingerprint: aggregated across sessions
+  // time fingerprint: aggregated across sessions
   let past = 0, present = 0, future = 0;
   const emotionTone: Record<string, number> = {};
   for (const s of profile.sessions) {
@@ -50,12 +40,12 @@ export function computeFingerprint(profile: UserCognitiveProfile): CognitiveFing
   };
 }
 
-/** Convert the emotional fingerprint to a Chinese description */
+/** Summarize the emotional fingerprint (raw categories; no fixed label map). */
 export function describeEmotionalTone(emotionTone: Record<string, number>): string {
   const entries = Object.entries(emotionTone).sort((a, b) => b[1] - a[1]);
   if (entries.length === 0) return "情绪表达较少（数据不足）";
   return entries
     .slice(0, 3)
-    .map(([cat, n]) => `${EMOTION_LABELS[cat] || cat} ${n}次`)
+    .map(([cat, n]) => `${cat} ${n}次`)
     .join("、");
 }

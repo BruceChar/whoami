@@ -1,4 +1,4 @@
-/** delphi — Six dimensions: cognitive fingerprint / energy map / thinking terrain / */
+/** delphi — six-dimension persona assembly (data-driven; narratives come from the LLM). */
 import {
   PersonaSnapshot,
   UserCognitiveProfile,
@@ -6,7 +6,6 @@ import {
 import { computeFingerprint } from "./fingerprint";
 import { computeEnergyMap } from "./energyMap";
 import { DIMENSION_LABELS, UP_IS_GOOD } from "../profiler/growthTracker";
-import { signAreas } from "../frameworks/sign";
 import { aggregateSkills } from "../frameworks/achievement";
 
 export const PERSONA_STAGE_LABELS: Record<string, string> = {
@@ -33,10 +32,9 @@ export function buildPersona(profile: UserCognitiveProfile, version?: string): P
   const energyMap = computeEnergyMap(profile);
 
   const fw = profile.frameworkData;
-  const signResult = { signals: fw.sign.signals };
-  const terrainAreas = signAreas(signResult);
+  const talentAreas = fw.sign.areas;
   const skills = aggregateSkills(fw.achievements);
-  const highlands = [...new Set([...terrainAreas, ...skills])].slice(0, 4);
+  const highlands = [...new Set([...talentAreas, ...skills])].slice(0, 4);
   const lowlands = fw.swot.weaknesses.slice(0, 3);
 
   const canyons = fw.vtd.values.conflicts.map((c) => ({
@@ -49,31 +47,19 @@ export function buildPersona(profile: UserCognitiveProfile, version?: string): P
     }
   }
 
-    // relational pattern (heuristic)
-  const combinedText = profile.sessions
-    .flatMap((s) => s.messages)
-    .filter((m) => m.role === "user")
-    .map((m) => m.text)
-    .join("\n");
-  const selfRefs = (combinedText.match(/我/g) || []).length;
-  const otherRefs = (combinedText.match(/他|她|他们|别人|大家/g) || []).length;
-  const selfBoundary: PersonaSnapshot["relationalPattern"]["selfBoundary"] =
-    selfRefs + otherRefs === 0 ? "moderate" : selfRefs / (selfRefs + otherRefs) > 0.75 ? "clear" : "moderate";
-  const coreNeeds = fw.vtd.values.anchors.filter((v) => ["被认可", "连接", "真实", "意义"].includes(v)).slice(0, 3);
+  // relational pattern (data-driven; nuanced narrative comes from the LLM)
+  const coreNeeds = fw.vtd.values.anchors.slice(0, 3);
   if (coreNeeds.length === 0) coreNeeds.push("被理解（数据积累中）");
 
-    // decision style (heuristic)
+  // decision style (marker- and data-driven; no content rules)
   const certainty = fingerprint.certaintyLevel;
   const speed = certainty > 0.65 ? "fast" : certainty < 0.35 ? "slow" : "moderate";
   const riskRaw = fw.swot.gravityProblems.length + fw.swot.anchorProblems.length;
   const riskTendency = riskRaw > 3 ? "conservative" : riskRaw === 0 ? "adventurous" : "moderate";
-  const regret = fw.dailyFeedback.some((d) => /后悔|遗憾|没做|没试/.test(d.unsatisfied.event + d.unsatisfied.reason))
-    ? "inaction"
-    : "mixed";
   const anchors = fw.vtd.values.anchors;
   const decisionAnchors = anchors.length >= 3 ? anchors.slice(0, 3) : ["价值观（数据积累中）", "逻辑", "情感"];
 
-    // growth trajectory
+  // growth trajectory
   const g = profile.growthTracking;
   const dims = Object.entries(g.dimensions)
     .map(([k, d]) => ({ k, ...d }))
@@ -107,7 +93,7 @@ export function buildPersona(profile: UserCognitiveProfile, version?: string): P
         .slice(0, 4),
     },
     relationalPattern: {
-      selfBoundary,
+      selfBoundary: "moderate",
       coreNeeds,
       conflictReaction: fw.dailyFeedback.length >= 3 ? "先内化（自我怀疑），后外化（解释/辩解）" : "数据积累中",
       givingValue: skills.slice(0, 3),
@@ -116,7 +102,7 @@ export function buildPersona(profile: UserCognitiveProfile, version?: string): P
       speed,
       infoPreference: "depth",
       riskTendency,
-      regretPattern: regret,
+      regretPattern: "mixed",
       decisionAnchors,
     },
     growthTrajectory: {

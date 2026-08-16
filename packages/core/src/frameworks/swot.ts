@@ -1,5 +1,7 @@
-/** delphi — S strength-shadow detection / W weakness reframing / O opportunity-capability */
+/** delphi — SWOT. Threat control-split is now LLM-driven. */
 import { FlowRunner, FlowStep } from "./flow";
+import { LLMAgent } from "../llm/agent";
+import { llmSplitThreats } from "../llm/extraction";
 
 export const SWOT_STEPS: FlowStep[] = [
   {
@@ -33,23 +35,23 @@ export interface SwotResult {
   weaknesses: string[];
   opportunities: string[];
   threats: string[];
-  gravityProblems: string[]; // 不可控威胁 → 重力问题
-  anchorProblems: string[]; // 可控威胁 → 锚定问题
+  gravityProblems: string[]; // uncontrollable threats -> gravity problems
+  anchorProblems: string[]; // controllable threats -> anchor problems
 }
 
-export function buildSwotResult(runner: FlowRunner): SwotResult {
-  const split = (s: string) =>
-    s.split(/[；;，,\n、]/).map((x) => x.trim()).filter((x) => x.length > 0);
+const split = (s: string) =>
+  s.split(/[；;，,\n、]/).map((x) => x.trim()).filter((x) => x.length > 0);
 
+export async function buildSwotResult(runner: FlowRunner, provider: LLMAgent): Promise<SwotResult> {
   const strengths = split(runner.answers.s || "");
   const weaknesses = split(runner.answers.w || "");
   const opportunities = split(runner.answers.o || "");
   const threats = split(runner.answers.t || "");
 
-    // control-circle split: uncontrollable keywords -> gravity problem
-  const uncontrollable = /不可控|控制不了|没办法|注定|客观|改变不了|无法改变|大势|时代|出身|年龄/;
-  const gravity = threats.filter((t) => uncontrollable.test(t));
-  const anchor = threats.filter((t) => !uncontrollable.test(t));
+  // control-circle split is LLM-driven (no keyword rules)
+  const splitResult = await llmSplitThreats(provider, threats);
+  const gravity = splitResult?.gravity ?? [];
+  const anchor = splitResult?.anchor ?? threats.filter((t) => !gravity.includes(t));
 
   return { strengths, weaknesses, opportunities, threats, gravityProblems: gravity, anchorProblems: anchor };
 }

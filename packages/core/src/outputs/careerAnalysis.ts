@@ -1,9 +1,6 @@
-/** delphi — Based on the cognitive profile, recommends work form / content direction / */
+/** delphi — career analysis: work form / content direction / pitfalls (data-driven; LLM-refined). */
 import { CareerAnalysis, UserCognitiveProfile } from "../models/types";
-import { satisfiedDrivers } from "../frameworks/dailyFeedback";
-import { signAreas } from "../frameworks/sign";
 import { aggregateSkills } from "../frameworks/achievement";
-import { DIMENSION_LABELS } from "../profiler/growthTracker";
 
 export function canAnalyzeCareer(profile: UserCognitiveProfile): boolean {
   const fw = profile.frameworkData;
@@ -19,23 +16,10 @@ export function buildCareerAnalysis(profile: UserCognitiveProfile): CareerAnalys
   const fw = profile.frameworkData;
   const reasoning: string[] = [];
 
-    // ---- 1. work form fit ----
-  const anchors = fw.vtd.values.anchors;
-  const workFormParts: string[] = [];
-  const autonomy = anchors.includes("自由") || anchors.includes("掌控");
-  const stability = anchors.includes("稳定");
-  const drivers = satisfiedDrivers(fw.dailyFeedback);
+  // ---- 1. work form fit (numeric interest-matrix signals + data counts) ----
   const independentEnergy = fw.interestMatrix.rating?.independent >= 4;
   const socialNeed = fw.interestMatrix.rating?.social >= 4;
-
-  if (autonomy) {
-    workFormParts.push("自主性需求高");
-    reasoning.push("VTD 价值观中检测到自主/自由导向");
-  }
-  if (stability) {
-    workFormParts.push("稳定需求高");
-    reasoning.push("VTD 价值观中检测到稳定导向");
-  }
+  const workFormParts: string[] = [];
   if (independentEnergy) {
     workFormParts.push("独立工作能量高");
     reasoning.push("兴趣矩阵显示独立任务能量高");
@@ -46,44 +30,27 @@ export function buildCareerAnalysis(profile: UserCognitiveProfile): CareerAnalys
   }
 
   let workForm: string;
-  if (autonomy && stability) {
-    workForm = "小型团队中的专家角色（自主与稳定兼得），或合伙人模式";
-  } else if (autonomy && !socialNeed) {
-    workForm = "独立/自由职业（注意建立外部反馈机制，防止能量枯竭）";
-  } else if (autonomy && socialNeed) {
+  if (independentEnergy && socialNeed) {
     workForm = "创业者或核心业务负责人（有自主空间，又有协作对象）";
-  } else if (stability) {
-    workForm = "成熟组织中的专业岗位（稳定优先）";
   } else if (independentEnergy) {
-    workForm = "专家型/研究型角色，或自由职业";
+    workForm = "独立/自由职业，或专家型角色（注意建立外部反馈机制）";
+  } else if (socialNeed) {
+    workForm = "团队协作型岗位（咨询、教学、协调等）";
   } else {
     workForm = "中等规模团队的专业岗位（数据积累后可细化）";
   }
   reasoning.push(`工作形态建议基于：${workFormParts.join("、") || "数据不足，采用默认"} `);
 
-    // ---- 2. work content direction ----
-  const areas = signAreas({ signals: fw.sign.signals });
+  // ---- 2. work content direction (LLM-extracted talent areas + skills) ----
+  const areas = fw.sign.areas;
   const skills = aggregateSkills(fw.achievements);
   const energyQuadrants = fw.interestMatrix.highEnergyQuadrants;
-  const contentDirection = [...new Set([...areas, ...skills])].slice(0, 4);
-
-  const directionMap: Record<string, string> = {
-    "分析研究": "策略分析、数据研究",
-    "表达创作": "内容创作、产品策划、写作",
-    "连接沟通": "咨询顾问、教学、销售",
-    "执行落地": "项目管理、运营",
-    "技术构建": "技术研发、工程",
-    "学习探索": "研究、创新岗位",
-  };
-  const mappedDirections = contentDirection.map((d) => directionMap[d] || d).slice(0, 3);
-  if (mappedDirections.length === 0 && energyQuadrants.length > 0) {
-    mappedDirections.push(...energyQuadrants.slice(0, 2));
-  }
-  if (mappedDirections.length === 0) {
-    mappedDirections.push("数据积累中——先完成 SIGN 与成就事件萃取");
+  const contentDirection = [...new Set([...areas, ...skills, ...energyQuadrants])].slice(0, 4);
+  if (contentDirection.length === 0) {
+    contentDirection.push("数据积累中——先完成 SIGN 与成就事件萃取");
   }
 
-    // ---- 3. pitfalls (based on bias frequencies) ----
+  // ---- 3. pitfalls (data-driven: bias frequencies + energy volatility) ----
   const avoid: string[] = [];
   const dim = profile.growthTracking.dimensions;
   if ((dim.shouldTyrannyFreq?.currentLevel || 0) > 0.3) {
@@ -101,7 +68,7 @@ export function buildCareerAnalysis(profile: UserCognitiveProfile): CareerAnalys
   }
   if (avoid.length === 0) avoid.push("暂无显著避坑信号（数据积累中）");
 
-    // ---- 4. risk tolerance ----
+  // ---- 4. risk tolerance (data-driven) ----
   const riskProfile =
     fw.swot.gravityProblems.length + fw.swot.anchorProblems.length >= 4
       ? "保守型路径（稳定优先，低风险偏好）"
@@ -109,7 +76,7 @@ export function buildCareerAnalysis(profile: UserCognitiveProfile): CareerAnalys
 
   return {
     workForm,
-    contentDirection: mappedDirections,
+    contentDirection,
     avoid,
     riskProfile,
     reasoning,

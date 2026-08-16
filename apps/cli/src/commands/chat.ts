@@ -6,7 +6,6 @@ import {
   appendMessage,
   beginSession,
   afterProfileUpdate,
-  BIAS_LABELS,
   requireLLMProvider,
   llmAnalyzeSession,
   applySessionDeepAnalysis,
@@ -98,7 +97,7 @@ export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; 
 
         // bias stats in meta-guide mode (snapshot rendered by the engine)
     if (result.markers.biases.length > 0 && engine.getMode() === "meta_guide") {
-      console.log(c.dim(`  ↳ 检测: ${result.markers.biases.map((b) => BIAS_LABELS[b.type]).join("、")}`));
+      console.log(c.dim(`  ↳ detected: ${result.markers.biases.map((b) => b.type).join(", ")}`));
     }
   }
 

@@ -1,59 +1,63 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { ScriptedLLMProvider } from "../src/llm/scriptedProvider";
 import { createDailyFlow, buildDailyEntry } from "../src/frameworks/dailyFeedback";
 import { createVFlow, buildVResult, createDFlow, buildDResult } from "../src/frameworks/vtd";
 import { createSwotFlow, buildSwotResult } from "../src/frameworks/swot";
 import { createInterestFlow, buildInterestMatrix } from "../src/frameworks/interestMatrix";
-import { extractValues, extractSkills, extractPureDrives } from "../src/frameworks/keywordExtract";
 import { buildCareerAnalysis, canAnalyzeCareer } from "../src/outputs/careerAnalysis";
 import { createEmptyProfile } from "../src/models/types";
 
-test("每日回馈流程与主题提取", () => {
+test("daily feedback: themes extracted by the LLM", async () => {
+  const llm = new ScriptedLLMProvider([{ text: '{"themes":["work"]}' }]);
   const runner = createDailyFlow();
   runner.submit("完成了项目汇报");
   runner.submit("因为讲得清楚，大家认可");
   runner.submit("加班到很晚");
   runner.submit("计划全被打乱");
-  const entry = buildDailyEntry(runner, "2025-01-02");
+  const entry = await buildDailyEntry(runner, llm, "2025-01-02");
   assert.equal(entry.satisfied.event, "完成了项目汇报");
-  assert.ok(entry.themes.length >= 1);
+  assert.deepEqual(entry.themes, ["work"]);
 });
 
-test("V-T-D：价值观锚点与冲突提取", () => {
+test("V-T-D: value anchors extracted by the LLM", async () => {
+  const llm = new ScriptedLLMProvider([{ text: '{"anchors":["自由","真实"],"conflicts":["自由 vs 稳定"]}' }]);
   const runner = createVFlow();
   runner.submit("做自己想做的事很有成就感");
   runner.submit("自由地安排时间");
   runner.submit("不自由毋宁死");
   runner.submit("我欣赏真实坦诚的人");
   runner.submit("和家人在一起");
-  const v = buildVResult(runner);
-  assert.ok(v.anchors.includes("自由"));
-  assert.ok(v.anchors.includes("真实"));
-  assert.ok(v.anchors.length >= 2);
+  const v = await buildVResult(runner, llm);
+  assert.deepEqual(v.anchors, ["自由", "真实"]);
+  assert.deepEqual(v.conflicts, ["自由 vs 稳定"]);
 });
 
-test("V-T-D：内驱源与外部动机过滤", () => {
+test("V-T-D: intrinsic drives extracted by the LLM", async () => {
+  const llm = new ScriptedLLMProvider([{ text: '{"pureDrives":["写"],"externalMotives":["赚钱"]}' }]);
   const runner = createDFlow();
   runner.submit("我想写小说，哪怕没人看");
   runner.submit("写东西不赚钱我也愿意");
   runner.submit("小时候想当画家");
-  const d = buildDResult(runner);
-  assert.ok(d.pureDrives.includes("写"));
-  assert.ok(d.externalMotivesFiltered.includes("赚钱"));
+  const d = await buildDResult(runner, llm);
+  assert.deepEqual(d.pureDrives, ["写"]);
+  assert.deepEqual(d.externalMotivesFiltered, ["赚钱"]);
 });
 
-test("SWOT：控制圈分离识别重力问题", () => {
+test("SWOT: control-circle split by the LLM", async () => {
+  const llm = new ScriptedLLMProvider([{ text: '{"gravity":["行业下行"],"anchor":["公司裁员"]}' }]);
   const runner = createSwotFlow();
   runner.submit("分析问题、写作");
   runner.submit("即兴表达");
   runner.submit("AI 时代的转型机会");
-  runner.submit("行业下行我控制不了，公司裁员的客观大势");
-  const r = buildSwotResult(runner);
+  runner.submit("行业下行；公司裁员");
+  const r = await buildSwotResult(runner, llm);
   assert.equal(r.strengths.length, 2);
-  assert.ok(r.gravityProblems.length >= 1, "应识别出重力问题");
+  assert.deepEqual(r.gravityProblems, ["行业下行"]);
+  assert.deepEqual(r.anchorProblems, ["公司裁员"]);
 });
 
-test("兴趣矩阵：评分与象限", () => {
+test("interest matrix: numeric ratings and quadrants", () => {
   const runner = createInterestFlow();
   runner.submit("5");
   runner.submit("1");
@@ -63,13 +67,7 @@ test("兴趣矩阵：评分与象限", () => {
   assert.ok(r.highEnergyQuadrants.length >= 2);
 });
 
-test("技能提取", () => {
-  const skills = extractSkills("我负责分析数据、写报告、组织团队会议");
-  assert.ok(skills.includes("分析"));
-  assert.ok(skills.includes("表达") || skills.includes("协调"));
-});
-
-test("从业分析：数据不足时不可用，足够后生成报告", () => {
+test("career analysis: unavailable without data, generated once enough data exists", () => {
   const profile = createEmptyProfile("u1", "/tmp");
   assert.equal(canAnalyzeCareer(profile), false);
   profile.frameworkData.dailyFeedback.push(

@@ -49,13 +49,14 @@ delphi 通过 [@earendil-works/pi-ai](https://github.com/earendil-works/pi)（Un
 | `DELPHI_LLM_PROVIDER`     | `deepseek` / `openai` / `anthropic` / `openrouter` / `google`；缺省自动探测已配置 Key 的提供商 |
 | `DELPHI_LLM_MODEL`        | 模型 id（缺省用各提供商默认模型，如 deepseek-v4-flash）                                                  |
 | `<PROVIDER>_API_KEY`      | 鉴权（如`DEEPSEEK_API_KEY`、`OPENROUTER_API_KEY`）                                                   |
-| `DELPHI_LLM_DEEP_ANALYZE` | `1` 开启逐条消息 LLM 标记增强（耗 token）                                                              |
 
 **配置优先级**：环境变量 > 配置文件 `<dataDir>/config.json`（Web「设置」页写入，`delphi doctor` 可查看）。
 
 **LLM 能力**：
 
 - 对话回复由真实模型生成（工具调用循环：`get_cognitive_profile` / `search_memory` 读取你的认知档案）
+- 对话回复语言跟随用户输入，由 LLM 自动判断（系统提示词为英文）
+- 认知标记、价值观/技能/主题/内驱源/天赋领域等结构化抽取全部由 LLM 完成（无规则匹配）
 - 会话结束自动深度分析：摘要 + 自动洞察（⭐）
 - 个人画像六维自然语言叙事、从业分析综合评述
 
@@ -133,7 +134,7 @@ whoami/
 | ----------------------- | ----------------------------------------- | ------------------------------------------------------------------------------ |
 | SQLite (better-sqlite3) | JSON 单文件档案（`store.ts`，原子写入） | 零原生依赖、跨平台零编译、可直接导出/备份/恢复；SQLite 可后续无缝替换          |
 | Ink (React for CLI)     | readline + chalk（ASCII 艺术）            | Ink 依赖 yoga 原生模块且难以脚本化测试；当前实现全部命令均可管道输入自动化验证 |
-| compromise.js (NLP)     | 中文规则词库 + pi-ai LLM 双引擎           | 零成本规则引擎兜底；配置 API Key 后由真实模型深度分析（可解释、可降级）        |
+| 中文规则词库 / 规则引擎 | 纯 LLM 结构化抽取（`llm/extraction.ts`）   | 与「LLM 驱动一切、不是规则匹配」原则一致：无固定关键词词库，全部由模型从原文抽取      |
 | Turborepo               | pnpm workspaces                           | 减少工具链复杂度；构建为`tsc` 项目引用，可随时升级 turbo                     |
 
 ## 测试

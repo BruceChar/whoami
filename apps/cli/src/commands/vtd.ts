@@ -9,6 +9,7 @@ import {
   buildSignResult,
   afterProfileUpdate,
   markMilestone,
+  requireLLMProvider,
 } from "@delphi/core";
 import { runFlow } from "./flowRun";
 import { askLine } from "../ui/ask";
@@ -16,6 +17,7 @@ import { c } from "../ui/render";
 
 export async function runVtd(store: ProfileStore): Promise<void> {
   const profile = store.get();
+  const llm = requireLLMProvider();
 
     // ---- V values ----
   const vRunner = createVFlow();
@@ -24,7 +26,7 @@ export async function runVtd(store: ProfileStore): Promise<void> {
     intro: "回答没有对错，越具体越好。完成 5 题后我会提取你的价值观锚点。",
   });
   if (!vOk) return;
-  const v = buildVResult(vRunner);
+  const v = await buildVResult(vRunner, llm);
   profile.frameworkData.vtd.values.anchors = v.anchors;
   profile.frameworkData.vtd.values.conflicts = v.conflicts;
 
@@ -45,7 +47,7 @@ export async function runVtd(store: ProfileStore): Promise<void> {
     title: "T · 天赋探测（SIGN 模型）",
     intro: "S 成功 / I 本能 / G 成长 / N 需求——四个信号交叉验证你的天赋领域。",
   });
-  const sign = buildSignResult(tRunner);
+  const sign = await buildSignResult(tRunner, llm);
   profile.frameworkData.sign.signals = sign.signals;
 
     // ---- D dream (motive purification) ----
@@ -55,7 +57,7 @@ export async function runVtd(store: ProfileStore): Promise<void> {
     intro: "找出「即使没人认可、不赚钱也愿意做」的事——那是你的内驱源。",
   });
   if (!dOk) return;
-  const d = buildDResult(dRunner);
+  const d = await buildDResult(dRunner, llm);
   profile.frameworkData.vtd.dreams.pureDrives = d.pureDrives;
   profile.frameworkData.vtd.dreams.externalMotivesFiltered = d.externalMotivesFiltered;
 

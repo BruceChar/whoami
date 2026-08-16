@@ -1,4 +1,4 @@
-/** delphi — LLM-enhanced analysis. */
+/** delphi — LLM analysis: session deep-dive, persona narratives, career review, and cognitive markers. */
 import {
   CareerAnalysis,
   Insight,
@@ -9,7 +9,6 @@ import {
 } from "../models/types";
 import { LLMAgent } from "./agent";
 import { newInsightId } from "../services/profileService";
-import { BiasType } from "../models/types";
 
 // ---------------------------------------------------------------------------
 // session-level deep analysis
@@ -21,12 +20,12 @@ export interface SessionDeepAnalysis {
 }
 
 const SESSION_SCHEMA = `{
-  summary: string,            // 2-3 句总结这次对话中观察到的思维模式
+  summary: string,            // 2-3 sentences summarizing the thinking patterns observed
   insights: [{
-    title: string,            // 洞察标题（如"发现新的价值观锚点：真实"）
-    analysis: string,         // 1-2 句解读，引用用户原话中的关键词
-    quote: string             // 触发该洞察的用户原话片段
-  }]                          // 0-3 条，没有就不给
+    title: string,            // insight title (e.g. "discovered a new value anchor: authenticity")
+    analysis: string,         // 1-2 sentences of interpretation, quoting the user's own words
+    quote: string             // the user's original phrase that triggered the insight
+  }]                          // 0-3 items; omit if none
 }`;
 
 export async function llmAnalyzeSession(
@@ -40,11 +39,14 @@ export async function llmAnalyzeSession(
     .join("\n");
   if (!userTexts.trim()) return null;
 
-  const schema =
-    "你是 delphi 的隐式认知分析师。只反射、不评价、不贴标签。分析下面这次对话，输出 JSON（严格合法，无解释）：\n" + SESSION_SCHEMA + "\n\n对话内容：\n" + userTexts.slice(0, 4000);
+  const instruction =
+    "You are delphi's stealth cognitive analyst. Reflect, never judge or label. Analyze the following conversation and output JSON (strictly valid, no commentary):\n" +
+    SESSION_SCHEMA +
+    "\n\nConversation:\n" +
+    userTexts.slice(0, 4000);
 
   const result = await provider.completeJSON<SessionDeepAnalysis>({
-    messages: [{ role: "user", content: schema }],
+    messages: [{ role: "user", content: instruction }],
     schema: SESSION_SCHEMA,
     temperature: 0.4,
   });
@@ -65,15 +67,13 @@ export function applySessionDeepAnalysis(
   const created: Insight[] = [];
   for (const ins of analysis.insights) {
     if (!ins.title || !ins.analysis) continue;
-        // de-dup: same analysis within 30 days
-    const dup = profile.insights.some(
-      (i) => i.agentDetected && i.analysis === ins.analysis
-    );
+    // de-dup: same analysis already present
+    const dup = profile.insights.some((i) => i.agentDetected && i.analysis === ins.analysis);
     if (dup) continue;
     const insight: Insight = {
       id: newInsightId(),
       timestamp: new Date().toISOString(),
-      source: `会话 ${session.id}`,
+      source: `session ${session.id}`,
       quote: ins.quote || "",
       analysis: ins.analysis,
       note: "",
@@ -92,12 +92,12 @@ export function applySessionDeepAnalysis(
 // ---------------------------------------------------------------------------
 
 const PERSONA_SCHEMA = `{
-  fingerprint: string,   // 2-3 句：用"你倾向于…"描述归因/确定性/时间取向/情绪基调（不贴标签）
-  energyMap: string,     // 2 句：什么给你能量、什么消耗你（基于数据）
-  terrain: string,       // 2 句：思维高地、洼地与张力
-  relationship: string,  // 2 句：关系中的需求与边界
-  decision: string,      // 2 句：决策风格与锚点
-  growth: string         // 2 句：成长方向与当前瓶颈
+  fingerprint: string,   // 2-3 sentences: describe attribution/certainty/time-orientation/emotional tone ("you tend to…")
+  energyMap: string,     // 2 sentences: what energizes you, what drains you (data-based)
+  terrain: string,       // 2 sentences: thinking highlands, lowlands and tensions
+  relationship: string,  // 2 sentences: needs and boundaries in relationships
+  decision: string,      // 2 sentences: decision style and anchors
+  growth: string         // 2 sentences: growth direction and current bottleneck
 }`;
 
 export interface PersonaNarratives {
@@ -138,8 +138,10 @@ export async function llmEnrichPersona(
       {
         role: "user",
         content:
-          "你是 delphi 的画像叙述者。基于以下用户认知画像数据，用第二人称「你」写 6 段自然语言叙事（每段 2-3 句），" +
-          "只描述动态模式（「你倾向于/数据显示/最近」），绝不贴固定标签（不说「你是XX型」）。输出 JSON：\n" + input,
+          "You are delphi's persona narrator. Based on the cognitive-profile data below, write 6 short natural-language narratives (2-3 sentences each) in the second person \"you\". " +
+          "Describe dynamic patterns (\"you tend to / the data shows / recently\"), never fixed labels (never \"you are an X type\"). " +
+          "Write in the user's language. Output JSON:\n" +
+          input,
       },
     ],
     schema: PERSONA_SCHEMA,
@@ -155,9 +157,9 @@ export async function llmEnrichPersona(
 // ---------------------------------------------------------------------------
 
 const CAREER_SCHEMA = `{
-  narrative: string,          // 3-5 句综合评述：工作形态与内容方向的整体判断，基于数据
-  extraDirections: string[],  // 补充的工作内容方向（0-2 个）
-  extraAvoid: string[]        // 补充的避坑提醒（0-2 条）
+  narrative: string,          // 3-5 sentence review of work-form and content-direction, data-based
+  extraDirections: string[],  // additional content directions (0-2)
+  extraAvoid: string[]        // additional pitfalls (0-2)
 }`;
 
 export async function llmRefineCareer(
@@ -182,7 +184,9 @@ export async function llmRefineCareer(
       {
         role: "user",
         content:
-          "你是 delphi 的从业分析顾问。基于用户认知档案数据，先确认/修正工作形态判断，再补充方向与避坑提醒。用第二人称。输出 JSON：\n" + input,
+          "You are delphi's career advisor. Based on the cognitive profile data below, confirm or correct the work-form judgment, then add content directions and pitfalls. " +
+          "Use the second person and the user's language. Output JSON:\n" +
+          input,
       },
     ],
     schema: CAREER_SCHEMA,
@@ -193,59 +197,76 @@ export async function llmRefineCareer(
 }
 
 // ---------------------------------------------------------------------------
-// per-message marker enhancement (optional; token-heavy per call)
+// per-message cognitive markers (the sole marker producer; no rule fallback)
 // ---------------------------------------------------------------------------
 
 const MARKER_SCHEMA = `{
   attribution: "internal" | "external" | "situational" | null,
   certainty: number,                     // 0-1
+  timeOrientation: { past: number, present: number, future: number },  // shares summing to 1
+  emotionTone: { [category: string]: number },   // e.g. { "anxiety": 2 }
   selfReflection: boolean,
   abstractionJump: boolean,
-  emotionTone: { [类别: string]: number }, // 如 {焦虑: 2}
-  extraBiases: [{ type: string, keyword: string, quote: string }]  // 规则引擎未覆盖的偏差
+  emotionFact: number,                   // 0-1, emotion-vs-fact separation clarity (1 = clear)
+  biases: [{ type: string, keyword: string, quote: string }]  // cognitive biases detected
 }`;
 
 export async function llmExtractMarkers(
   provider: LLMAgent,
   text: string
-): Promise<Partial<MessageMarkers> & { extraBiases?: Array<{ type: string; keyword: string; quote: string }> } | null> {
-  const result = await provider.completeJSON<any>({
+): Promise<MessageMarkers | null> {
+  const result = await provider.completeJSON<{
+    attribution?: MessageMarkers["attribution"];
+    certainty?: number;
+    timeOrientation?: MessageMarkers["timeOrientation"];
+    emotionTone?: Record<string, number>;
+    selfReflection?: boolean;
+    abstractionJump?: boolean;
+    emotionFact?: number;
+    biases?: Array<{ type?: string; keyword?: string; quote?: string }>;
+  }>({
     messages: [
       {
         role: "user",
         content:
-          "你是 delphi 的认知标记提取器。分析下面这句话（中文），提取思维标记，只输出 JSON：\n" +
-          `句子：「${text.slice(0, 500)}」`,
+          "You are delphi's cognitive-marker extractor. Analyze the sentence below and extract thinking markers. Output only JSON:\n" +
+          `Sentence: "${text.slice(0, 500)}"`,
       },
     ],
     schema: MARKER_SCHEMA,
     temperature: 0.2,
   });
   if (!result) return null;
-  return result;
-}
 
-/** Merge LLM markers into rule markers (LLM wins; biases are unioned) */
-export function mergeMarkers(rule: MessageMarkers, llm: NonNullable<Awaited<ReturnType<typeof llmExtractMarkers>>>): MessageMarkers {
-  const merged: MessageMarkers = { ...rule };
-  if (llm.attribution) merged.attribution = llm.attribution;
-  if (typeof llm.certainty === "number") merged.certainty = llm.certainty;
-  if (typeof llm.selfReflection === "boolean") merged.selfReflection = llm.selfReflection;
-  if (typeof llm.abstractionJump === "boolean") merged.abstractionJump = llm.abstractionJump;
-  if (llm.emotionTone && typeof llm.emotionTone === "object") {
-    merged.emotionTone = { ...rule.emotionTone };
-    for (const [k, v] of Object.entries(llm.emotionTone)) {
-      merged.emotionTone[k] = (merged.emotionTone[k] || 0) + (typeof v === "number" ? v : 0);
-    }
-  }
-  if (Array.isArray(llm.extraBiases)) {
-    const have = new Set(rule.biases.map((b) => b.type));
-    for (const b of llm.extraBiases) {
-      if (b?.type && !have.has(b.type as BiasType)) {
-        merged.biases.push({ type: b.type as BiasType, keyword: b.keyword || "", quote: b.quote || "" });
-        have.add(b.type as BiasType);
-      }
-    }
-  }
-  return merged;
+  const biasTypeOf = (t?: string): MessageMarkers["biases"][number]["type"] | null => {
+    const known = new Set<MessageMarkers["biases"][number]["type"]>([
+      "should_tyranny", "catastrophizing", "mind_reading", "confirmation_bias",
+      "overgeneralization", "emotional_reasoning", "all_or_nothing",
+    ]);
+    return t && known.has(t as MessageMarkers["biases"][number]["type"])
+      ? (t as MessageMarkers["biases"][number]["type"])
+      : null;
+  };
+
+  const biases = Array.isArray(result.biases)
+    ? result.biases
+        .filter((b) => b && biasTypeOf(b.type))
+        .map((b) => ({ type: biasTypeOf(b.type)!, keyword: b.keyword || "", quote: b.quote || "" }))
+    : [];
+
+  const to = result.timeOrientation;
+  const tTotal = (to?.past || 0) + (to?.present || 0) + (to?.future || 0);
+
+  return {
+    biases,
+    attribution: result.attribution ?? null,
+    certainty: typeof result.certainty === "number" ? result.certainty : 0.5,
+    timeOrientation: tTotal
+      ? { past: (to?.past || 0) / tTotal, present: (to?.present || 0) / tTotal, future: (to?.future || 0) / tTotal }
+      : { past: 0.33, present: 0.34, future: 0.33 },
+    emotionTone: result.emotionTone && typeof result.emotionTone === "object" ? result.emotionTone : {},
+    selfReflection: !!result.selfReflection,
+    abstractionJump: !!result.abstractionJump,
+    emotionFact: typeof result.emotionFact === "number" ? result.emotionFact : 0.5,
+  };
 }

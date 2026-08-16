@@ -176,7 +176,7 @@ export class PiAiProvider implements LLMProvider, LLMAgent {
       {
         role: "system",
         content:
-          "你是一个严格的结构化输出助手。只输出一个合法的 JSON 值（对象或数组），不要输出任何解释、前后缀或 Markdown 代码围栏。\n期望结构：\n" +
+          "You are a strict structured-output assistant. Output a single valid JSON value (object or array) only — no explanation, prefix, suffix, or Markdown code fence.\nExpected shape:\n" +
           opts.schema,
       },
       ...opts.messages,

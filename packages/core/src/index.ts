@@ -2,20 +2,12 @@
 export * from "./models/types";
 export * from "./storage/store";
 
-// analyzer
-export * from "./analyzer/lexicons";
-export * from "./analyzer/biasDetector";
-export * from "./analyzer/cognitiveMarker";
-
 // engine (three modes)
 export * from "./engine/modeSwitcher";
-export * from "./engine/stealth";
-export * from "./engine/transparent";
 export * from "./engine/thinkingEngine";
 
 // framework library
 export * from "./frameworks/flow";
-export * from "./frameworks/keywordExtract";
 export * from "./frameworks/toolTemplates";
 export * from "./frameworks/feedback360";
 export * from "./frameworks/capability";
@@ -49,3 +41,4 @@ export * from "./llm/registry";
 export * from "./llm/scriptedProvider";
 export * from "./llm/agent";
 export * from "./llm/enhancedAnalysis";
+export * from "./llm/extraction";

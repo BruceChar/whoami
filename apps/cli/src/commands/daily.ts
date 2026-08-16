@@ -4,12 +4,14 @@ import {
   createDailyFlow,
   buildDailyEntry,
   afterProfileUpdate,
+  requireLLMProvider,
 } from "@delphi/core";
 import { runFlow } from "./flowRun";
 import { c } from "../ui/render";
 
 export async function runDaily(store: ProfileStore): Promise<void> {
   const profile = store.get();
+  const llm = requireLLMProvider();
   const runner = createDailyFlow();
   const ok = await runFlow(runner, {
     title: "每日回馈 · 决策考古",
@@ -17,7 +19,7 @@ export async function runDaily(store: ProfileStore): Promise<void> {
   });
   if (!ok) return;
 
-  const entry = buildDailyEntry(runner);
+  const entry = await buildDailyEntry(runner, llm);
   profile.frameworkData.dailyFeedback.push(entry);
 
   afterProfileUpdate(profile);

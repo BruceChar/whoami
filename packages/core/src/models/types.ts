@@ -67,6 +67,17 @@ export type BiasType =
 
 export type AttributionType = "internal" | "external" | "situational";
 
+/** All cognitive bias types (used for frequency aggregation; detected by the LLM). */
+export const BIAS_TYPES: BiasType[] = [
+  "should_tyranny",
+  "catastrophizing",
+  "mind_reading",
+  "confirmation_bias",
+  "overgeneralization",
+  "emotional_reasoning",
+  "all_or_nothing",
+];
+
 // ---------------------------------------------------------------------------
 // per-message cognitive markers (smallest stealth-analysis output)
 // ---------------------------------------------------------------------------
@@ -74,12 +85,12 @@ export type AttributionType = "internal" | "external" | "situational";
 export interface MessageMarkers {
   biases: Array<{ type: BiasType; keyword: string; quote: string }>;
   attribution: AttributionType | null;
-  certainty: number; // 0-1，确定性用语比例
+  certainty: number; // 0-1, share of high-certainty wording
   timeOrientation: { past: number; present: number; future: number };
-  emotionTone: Record<string, number>; // 情绪词 → 次数
-  selfReflection: boolean; // 是否出现自我反思信号
-  abstractionJump: boolean; // 是否出现抽象层级跳跃
-  isQuestion: boolean;
+  emotionTone: Record<string, number>; // emotion category -> count
+  selfReflection: boolean; // whether a self-reflection signal is present
+  abstractionJump: boolean; // whether an abstraction-level jump is present
+  emotionFact: number; // 0-1, clarity of emotion-vs-fact separation (1 = clear)
 }
 
 export interface ChatMessage {
@@ -258,7 +269,7 @@ export interface FrameworkData {
   interestMatrix: InterestMatrixData;
   feedback: FeedbackData;
   dailyFeedback: DailyFeedbackEntry[];
-  sign: { signals: Record<string, string> };
+  sign: { signals: Record<string, string>; areas: string[] };
   capability: CapabilityData | null;
 }
 
@@ -441,7 +452,7 @@ export function createEmptyFrameworkData(): FrameworkData {
     feedback: { externalPerception: [], selfExternalGaps: [], shareLinks: [], records: [] },
     capability: null,
     dailyFeedback: [],
-    sign: { signals: {} },
+    sign: { signals: {}, areas: [] },
   };
 }
 

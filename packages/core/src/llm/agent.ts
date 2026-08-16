@@ -1,9 +1,6 @@
 /** delphi — LLM agent (real agent: tool calling + profile grounding). */
 import { ChatMessage, UserCognitiveProfile } from "../models/types";
 import { LLMMessage, LLMProvider, LLMUsage } from "./types";
-import { DIMENSION_LABELS, UP_IS_GOOD } from "../profiler/growthTracker";
-import { PERSONA_STAGE_LABELS } from "../persona/persona";
-import { EMOTION_LABELS } from "../persona/fingerprint";
 
 /** JSON Schema subset (for tool parameters) */
 export interface JsonSchema {
@@ -30,7 +27,7 @@ export interface LLMAgentResult {
   text: string;
   usage?: LLMUsage;
   model: string;
-    /** Tool names executed this turn */
+  /** Tool names executed this turn */
   toolCalls: string[];
 }
 
@@ -53,65 +50,56 @@ export const DELPHI_TOOLS: AgentToolDef[] = [
   {
     name: "get_cognitive_profile",
     description:
-      "获取用户的认知档案摘要（成长阶段、归因模式、思维偏差频率、价值观锚点、能量地图、画像版本等）。回答与用户自我认知相关的问题前建议先调用。",
+      "Fetch a summary of the user's cognitive profile (growth stage, attribution pattern, cognitive-bias frequencies, value anchors, energy map, persona version, etc.). Call this before answering questions about the user's self-knowledge.",
     parameters: { type: "object", properties: {} },
   },
   {
     name: "search_memory",
-    description: "在用户的对话记录、洞察、回馈、SWOT 等档案中按关键词搜索，返回相关片段。",
+    description: "Keyword-search the user's conversation records, insights, daily feedback, SWOT items, and achievements; returns matching snippets.",
     parameters: {
       type: "object",
       properties: {
-        query: { type: "string", description: "搜索关键词（中文）" },
+        query: { type: "string", description: "search keyword" },
       },
       required: ["query"],
     },
   },
 ];
 
-/** Build the profile summary JSON (for the get_cognitive_profile tool) */
+/** Build the profile summary JSON (for the get_cognitive_profile tool). */
 export function buildProfileSummaryJSON(profile: UserCognitiveProfile): string {
   const g = profile.growthTracking;
-  const dims = Object.entries(g.dimensions)
-    .filter(([k]) => !UP_IS_GOOD[k]) // 频率类（应下降）
-    .map(([k, d]) => `${DIMENSION_LABELS[k] || k}:${d.currentLevel.toFixed(2)}`)
-    .slice(0, 5);
-  const upDims = Object.entries(g.dimensions)
-    .filter(([k]) => UP_IS_GOOD[k] === undefined || !UP_IS_GOOD[k])
-    .slice(0, 3)
-    .map(([k, d]) => `${DIMENSION_LABELS[k] || k}:${d.currentLevel.toFixed(2)}`);
-
-  const emotions = Object.entries(profile.cognitiveMarkers.biasFrequency)
+  const topBiases = Object.entries(profile.cognitiveMarkers.biasFrequency)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3)
     .map(([k, v]) => `${k}:${v}`);
 
   const summary = {
-    成长阶段: PERSONA_STAGE_LABELS[g.growthStage],
-    会话数: profile.sessions.length,
-    归因模式: {
-      内归因: Math.round(profile.cognitiveMarkers.attributionPattern.internal * 100),
-      外归因: Math.round(profile.cognitiveMarkers.attributionPattern.external * 100),
-      情境归因: Math.round(profile.cognitiveMarkers.attributionPattern.situational * 100),
+    growthStage: g.growthStage,
+    sessionCount: profile.sessions.length,
+    attributionPattern: {
+      internal: Math.round(profile.cognitiveMarkers.attributionPattern.internal * 100),
+      external: Math.round(profile.cognitiveMarkers.attributionPattern.external * 100),
+      situational: Math.round(profile.cognitiveMarkers.attributionPattern.situational * 100),
     },
-    确定性指数: profile.cognitiveMarkers.certaintyIndex.toFixed(2),
-    高频偏差: emotions,
-    频率类指标: dims,
-    价值观锚点: profile.frameworkData.vtd.values.anchors,
-    价值观冲突: profile.frameworkData.vtd.values.conflicts,
-    内驱源: profile.frameworkData.vtd.dreams.pureDrives,
-    能量源: profile.currentPersona?.energyMap.sources || profile.frameworkData.dailyFeedback.map((d) => d.satisfied.event),
-    能量黑洞: profile.currentPersona?.energyMap.blackHoles || [],
-    画像版本: profile.currentPersona?.version || "未生成",
-    最近洞察: profile.insights.slice(-3).map((i) => i.analysis),
+    certaintyIndex: Number(profile.cognitiveMarkers.certaintyIndex.toFixed(2)),
+    topBiasFrequencies: topBiases,
+    valueAnchors: profile.frameworkData.vtd.values.anchors,
+    valueConflicts: profile.frameworkData.vtd.values.conflicts,
+    intrinsicDrives: profile.frameworkData.vtd.dreams.pureDrives,
+    energySources: profile.currentPersona?.energyMap.sources || profile.frameworkData.dailyFeedback.map((d) => d.satisfied.event),
+    energyBlackHoles: profile.currentPersona?.energyMap.blackHoles || [],
+    talentAreas: profile.frameworkData.sign.areas,
+    personaVersion: profile.currentPersona?.version || "not generated",
+    recentInsights: profile.insights.slice(-3).map((i) => i.analysis),
   };
   return JSON.stringify(summary, null, 1);
 }
 
-/** Keyword search across the profile (for the search_memory tool) */
+/** Keyword search across the profile (for the search_memory tool). */
 export function searchMemoryJSON(profile: UserCognitiveProfile, query: string): string {
   const q = query.trim();
-  if (!q) return JSON.stringify({ error: "缺少搜索词" });
+  if (!q) return JSON.stringify({ error: "missing search term" });
   const hits: Array<{ source: string; snippet: string; date: string }> = [];
   const push = (source: string, text: string, date: string) => {
     if (text && text.includes(q) && hits.length < 6) {
@@ -120,28 +108,23 @@ export function searchMemoryJSON(profile: UserCognitiveProfile, query: string): 
   };
   for (const s of profile.sessions) {
     for (const m of s.messages) {
-      if (m.role === "user") push("对话", m.text, m.timestamp);
+      if (m.role === "user") push("conversation", m.text, m.timestamp);
     }
   }
   for (const i of profile.insights) {
-    push("洞察", `${i.quote} ${i.analysis}`, i.timestamp);
+    push("insight", `${i.quote} ${i.analysis}`, i.timestamp);
   }
   for (const d of profile.frameworkData.dailyFeedback) {
-    push("每日回馈", `${d.satisfied.event} / ${d.unsatisfied.event}`, d.date);
+    push("daily_feedback", `${d.satisfied.event} / ${d.unsatisfied.event}`, d.date);
   }
   for (const a of profile.frameworkData.achievements) {
-    push("成就事件", `${a.star.situation} ${a.star.action}`, a.eventId);
+    push("achievement", `${a.star.situation} ${a.star.action}`, a.eventId);
   }
   const fw = profile.frameworkData;
   for (const w of fw.swot.strengths.concat(fw.swot.weaknesses, fw.swot.opportunities, fw.swot.threats)) {
-    push("SWOT", w, profile.updatedAt);
+    push("swot", w, profile.updatedAt);
   }
-  return JSON.stringify(hits.length ? hits : { message: "未找到相关记录" }, null, 1);
-}
-
-/** Chinese label for an emotion tone key (for context hints) */
-export function emotionLabel(key: string): string {
-  return EMOTION_LABELS[key] || key;
+  return JSON.stringify(hits.length ? hits : { message: "no matching records found" }, null, 1);
 }
 
 // ---------------------------------------------------------------------------
@@ -173,7 +156,7 @@ export async function runChatAgent(opts: ChatAgentOptions): Promise<LLMAgentResu
         case "search_memory":
           return searchMemoryJSON(opts.profile, String(args.query ?? ""));
         default:
-          return JSON.stringify({ error: `未知工具: ${name}` });
+          return JSON.stringify({ error: `unknown tool: ${name}` });
       }
     },
   });

@@ -5,12 +5,14 @@ import {
   buildSwotResult,
   afterProfileUpdate,
   markMilestone,
+  requireLLMProvider,
 } from "@delphi/core";
 import { runFlow } from "./flowRun";
 import { c } from "../ui/render";
 
 export async function runSwot(store: ProfileStore): Promise<void> {
   const profile = store.get();
+  const llm = requireLLMProvider();
   const runner = createSwotFlow();
   const ok = await runFlow(runner, {
     title: "SWOT 分析（Agent 增强版）",
@@ -18,7 +20,7 @@ export async function runSwot(store: ProfileStore): Promise<void> {
   });
   if (!ok) return;
 
-  const result = buildSwotResult(runner);
+  const result = await buildSwotResult(runner, llm);
   profile.frameworkData.swot = {
     strengths: result.strengths,
     weaknesses: result.weaknesses,

@@ -5,8 +5,6 @@ import {
   updatePersona,
   comparePersonas,
   PERSONA_STAGE_LABELS,
-  describeEmotionalTone,
-  EMOTION_LABELS,
   getLLMProvider,
   llmEnrichPersona,
 } from "@delphi/core";
@@ -76,7 +74,7 @@ export function renderPersona(p: import("@delphi/core").PersonaSnapshot, profile
   const fp = p.cognitiveFingerprint;
   const em = fp.emotionalTone;
   const topEmotion = Object.entries(em).sort((a, b) => b[1] - a[1]).slice(0, 3)
-    .map(([k, v]) => `${EMOTION_LABELS[k] || k} ${v}次`).join(" | ") || "数据积累中";
+    .map(([k, v]) => `${k} ${v}次`).join(" | ") || "数据积累中";
 
   const lines: string[] = [];
   lines.push(hr(58));

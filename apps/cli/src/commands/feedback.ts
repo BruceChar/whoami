@@ -51,7 +51,7 @@ export async function runFeedback(store: ProfileStore): Promise<void> {
           const link = createShareLink(profile, { expiresAt: new Date(Date.now() + 30 * 86400000).toISOString() });
           resolvedLink = link.id;
         }
-        const author = await askLine("填写人（姓名/昵称，可留空匿名）> ");
+        const author = await askLine("填写人（姓名/昵称）> ");
         const relationship = await askLine("与你的关系（同事/朋友/家人/前领导/同学）> ");
         const knownFor = await askLine("认识时长（如 3年）> ");
         const impression = await askLine("对你整体印象的评价 > ");

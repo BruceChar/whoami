@@ -8,6 +8,7 @@ import {
   capabilityFields,
   afterProfileUpdate,
   markMilestone,
+  requireLLMProvider,
 } from "@delphi/core";
 import { runFlow } from "./flowRun";
 import { askLine, EOF_INPUT } from "../ui/ask";
@@ -15,6 +16,7 @@ import { c } from "../ui/render";
 
 export async function runCapability(store: ProfileStore): Promise<void> {
   const profile = store.get();
+  const llm = requireLLMProvider();
 
   console.log(c.cyan("\n可选领域: " + capabilityFields().join(" / ")));
   const field = await askLine("目标领域 > ");
@@ -30,7 +32,7 @@ export async function runCapability(store: ProfileStore): Promise<void> {
   });
   if (!ok) return;
 
-  const result = buildCapabilityResult(profile, runner, field.trim());
+  const result = await buildCapabilityResult(profile, runner, llm, field.trim());
   profile.frameworkData.capability = result;
 
   console.log(c.cyan(`\n「${result.field}」能力画像：`));

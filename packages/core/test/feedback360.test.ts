@@ -73,7 +73,7 @@ test("llmAnalyzeFeedback: no records returns null", async () => {
   assert.equal(await llmAnalyzeFeedback(llm, profile), null);
 });
 
-test("capability: catalog + flow + cross-validation", () => {
+test("capability: catalog + flow + cross-validation", async () => {
   assert.ok(getCapabilities("产品经理").length >= 4);
 
   const profile = createEmptyProfile("u1", "/tmp");
@@ -86,7 +86,6 @@ test("capability: catalog + flow + cross-validation", () => {
   });
 
   const runner = createCapabilityFlow("产品经理");
-  // skip field step then rate: 沟通协调 low (2) but evidenced -> hiddenStrength
   runner.submit("产品经理");
   runner.submit("2"); // 需求分析
   runner.submit("2"); // 沟通协调 (rated low, but in archive)
@@ -95,7 +94,8 @@ test("capability: catalog + flow + cross-validation", () => {
   runner.submit("4");
   runner.submit("3");
 
-  const result = buildCapabilityResult(profile, runner);
+  const llm = new ScriptedLLMProvider([{ text: '{"hiddenStrengths":["沟通协调"]}' }]);
+  const result = await buildCapabilityResult(profile, runner, llm, "产品经理");
   assert.equal(result.field, "产品经理");
   assert.equal(result.ratings.length, 6);
   assert.ok(result.hiddenStrengths.includes("沟通协调"), "low rating but archived skill -> hidden strength");

@@ -6,6 +6,7 @@ import {
   MULTIPLE_LIVES_STEPS,
   detectCommonElements,
   afterProfileUpdate,
+  requireLLMProvider,
 } from "@delphi/core";
 import { askLine, EOF_INPUT } from "../ui/ask";
 import { c, section } from "../ui/render";
@@ -53,7 +54,8 @@ async function runMultipleLives(store: ProfileStore): Promise<void> {
     console.log(c.cyan(`\n【${step.title}】${step.prompt}`));
     answers[step.id] = await askLine("> ");
   }
-  const common = detectCommonElements(answers);
+  const llm = requireLLMProvider();
+  const common = await detectCommonElements(llm, answers);
   if (profile.analysisOutputs.lifeDesign) {
     profile.analysisOutputs.lifeDesign.multipleLives = {
       commonElements: common,

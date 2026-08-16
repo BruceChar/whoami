@@ -5,12 +5,14 @@ import {
   buildAchievement,
   afterProfileUpdate,
   markMilestone,
+  requireLLMProvider,
 } from "@delphi/core";
 import { runFlow } from "./flowRun";
 import { c } from "../ui/render";
 
 export async function runAchievement(store: ProfileStore): Promise<void> {
   const profile = store.get();
+  const llm = requireLLMProvider();
   const runner = createAchievementFlow();
   const ok = await runFlow(runner, {
     title: "成就事件萃取（STAR）",
@@ -18,7 +20,7 @@ export async function runAchievement(store: ProfileStore): Promise<void> {
   });
   if (!ok) return;
 
-  const { entry, skills } = buildAchievement(runner);
+  const { entry, skills } = await buildAchievement(runner, llm);
   profile.frameworkData.achievements.push(entry);
 
   console.log(c.cyan("\n成就事件已归档："));

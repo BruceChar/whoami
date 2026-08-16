@@ -88,7 +88,7 @@ export function submitFeedback(
   const record: FeedbackRecord = {
     id: newFeedbackId(),
     linkId,
-    author: input.author.trim() || "匿名",
+    author: input.author.trim(),
     relationship: input.relationship.trim() || "其他",
     knownFor: input.knownFor.trim(),
     impression: input.impression.trim(),
@@ -119,13 +119,13 @@ export function feedbackSummary(profile: UserCognitiveProfile): {
 }
 
 const FEEDBACK_SCHEMA = `{
-  consensusReport: string,  // 2-4 句：外部认知的共识（不贴标签，用"大家认为你…"）
+  consensusReport: string,  // 2-4 sentences of external-perception consensus (no labels)
   gaps: [{
-    trait: string,          // 特质关键词
-    selfPerception: string, // 用户自认为的
-    externalPerception: string // 他人眼中的
+    trait: string,          // trait keyword
+    selfPerception: string, // how the user sees themselves
+    externalPerception: string // how others see them
   }],
-  consistency: "high" | "medium" | "low"  // 多人描述的一致性
+  consistency: "high" | "medium" | "low"  // consistency across respondents
 }`;
 
 export interface FeedbackAnalysis {
@@ -153,8 +153,8 @@ export async function llmAnalyzeFeedback(
       {
         role: "user",
         content:
-          "你是 delphi 的外部认知分析师。基于用户亲友的 360° 反馈与用户的自我认知，分析共识、自我-外部差异。用第二人称，只描述不贴标签。输出 JSON：\n\n" +
-          `亲友反馈：\n${feedbackText.slice(0, 4000)}\n\n用户自我认知（价值观锚点）：${selfText}`,
+          "You are delphi's external-perception analyst. Given the user's 360° feedback from friends/family and their self-perception, analyze the consensus and the self-vs-external gaps. Use the second person, describe without labeling, and write in the user's language. Output JSON:\n\n" +
+          `Feedback:\n${feedbackText.slice(0, 4000)}\n\nUser self-perception (value anchors): ${selfText}`,
       },
     ],
     schema: FEEDBACK_SCHEMA,

@@ -1,26 +1,15 @@
 /** delphi — tool templates (methodology templates triggered by "/" in chat). */
-import { V_STEPS, D_STEPS } from "./vtd";
-import { SIGN_STEPS } from "./sign";
-import { SWOT_STEPS } from "./swot";
-import { ACHIEVEMENT_STEPS } from "./achievement";
-import { INTEREST_STEPS } from "./interestMatrix";
-import { DAILY_STEPS } from "./dailyFeedback";
-
 export interface ToolTemplate {
   id: string;
   label: string;
   emoji: string;
   description: string;
-    /** System prompt for conducting this tool (appended after the mirror principle) */
+  /** System prompt for conducting this tool (appended after the mirror principle). */
   prompt: string;
 }
 
-function questions(steps: Array<{ prompt: string }>): string {
-  return steps.map((s, i) => `${i + 1}. ${s.prompt.replace(/\n/g, " ")}`).join("\n");
-}
-
 const MIRROR_NOTE =
-  "主持原则：一次只问一个问题，等用户回答后再问下一个；不评判、不打断；全部问完后，用一段话反射用户回答中浮现的模式。";
+  "Conduct rule: ask one question at a time and wait for the answer; never judge or interrupt. After all questions, reflect back the patterns that emerged from the user's answers. Write in the user's language.";
 
 export const TOOL_TEMPLATES: ToolTemplate[] = [
   {
@@ -28,56 +17,56 @@ export const TOOL_TEMPLATES: ToolTemplate[] = [
     label: "V-T-D 探索",
     emoji: "🧭",
     description: "价值观-天赋-梦想：三层深度探索",
-    prompt: `现在运行【V-T-D 探索】工具。按顺序提问（先价值观 5 题，再天赋 4 题，最后梦想 3 题）：\n价值观：\n${questions(V_STEPS)}\n天赋（SIGN）：\n${questions(SIGN_STEPS)}\n梦想：\n${questions(D_STEPS)}\n${MIRROR_NOTE}\n全部完成后，从回答中提取价值观锚点与内驱源，反馈给用户（如：「我注意到你反复提到自由与创造——这两个词可能是你的价值观锚点」）。`,
+    prompt: `Run the V-T-D exploration tool. Ask in order: values (admired people, non-negotiables, what matters most), talents (SIGN: what comes easily / what you instinctively do / what you learn fast / what feels fulfilling), then dreams (what you would do without money or recognition).\n${MIRROR_NOTE}\nAfter all questions, extract the user's value anchors and intrinsic drives, and reflect them back (e.g. "I notice you keep returning to freedom and creation — these may be your value anchors").`,
   },
   {
     id: "sign",
     label: "SIGN 天赋探测",
     emoji: "✨",
     description: "成功/本能/成长/需求 四信号",
-    prompt: `现在运行【SIGN 天赋探测】工具。按顺序提问：\n${questions(SIGN_STEPS)}\n${MIRROR_NOTE}\n完成后交叉验证用户的天赋领域，反馈给用户。`,
+    prompt: `Run the SIGN talent-detection tool. Ask about the four signals: Success (what you do better than others), Instinct (what you're drawn to do), Growth (what you learn fast / enter flow in), Needs (what leaves you fulfilled rather than empty).\n${MIRROR_NOTE}\nAfterward, cross-validate the four signals and reflect the user's talent domains back.`,
   },
   {
     id: "swot",
     label: "SWOT 分析",
     emoji: "🔍",
     description: "优势/劣势/机会/威胁（增强版）",
-    prompt: `现在运行【SWOT 分析】工具。按顺序提问：\n${questions(SWOT_STEPS)}\n${MIRROR_NOTE}\n完成后，把「威胁」分成可控（锚定问题）与不可控（重力问题）两部分反馈给用户。`,
+    prompt: `Run the SWOT analysis tool. Ask about Strengths, Weaknesses, Opportunities, and Threats, probing each quadrant (e.g. "what is the shadow side of this strength?", "is this a fact or your interpretation?").\n${MIRROR_NOTE}\nAfterward, split threats into controllable (anchor problems) and uncontrollable (gravity problems), and reflect both back.`,
   },
   {
     id: "achievement",
     label: "成就事件萃取",
     emoji: "🏆",
     description: "STAR 深度挖掘 + 技能萃取",
-    prompt: `现在运行【成就事件萃取（STAR）】工具。按顺序提问：\n${questions(ACHIEVEMENT_STEPS)}\n${MIRROR_NOTE}\n完成后，萃取该事件中的可迁移技能，反馈给用户（「你以为没有、其实有」的能力）。`,
+    prompt: `Run the achievement-event (STAR) extraction. Ask about Situation/Task, Action, Result, and long-term impact.\n${MIRROR_NOTE}\nAfterward, extract the transferable skills evidenced by the story — including skills the user may not realize they used — and reflect them back.`,
   },
   {
     id: "interest",
     label: "兴趣矩阵",
     emoji: "🎨",
     description: "四象限能量评分",
-    prompt: `现在运行【兴趣矩阵】工具。依次问用户为四类活动打分（0-5）：创造性、分析性、独立性、社交性。\n${MIRROR_NOTE}\n完成后，指出高能象限与能量冲突。`,
+    prompt: `Run the interest matrix. Ask the user to rate (0-5) their energy on four activity types: creative, analytical, independent, and social.\n${MIRROR_NOTE}\nAfterward, point out their high-energy quadrants and any energy conflicts.`,
   },
   {
     id: "daily",
     label: "每日回馈",
     emoji: "📝",
     description: "今日满意/不满意 + 原因",
-    prompt: `现在运行【每日回馈】工具。按顺序提问：\n${questions(DAILY_STEPS)}\n${MIRROR_NOTE}\n完成后记录满意/不满意驱动的主题。`,
+    prompt: `Run the daily-feedback tool. Ask about one satisfying event and why, then one unsatisfying event and why.\n${MIRROR_NOTE}\nAfterward, record the recurring themes behind the satisfying and unsatisfying drivers.`,
   },
   {
     id: "career",
     label: "从业分析",
     emoji: "💼",
     description: "上班 vs 创业适配度",
-    prompt: `现在运行【从业分析】。先调用工具 get_cognitive_profile 读取认知档案，然后基于价值观锚点、能量流向、天赋信号，输出：工作形态建议（上班/创业/自由职业）、工作内容方向、避坑提醒。用第二人称「你」。`,
+    prompt: `Run the career analysis. First call get_cognitive_profile to read the cognitive profile, then based on value anchors, energy flows, and talent signals, output: work-form recommendation (employment / startup / freelance), content directions, and pitfalls to avoid. Use the second person "you" and the user's language.`,
   },
   {
     id: "life",
     label: "人生设计",
     emoji: "🌱",
     description: "Connect The Dots / 多重人生",
-    prompt: `现在运行【人生设计】。调用 get_cognitive_profile 读取档案，然后依次进行：\n1) Connect The Dots——把「你相信的」与「你做的事」对齐，指出断裂点；\n2) 多重人生假设——依次问三个问题：继续当前路径 5 年会怎样 / 如果核心技能被 AI 取代你还有什么价值 / 如果钱和面子都不存在你会选什么；\n3) 找三者的共同元素 = 你的内驱核心。`,
+    prompt: `Run the life-design tool. Call get_cognitive_profile to read the profile, then: 1) Connect The Dots — align "what you believe" with "what you do" and point out gaps; 2) multiple-life hypotheses — ask: what if you continue the current path for 5 years / what if your core skill were replaced by AI / what would you choose if money and reputation didn't exist; 3) find the common element across the three = the core intrinsic drive.`,
   },
 ];
 

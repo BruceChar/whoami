@@ -3,15 +3,16 @@ import {
   ProfileStore,
   createSignFlow,
   buildSignResult,
-  signAreas,
   afterProfileUpdate,
   markMilestone,
+  requireLLMProvider,
 } from "@delphi/core";
 import { runFlow } from "./flowRun";
 import { c } from "../ui/render";
 
 export async function runSign(store: ProfileStore): Promise<void> {
   const profile = store.get();
+  const llm = requireLLMProvider();
   const runner = createSignFlow();
   const ok = await runFlow(runner, {
     title: "天赋信号探测（SIGN）",
@@ -19,9 +20,10 @@ export async function runSign(store: ProfileStore): Promise<void> {
   });
   if (!ok) return;
 
-  const result = buildSignResult(runner);
+  const result = await buildSignResult(runner, llm);
   profile.frameworkData.sign.signals = result.signals;
-  const areas = signAreas(result);
+  profile.frameworkData.sign.areas = result.areas;
+  const areas = result.areas;
 
   console.log(c.cyan("\n天赋信号摘要："));
   for (const [key, label] of [["success", "S 成功"], ["instinct", "I 本能"], ["growth", "G 成长"], ["needs", "N 需求"]] as const) {

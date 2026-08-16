@@ -1,12 +1,13 @@
 /**
  * delphi — core capability model.
- * User picks a target field, self-rates its core capabilities, then the
- * result is cross-validated against achievement skills and SIGN signals
- * (surfacing "capabilities you think you lack but actually have").
+ * User picks a target field and self-rates its core capabilities; the result
+ * is cross-validated against the archive (LLM-driven hidden-strength detection).
  */
 import { CapabilityData, UserCognitiveProfile } from "../models/types";
 import { FlowRunner, FlowStep } from "./flow";
+import { LLMAgent } from "../llm/agent";
 import { aggregateSkills } from "./achievement";
+import { llmFindHiddenStrengths } from "../llm/extraction";
 
 export interface CapabilityCatalog {
   field: string;
@@ -50,12 +51,13 @@ function parseScore(raw: string | undefined): number {
   return Math.max(0, Math.min(5, n));
 }
 
-/** Build the capability result and cross-validate against existing data. */
-export function buildCapabilityResult(
+/** Build the capability result and cross-validate against existing data (LLM-driven). */
+export async function buildCapabilityResult(
   profile: UserCognitiveProfile,
   runner: FlowRunner,
+  provider: LLMAgent,
   field?: string
-): CapabilityData {
+): Promise<CapabilityData> {
   const resolvedField = field || runner.answers.field || "产品经理";
   const caps = getCapabilities(resolvedField);
   const ratings = caps.map((cap, i) => ({
@@ -66,17 +68,23 @@ export function buildCapabilityResult(
   const strengths = ratings.filter((r) => r.score >= 4).map((r) => r.capability);
   const gaps = ratings.filter((r) => r.score <= 2).map((r) => r.capability);
 
-  // Cross-validate: capabilities rated low but evidenced in the archive.
-  const evidence = new Set<string>([
+  // Cross-validate via LLM: capabilities rated low but evidenced in the archive.
+  const lowRated = ratings.filter((r) => r.score <= 2).map((r) => r.capability);
+  const evidence = [
     ...aggregateSkills(profile.frameworkData.achievements),
-    ...Object.values(profile.frameworkData.sign.signals).join(" ").split(/\s+/),
+    ...Object.values(profile.frameworkData.sign.signals),
     ...(profile.frameworkData.swot.strengths || []),
-  ].map((s) => s.trim()).filter(Boolean));
+  ].map((s) => s.trim()).filter(Boolean);
 
-  const hiddenStrengths = ratings
-    .filter((r) => r.score <= 2)
-    .filter((r) => [...evidence].some((e) => e.length >= 2 && (r.capability.includes(e) || e.includes(r.capability))))
-    .map((r) => r.capability);
+  let hiddenStrengths: string[] = [];
+  if (lowRated.length > 0 && evidence.length > 0) {
+    const found = await llmFindHiddenStrengths(
+      provider,
+      lowRated.map((c) => `- ${c} (self-rated low)`).join("\n"),
+      evidence.join("\n")
+    );
+    hiddenStrengths = (found?.hiddenStrengths ?? []).filter((c) => caps.includes(c));
+  }
 
   return { field: resolvedField, ratings, strengths, gaps, hiddenStrengths };
 }

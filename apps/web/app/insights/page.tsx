@@ -7,7 +7,6 @@ import {
   UP_IS_GOOD,
   PERSONA_STAGE_LABELS,
   INFLECTION_LABELS,
-  EMOTION_LABELS,
   canGeneratePersona,
   updatePersona,
   llmEnrichPersona,

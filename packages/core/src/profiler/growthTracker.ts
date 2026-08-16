@@ -6,8 +6,7 @@ import {
   SessionRecord,
   UserCognitiveProfile,
 } from "../models/types";
-import { BIAS_TYPES } from "../analyzer/biasDetector";
-import { emotionFactScore } from "../analyzer/cognitiveMarker";
+import { BIAS_TYPES } from "../models/types";
 
 export const DIMENSION_LABELS: Record<string, string> = {
   selfReflectionDepth: "自我反思深度",
@@ -61,7 +60,7 @@ export function computeSessionPoint(profile: UserCognitiveProfile, session: Sess
   for (const m of userMsgs) {
     if (!m.markers) continue;
     reflection += m.markers.selfReflection ? 1 : 0;
-    emotionFactSum += emotionFactScore(m.text);
+    emotionFactSum += m.markers.emotionFact ?? 0.5;
     jumps += m.markers.abstractionJump ? 1 : 0;
     certaintySum += m.markers.certainty;
     if (m.markers.attribution === "internal") internal++;
