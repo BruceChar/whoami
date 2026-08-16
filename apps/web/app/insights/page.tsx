@@ -161,6 +161,56 @@ export default async function InsightsPage() {
           </ul>
         )}
       </section>
+
+      {/* ===== 外部反馈（360°） ===== */}
+      <section className="mirror-card">
+        <h2 className="mirror-title">外部反馈（360°）</h2>
+        {profile.frameworkData.feedback.records.length === 0 ? (
+          <p className="text-sm text-ink-400">
+            暂无反馈。前往 <Link href="/settings" className="text-mirror-600 underline">⚙️ 设置</Link> 生成分享链接，邀请亲友填写。
+          </p>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2 text-xs">
+              {Object.entries(
+                profile.frameworkData.feedback.records.reduce<Record<string, number>>((acc, r) => {
+                  acc[r.relationship] = (acc[r.relationship] || 0) + 1;
+                  return acc;
+                }, {})
+              ).map(([rel, n]) => (
+                <span key={rel} className="rounded-full bg-ink-100 px-2.5 py-1 text-ink-600">{rel} · {n} 条</span>
+              ))}
+            </div>
+
+            {profile.frameworkData.feedback.consensusReport && (
+              <div className="rounded-xl bg-mirror-50 p-4 text-sm leading-relaxed text-ink-700">
+                <p className="mb-1 text-xs font-medium text-mirror-600">外部认知共识报告</p>
+                {profile.frameworkData.feedback.consensusReport}
+              </div>
+            )}
+
+            {profile.frameworkData.feedback.selfExternalGaps.length > 0 && (
+              <ul className="space-y-1 text-sm text-amber-600">
+                {profile.frameworkData.feedback.selfExternalGaps.map((gap, i) => (
+                  <li key={i}>⚠ {gap}</li>
+                ))}
+              </ul>
+            )}
+
+            <ul className="space-y-2 text-sm">
+              {profile.frameworkData.feedback.records.slice(-8).reverse().map((r) => (
+                <li key={r.id} className="rounded-xl bg-ink-50 p-3">
+                  <p className="text-ink-800">{r.impression}</p>
+                  <p className="mt-1 text-xs text-ink-400">
+                    [{r.relationship}·{r.author}] {r.knownFor}
+                    {r.evidence ? ` · 依据: ${r.evidence.slice(0, 50)}` : ""}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

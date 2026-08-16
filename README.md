@@ -69,11 +69,13 @@ delphi 通过 [@earendil-works/pi-ai](https://github.com/earendil-works/pi)（Un
 | 四、4.2.1   | V-T-D 价值观-天赋-梦想                                            | `delphi vtd`                                                                |
 | 四、4.2.2   | SIGN 天赋信号探测                                                 | `delphi sign`                                                               |
 | 四、4.3.1   | SWOT 分析（Agent 增强：优势阴影/劣势再框定/控制圈分离）           | `delphi swot`                                                               |
+| 四、4.3.2   | 核心能力模型（选领域→能力自评→交叉验证隐藏优势）                  | `delphi capability`                                                         |
 | 四、4.3.3   | 成就事件萃取（STAR）                                              | `delphi achievement`                                                        |
 | 四、4.4.1   | 兴趣矩阵（四象限能量评分）                                        | `delphi interest`                                                           |
-| 五          | 从业分析引擎                                                      | `delphi career`                                                             |
-| 六          | 人生设计引擎（Connect The Dots / 重力问题 / 多重人生 / 原型设计） | `delphi life`                                                               |
-| 七、7.2     | 认知仪表盘                                                        | `delphi space dashboard`                                                    |
+| 五          | 分享与反馈收集（360°：分享链接 + 共识报告 + 自我/外部差异）       | `delphi feedback`；Web `/settings` 生成链接，`/f/<id>` 公开表单            |
+| 六          | 从业分析引擎                                                      | `delphi career`                                                             |
+| 七          | 人生设计引擎（Connect The Dots / 重力问题 / 多重人生 / 原型设计） | `delphi life`                                                               |
+| 八、7.2     | 认知仪表盘                                                        | `delphi space dashboard`                                                    |
 | 七、7.3     | 成长时间线（17 指标 + 转折点 + 练习效应校正）                     | `delphi space timeline`                                                     |
 | 七、7.4     | 思维档案库                                                        | `delphi space archive`                                                      |
 | 七、7.5     | 洞察收藏夹                                                        | `delphi space insights`                                                     |

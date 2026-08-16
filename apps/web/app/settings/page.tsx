@@ -136,6 +136,58 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      <ShareLinkCard />
+    </div>
+  );
+}
+
+function ShareLinkCard() {
+  const [days, setDays] = useState("30");
+  const [max, setMax] = useState("");
+  const [link, setLink] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const generate = async () => {
+    setBusy(true);
+    setError(null);
+    setLink(null);
+    try {
+      const res = await fetch("/api/feedback/link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ expiresDays: parseInt(days, 10) || 30, maxEntries: parseInt(max, 10) || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "生成失败");
+      setLink(`${typeof window !== "undefined" ? window.location.origin : ""}${data.url}`);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mirror-card space-y-3">
+      <h2 className="mirror-title">🧑‍🤝‍🧑 反馈收集（360°）</h2>
+      <p className="text-sm text-ink-400">生成分享链接发给亲友，邀请他们填写对你的反馈，校准自我认知。</p>
+      <div className="flex gap-3">
+        <input value={days} onChange={(e) => setDays(e.target.value)} placeholder="有效期（天，默认30）" className="w-40 rounded-xl border border-ink-200 bg-surface px-3 py-2 text-sm text-ink-800 placeholder:text-ink-300 focus:outline-none focus:ring-1 focus:ring-mirror-400" />
+        <input value={max} onChange={(e) => setMax(e.target.value)} placeholder="人数上限（可选）" className="w-40 rounded-xl border border-ink-200 bg-surface px-3 py-2 text-sm text-ink-800 placeholder:text-ink-300 focus:outline-none focus:ring-1 focus:ring-mirror-400" />
+        <button onClick={generate} disabled={busy} className="rounded-xl bg-mirror-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-mirror-600 disabled:opacity-40">
+          生成链接
+        </button>
+      </div>
+      {link && (
+        <div className="rounded-xl bg-ink-50 p-3 text-sm">
+          <p className="text-ink-500">分享链接：</p>
+          <input readOnly value={link} onFocus={(e) => e.currentTarget.select()} className="mt-1 w-full rounded-lg border border-ink-200 bg-surface px-3 py-2 font-mono text-xs text-mirror-700" />
+          <p className="mt-1 text-xs text-ink-400">在 <a href="/insights" className="text-mirror-600 underline">洞察页</a> 查看收到的反馈。</p>
+        </div>
+      )}
+      {error && <p className="text-sm text-rose-500">{error}</p>}
     </div>
   );
 }
