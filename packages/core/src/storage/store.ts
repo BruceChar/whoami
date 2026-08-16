@@ -1,4 +1,4 @@
-/** delphi — local JSON file storage (privacy-first; all data stays local). */
+/** delphi — local profile store (document-based; storage backend is pluggable). */
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
@@ -6,22 +6,21 @@ import {
   UserCognitiveProfile,
   createEmptyProfile,
 } from "../models/types";
+import { StorageBackend, resolveStorageBackend } from "./backend";
 
 export const DEFAULT_DATA_DIR = path.join(os.homedir(), ".delphi");
 
 export interface StoreOptions {
   dataDir?: string;
   userId?: string;
+  backend?: StorageBackend;
 }
 
 /**
-  * Data-dir resolution order:
-  * 1. explicit opts.dataDir
-  * 2. DELPHI_DATA_DIR env (tests / multi-instance isolation)
-  * 3. default ~/.delphi
-  * 1. explicit opts.dataDir
-  * 2. DELPHI_DATA_DIR env (tests / multi-instance isolation)
-  * 3. default ~/.delphi
+ * Data-dir resolution order:
+ * 1. explicit opts.dataDir
+ * 2. DELPHI_DATA_DIR env (tests / multi-instance isolation)
+ * 3. default ~/.delphi
  */
 export function resolveDataDir(opts?: StoreOptions): string {
   if (opts?.dataDir) return opts.dataDir;
@@ -30,29 +29,32 @@ export function resolveDataDir(opts?: StoreOptions): string {
   return DEFAULT_DATA_DIR;
 }
 
+/** The profile document key inside the storage backend. */
+export const PROFILE_KEY = "profile.json";
+
 export class ProfileStore {
   readonly dataDir: string;
   readonly userId: string;
-  private profilePath: string;
+  private backend: StorageBackend;
   private profile: UserCognitiveProfile;
 
   constructor(opts: StoreOptions = {}) {
     this.dataDir = resolveDataDir(opts);
     this.userId = opts.userId || "local-user";
-    this.profilePath = path.join(this.dataDir, "profile.json");
+    this.backend = opts.backend || resolveStorageBackend(this.dataDir);
     fs.mkdirSync(this.dataDir, { recursive: true });
     fs.mkdirSync(path.join(this.dataDir, "backups"), { recursive: true });
     fs.mkdirSync(path.join(this.dataDir, "exports"), { recursive: true });
     this.profile = this.load();
   }
 
-  /** Load the profile from disk on every start (consistent across processes) */
+  /** Load the profile from the backend on every start (consistent across processes) */
   private load(): UserCognitiveProfile {
     try {
-      if (fs.existsSync(this.profilePath)) {
-        const raw = fs.readFileSync(this.profilePath, "utf-8");
+      const raw = this.backend.read(PROFILE_KEY);
+      if (raw) {
         const parsed = JSON.parse(raw) as UserCognitiveProfile;
-            // merge defaults for fields missing from older profiles
+        // merge defaults for fields missing from older profiles
         const base = createEmptyProfile(this.userId, this.dataDir);
         return mergeProfile(base, parsed);
       }
@@ -62,20 +64,18 @@ export class ProfileStore {
     return createEmptyProfile(this.userId, this.dataDir);
   }
 
-  /** Atomic profile write */
+  /** Persist the profile through the storage backend (atomic per backend). */
   save(): void {
     this.profile.updatedAt = new Date().toISOString();
-    const tmp = this.profilePath + ".tmp";
-    fs.writeFileSync(tmp, JSON.stringify(this.profile, null, 2), "utf-8");
-    fs.renameSync(tmp, this.profilePath);
+    this.backend.write(PROFILE_KEY, JSON.stringify(this.profile, null, 2));
   }
 
-    /** Get the profile (mutable; call save() to persist) */
+  /** Get the profile (mutable; call save() to persist) */
   get(): UserCognitiveProfile {
     return this.profile;
   }
 
-    /** Write a backup of the current profile */
+  /** Write a backup of the current profile (as a JSON file under <dataDir>/backups). */
   backup(label = "manual"): string {
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     const dest = path.join(this.dataDir, "backups", `profile-${label}-${stamp}.json`);
@@ -83,7 +83,7 @@ export class ProfileStore {
     return dest;
   }
 
-    /** Export the profile JSON to the exports dir; returns the path */
+  /** Export the profile JSON to the exports dir; returns the path */
   exportJson(): string {
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     const dest = path.join(this.dataDir, "exports", `profile-${stamp}.json`);
@@ -91,7 +91,7 @@ export class ProfileStore {
     return dest;
   }
 
-    /** Restore the profile from a JSON file */
+  /** Restore the profile from a JSON file */
   importJson(filePath: string): void {
     const raw = fs.readFileSync(filePath, "utf-8");
     const parsed = JSON.parse(raw) as UserCognitiveProfile;
@@ -101,7 +101,7 @@ export class ProfileStore {
     this.save();
   }
 
-    /** Clear all data (reset the profile) */
+  /** Clear all data (reset the profile) */
   reset(): void {
     this.profile = createEmptyProfile(this.userId, this.dataDir);
     this.save();

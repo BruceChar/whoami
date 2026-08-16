@@ -9,6 +9,7 @@ import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
 import { resolveDataDir, ProfileStore } from "../storage/store";
+import { resolveStorageBackend } from "../storage/backend";
 import { hashPassword, verifyPassword } from "./auth";
 
 export interface UserAccount {
@@ -41,8 +42,9 @@ export function userDir(userId: string, dataDir?: string): string {
 }
 
 export function loadUsers(dataDir?: string): UserAccount[] {
+  const raw = resolveStorageBackend(dataDir).read("users.json");
+  if (!raw) return [];
   try {
-    const raw = fs.readFileSync(usersFile(dataDir), "utf-8");
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed.users) ? parsed.users : [];
   } catch {
@@ -51,9 +53,7 @@ export function loadUsers(dataDir?: string): UserAccount[] {
 }
 
 function saveUsers(users: UserAccount[], dataDir?: string): void {
-  const dir = dataDir || resolveDataDir();
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(usersFile(dataDir), JSON.stringify({ users }, null, 2), "utf-8");
+  resolveStorageBackend(dataDir).write("users.json", JSON.stringify({ users }, null, 2));
 }
 
 export function findUserByUsername(username: string, dataDir?: string): UserAccount | null {

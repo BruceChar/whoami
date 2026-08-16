@@ -1,5 +1,6 @@
 /** delphi — @delphi/core — delphi core engine. */
 export * from "./models/types";
+export * from "./storage/backend";
 export * from "./storage/store";
 
 // engine (three modes)

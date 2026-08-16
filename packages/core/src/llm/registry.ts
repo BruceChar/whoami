@@ -5,6 +5,7 @@ import { LLMProvider } from "./types";
 import { LLMAgent } from "./agent";
 import { PiAiProvider, PROVIDER_ENV_KEYS } from "./piAiProvider";
 import { resolveDataDir } from "../storage/store";
+import { resolveStorageBackend } from "../storage/backend";
 
 export const SUPPORTED_PROVIDERS = ["deepseek", "openai", "anthropic", "openrouter", "google"] as const;
 export type SupportedProvider = (typeof SUPPORTED_PROVIDERS)[number];
@@ -47,19 +48,22 @@ export function configFilePath(dataDir?: string): string {
 }
 
 export function loadLLMConfigFile(dataDir?: string): LLMConfigFile | null {
+  const raw = resolveStorageBackend(dataDir).read("config.json");
+  if (!raw) return null;
   try {
-    const p = configFilePath(dataDir);
-    if (!fs.existsSync(p)) return null;
-    return JSON.parse(fs.readFileSync(p, "utf-8")) as LLMConfigFile;
+    return JSON.parse(raw) as LLMConfigFile;
   } catch {
     return null;
   }
 }
 
 export function saveLLMConfigFile(cfg: LLMConfigFile, dataDir?: string): void {
-  const dir = dataDir || resolveDataDir();
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(configFilePath(dir), JSON.stringify(cfg, null, 2), "utf-8");
+  resolveStorageBackend(dataDir).write("config.json", JSON.stringify(cfg, null, 2));
+}
+
+/** Remove the LLM config document from the storage backend. */
+export function removeLLMConfigFile(dataDir?: string): void {
+  resolveStorageBackend(dataDir).remove("config.json");
 }
 
 /** Save/merge a provider config: keeps already-configured provider keys, updates the given one. */

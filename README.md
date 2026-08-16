@@ -10,7 +10,7 @@
 
 ## 本地启动
 
-要求：Node.js 20+、pnpm 9+。
+要求：Node.js 23.4+（使用内置 `node:sqlite`）、pnpm 9+。
 
 ```bash
 pnpm install
@@ -29,7 +29,11 @@ export DEEPSEEK_API_KEY=sk-你的密钥
 # { "provider": "deepseek", "model": "deepseek-v4-flash", "apiKey": "sk-你的密钥" }
 ```
 
-数据保存在 `~/.delphi/`（可用环境变量 `DELPHI_DATA_DIR` 指定目录）。
+数据保存在 `~/.delphi/`（可用环境变量 `DELPHI_DATA_DIR` 指定目录）。存储后端可切换：
+
+- `DELPHI_STORAGE=sqlite`（默认）：单个 `delphi.db`（事务化，首次使用自动导入旧的 JSON 数据）
+- `DELPHI_STORAGE=file`：JSON 文件（`profile.json` / `users.json` / `config.json`，人类可读）
+- `DELPHI_STORAGE=postgres`：托管生产用（异步适配器规划中，见 `DEPLOYMENT.md`）
 
 ### CLI（本地管理工具）
 

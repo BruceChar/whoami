@@ -93,14 +93,8 @@ export async function DELETE() {
   if (authRequired()) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   }
-  const { configFilePath } = await import("@delphi/core");
-  const fs = await import("fs");
-  const p = configFilePath(resolveDataDir());
-  try {
-    if (fs.existsSync(p)) fs.unlinkSync(p);
-  } catch {
-    // ignore
-  }
+  const { removeLLMConfigFile } = await import("@delphi/core");
+  removeLLMConfigFile(resolveDataDir());
   resetLLMProvider();
   return NextResponse.json({ ok: true, configured: false });
 }

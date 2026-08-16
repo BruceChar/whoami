@@ -29,9 +29,13 @@ test("ProfileStore 创建/保存/读取往返", () => {
   profile.userId = "tester";
   store.save();
 
+  // persisted through the storage backend (sqlite delphi.db or profile.json in file mode)
   const store2 = new ProfileStore({ dataDir: dir });
   assert.equal(store2.get().userId, "tester");
-  assert.ok(fs.existsSync(path.join(dir, "profile.json")));
+  assert.ok(
+    fs.existsSync(path.join(dir, "delphi.db")) || fs.existsSync(path.join(dir, "profile.json")),
+    "data should be persisted on disk"
+  );
 });
 
 test("对话 → 会话记录 → 指标重算 → 档案更新", async () => {

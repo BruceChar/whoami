@@ -25,6 +25,18 @@ DELPHI_MODE=hosted pnpm --filter @delphi/web start
 - `DELPHI_AUTH_SECRET` 本地可省略（自动生成并持久化到 `<dataDir>/.auth-secret`）；托管到 Vercel 时必须显式设置。
 - 本地的用户/工作区管理可用 CLI：`delphi users list|add|reset-password|...`、`delphi workspace clear|export <username>`。
 
+## 存储后端（DELPHI_STORAGE）
+
+逻辑模型是一组 JSON **文档**（profile / users / config / 每用户档案），物理位置可插拔：
+
+| 后端 | 说明 | 适用 |
+| --- | --- | --- |
+| `sqlite`（默认） | 单个 `delphi.db`（`node:sqlite`，零原生依赖，事务化）；首次使用自动导入旧的 JSON 文件 | 本地 / 自托管 |
+| `file` | 原 JSON 文件（人类可读、可直接备份/导出） | 本地调试、需要可读文件 |
+| `postgres` | 数据库 KV（异步适配器，**规划中**） | 托管生产（Vercel 等） |
+
+切换方式：`DELPHI_STORAGE=file|sqlite|postgres`。当前默认 `sqlite`；从旧版本升级时，首次启动会自动把 `profile.json / users.json / config.json` 导入 `delphi.db`，不丢数据。
+
 ## 为什么本地文件在 Vercel 上不可行
 
 Vercel 的函数是 **serverless**：文件系统是临时的，`/tmp` 里的写入在函数退出后可能丢失，跨请求不保证持久。因此 hosted 模式必须把当前基于文件的 `profile.json / users.json / config.json` 换成**持久化数据库**。
