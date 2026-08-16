@@ -28,7 +28,7 @@ export default async function FeedbackPage({ params }: { params: { linkId: strin
         <p className="text-3xl">🪞</p>
         <h1 className="mt-2 text-xl font-semibold text-ink-900">给 ta 写一段反馈</h1>
         <p className="mt-1 text-sm text-ink-400">
-          ta 邀请你帮忙更真实地认识自己。你的反馈会被认真对待，可选匿名。
+          ta 邀请你帮忙更真实地认识自己。你的反馈会被认真对待。
         </p>
       </div>
       <div className="mirror-card">

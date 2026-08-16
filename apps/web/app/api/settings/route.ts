@@ -1,11 +1,12 @@
 /**
- * GET/POST /api/settings — LLM config, persisted to <dataDir>/config.json
- * (written by the web Settings page). Offline mode is removed: an API key is required.
+ * GET/POST/DELETE /api/settings — LLM config, persisted to <dataDir>/config.json.
+ * Provider API keys are remembered per provider: switching providers never
+ * requires re-entering an already-configured key.
  */
 import { NextRequest, NextResponse } from "next/server";
 import {
   getConfigStatus,
-  saveLLMConfigFile,
+  saveLLMConfig,
   SUPPORTED_PROVIDERS,
   loadLLMConfigFile,
   resetLLMProvider,
@@ -47,12 +48,18 @@ export async function POST(req: NextRequest) {
     );
   }
   if (!apiKey) {
-    return NextResponse.json({ error: "API Key 不能为空" }, { status: 400 });
+    // allow switching to an already-configured provider without re-entering the key
+    const dataDir = resolveDataDir();
+    const file = loadLLMConfigFile(dataDir);
+    const existing = file?.apiKeys?.[provider]?.trim() || (provider === file?.provider ? file?.apiKey?.trim() : undefined);
+    if (!existing) {
+      return NextResponse.json({ error: "API Key 不能为空" }, { status: 400 });
+    }
   }
 
   const dataDir = resolveDataDir();
-  saveLLMConfigFile({ provider, model, apiKey }, dataDir);
-  resetLLMProvider(); // 使服务端缓存失效，下次请求重建 Provider
+  saveLLMConfig({ provider, model, apiKey }, dataDir);
+  resetLLMProvider(); // invalidate the server-side singleton; rebuilt on next request
 
   const status = getConfigStatus(dataDir);
   return NextResponse.json({ ok: true, ...status });

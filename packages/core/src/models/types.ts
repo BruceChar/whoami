@@ -421,6 +421,11 @@ export interface UserCognitiveProfile {
   createdAt: string;
   updatedAt: string;
 
+  /** Basic personal info (nickname/how to address the user; editable in settings). */
+  userInfo: {
+    nickname: string;
+  };
+
   cognitiveMarkers: CognitiveMarkers;
 
   frameworkData: FrameworkData;
@@ -499,6 +504,7 @@ export function createEmptyProfile(userId: string, dataDir: string): UserCogniti
     userId,
     createdAt: now,
     updatedAt: now,
+    userInfo: { nickname: "" },
     cognitiveMarkers: {
       attributionPattern: { internal: 0, external: 0, situational: 0 },
       certaintyIndex: 0,

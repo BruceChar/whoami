@@ -16,7 +16,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     title: session.title || session.messages.find((m) => m.role === "user")?.text.slice(0, 24) || "未命名会话",
     mode: session.mode,
     messages: session.messages.map((m) => ({
-      role: m.role,
+      role: m.role === "agent" ? "assistant" : m.role,
       content: m.text,
       timestamp: m.timestamp,
     })),

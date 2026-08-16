@@ -24,6 +24,32 @@ export const PROVIDER_ENV_KEYS: Record<string, string> = {
   google: "GOOGLE_API_KEY",
 };
 
+/** List the available models for a provider (from the pi-ai catalog; no API key needed). */
+export async function listProviderModels(
+  providerId: string
+): Promise<Array<{ id: string; inputCost?: number }>> {
+  const fallback = () =>
+    (DEFAULT_MODEL_CANDIDATES[providerId] || []).map((id) => ({ id }));
+  try {
+    const { createModels } = await dynamicImport("@earendil-works/pi-ai");
+    const models = createModels();
+    const modulePath = PROVIDER_MODULES[providerId];
+    if (!modulePath) return fallback();
+    const mod: Record<string, () => unknown> = await dynamicImport(modulePath);
+    const factory = mod[`${providerId}Provider`];
+    if (typeof factory !== "function") return fallback();
+    models.setProvider(factory() as never);
+    const all: any[] = models.getModels(providerId) || [];
+    if (!Array.isArray(all) || all.length === 0) return fallback();
+    return all
+      .map((m) => ({ id: String(m.id || ""), inputCost: m.cost?.input }))
+      .filter((m) => m.id)
+      .sort((a, b) => (a.inputCost ?? Infinity) - (b.inputCost ?? Infinity));
+  } catch {
+    return fallback();
+  }
+}
+
 /** Default model candidates per provider (cost-effective first) */
 export const DEFAULT_MODEL_CANDIDATES: Record<string, string[]> = {
   deepseek: ["deepseek-v4-flash", "deepseek-v4-pro"],

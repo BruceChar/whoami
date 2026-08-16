@@ -28,7 +28,9 @@ export class LLMNotConfiguredError extends Error {
 export interface LLMConfigFile {
   provider?: string;
   model?: string;
-  apiKey?: string;
+  apiKey?: string; // legacy single-key field (kept for backward compatibility)
+  /** Per-provider API keys; the active provider's key is read from here. */
+  apiKeys?: Record<string, string>;
 }
 
 // ---------------------------------------------------------------------------
@@ -55,19 +57,53 @@ export function saveLLMConfigFile(cfg: LLMConfigFile, dataDir?: string): void {
   fs.writeFileSync(configFilePath(dir), JSON.stringify(cfg, null, 2), "utf-8");
 }
 
-/** Current config status (for doctor / web settings); key masked */
+/** Save/merge a provider config: keeps already-configured provider keys, updates the given one. */
+export function saveLLMConfig(
+  cfg: { provider: SupportedProvider; model?: string; apiKey?: string },
+  dataDir?: string
+): void {
+  const existing = loadLLMConfigFile(dataDir) || {};
+  const apiKeys = { ...(existing.apiKeys || {}) };
+  if (cfg.apiKey && cfg.apiKey.trim()) {
+    apiKeys[cfg.provider] = cfg.apiKey.trim();
+  }
+  const next: LLMConfigFile = {
+    provider: cfg.provider,
+    ...(cfg.model?.trim() ? { model: cfg.model.trim() } : {}),
+    apiKeys,
+  };
+  const dir = dataDir || resolveDataDir();
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(configFilePath(dir), JSON.stringify(next, null, 2), "utf-8");
+}
+
+/** Current config status (for doctor / web settings); keys masked */
 export interface LLMConfigStatus {
   configured: boolean;
   provider?: string;
   model?: string;
   apiKeyMasked?: string;
   source?: "env" | "file" | "none";
+  /** Per-provider key status (env + file-configured keys). */
+  providers?: Record<string, { configured: boolean; apiKeyMasked?: string; source: "env" | "file" | "none" }>;
 }
 
 export function getConfigStatus(dataDir?: string): LLMConfigStatus {
   const config = resolveLLMConfig(dataDir);
+  const file = loadLLMConfigFile(dataDir);
+
+  const providers: Record<string, { configured: boolean; apiKeyMasked?: string; source: "env" | "file" | "none" }> = {};
+  for (const p of SUPPORTED_PROVIDERS) {
+    const envKey = process.env[PROVIDER_ENV_KEYS[p]];
+    const fileKey = file?.apiKeys?.[p]?.trim() || (p === file?.provider ? file?.apiKey?.trim() : undefined);
+    const key = envKey || fileKey;
+    providers[p] = key
+      ? { configured: true, apiKeyMasked: `${key.slice(0, 4)}****${key.slice(-4)}`, source: envKey ? "env" : "file" }
+      : { configured: false, source: "none" };
+  }
+
   if (!config) {
-    return { configured: false, source: "none" };
+    return { configured: false, source: "none", providers };
   }
   const masked = config.apiKey
     ? `${config.apiKey.slice(0, 4)}****${config.apiKey.slice(-4)}`
@@ -78,6 +114,7 @@ export function getConfigStatus(dataDir?: string): LLMConfigStatus {
     model: config.model,
     apiKeyMasked: masked,
     source: config.source,
+    providers,
   };
 }
 
@@ -91,7 +128,8 @@ export function resolveLLMConfig(dataDir?: string): LLMConfig | null {
 
   const explicitProvider = process.env.DELPHI_LLM_PROVIDER?.trim().toLowerCase();
   const model = (process.env.DELPHI_LLM_MODEL || file?.model || "").trim() || undefined;
-  const fileKey = file?.apiKey?.trim() || undefined;
+  const fileKeyFor = (provider: string) =>
+    file?.apiKeys?.[provider]?.trim() || file?.apiKey?.trim() || undefined;
 
     // 1) explicit env provider (needs its key)
   if (explicitProvider) {
@@ -100,7 +138,7 @@ export function resolveLLMConfig(dataDir?: string): LLMConfig | null {
         `[delphi] 未知 LLM 提供商 "${explicitProvider}"。支持: ${SUPPORTED_PROVIDERS.join(" / ")}\n\n` + llmConfigHelp()
       );
     }
-    const envKey = process.env[PROVIDER_ENV_KEYS[explicitProvider]] || fileKey;
+    const envKey = process.env[PROVIDER_ENV_KEYS[explicitProvider]] || fileKeyFor(explicitProvider);
     if (!envKey) {
       throw new LLMNotConfiguredError();
     }
@@ -113,9 +151,10 @@ export function resolveLLMConfig(dataDir?: string): LLMConfig | null {
   }
 
     // 2) config file (written by the web Settings page)
-  if (fileKey && file?.provider) {
+  if (file?.provider) {
     const provider = file.provider.trim().toLowerCase() as SupportedProvider;
-    if ((SUPPORTED_PROVIDERS as readonly string[]).includes(provider)) {
+    const fileKey = fileKeyFor(provider);
+    if ((SUPPORTED_PROVIDERS as readonly string[]).includes(provider) && fileKey) {
       return { provider, model, apiKey: fileKey, source: "file" };
     }
   }
