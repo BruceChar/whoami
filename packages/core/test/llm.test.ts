@@ -118,6 +118,44 @@ test("PiAiProvider：faux 注入 JSON 提取", async () => {
   assert.deepEqual(json, { attribution: "internal", biases: ["overgeneralization"] });
 });
 
+test("PiAiProvider: assistant string content does not break the converter", async () => {
+  // Regression: pi-ai's wire converter calls content.flatMap on assistant
+  // messages, so a plain string content used to throw "assistantMsg.content.
+  // flatMap is not a function". Assistant content must reach pi-ai as arrays.
+  let seen = false;
+  const provider = new PiAiProvider({
+    providerId: "faux",
+    modelId: "faux-1",
+    setup: async (models) => {
+      const mod = await dynamicImport("@earendil-works/pi-ai/providers/faux");
+      const faux = mod.fauxProvider({ models: [{ id: "faux-1" }] });
+      models.setProvider(faux.provider);
+      faux.setResponses([
+        (context: any) => {
+          const asst = context.messages.find((m: any) => m.role === "assistant");
+          if (asst) {
+            seen = true;
+            if (!Array.isArray(asst.content)) {
+              throw new Error(`assistant content must be an array, got: ${typeof asst.content}`);
+            }
+          }
+          return mod.fauxAssistantMessage("好的，继续。");
+        },
+      ]);
+    },
+    resolveModel: (models, _providerId, modelId) => models.getModel("faux", modelId),
+  });
+  const res = await provider.agentChat({
+    messages: [
+      { role: "user", content: "我最近很焦虑" },
+      { role: "assistant", content: "我注意到你提到了焦虑。" },
+      { role: "user", content: "我总是担心做不好" },
+    ],
+  });
+  assert.equal(seen, true, "assistant message should reach pi-ai");
+  assert.ok(res.text.includes("继续"));
+});
+
 // ---------------------------------------------------------------------------
 // registry
 // ---------------------------------------------------------------------------

@@ -135,7 +135,7 @@ export class PiAiProvider implements LLMProvider, LLMAgent {
         .filter((m) => m.role !== "system")
         .map((m) => ({
           role: m.role,
-          content: m.content,
+          content: toPiContent(m.role, m.content),
           timestamp: Date.now(),
         })),
     };
@@ -209,7 +209,7 @@ export class PiAiProvider implements LLMProvider, LLMAgent {
       systemPrompt: opts.system || undefined,
       messages: opts.messages.map((m) => ({
         role: m.role,
-        content: m.content,
+        content: toPiContent(m.role, m.content),
         timestamp: Date.now(),
       })),
       tools: opts.tools?.map((t) => ({
@@ -288,8 +288,7 @@ export class PiAiProvider implements LLMProvider, LLMAgent {
 }
 
 /** JSON Schema (subset) -> TypeBox TSchema (required for pi-ai tool parameters) */
-function jsonSchemaToTypeBox(Type: any, schema: import("./agent").JsonSchema): any {
-  switch (schema.type) {
+function jsonSchemaToTypeBox(Type: any, schema: import("./agent").JsonSchema): any {  switch (schema.type) {
     case "string":
       return Type.String(schema.description ? { description: schema.description } : undefined);
     case "number":
@@ -310,4 +309,19 @@ function jsonSchemaToTypeBox(Type: any, schema: import("./agent").JsonSchema): a
     default:
       return Type.Any();
   }
+}
+
+/**
+ * Normalize message content for pi-ai: assistant messages must carry content
+ * as an array of content blocks (pi-ai's converter calls content.flatMap on
+ * assistant messages; a plain string would throw).
+ */
+function toPiContent(
+  role: string,
+  content: string
+): string | Array<{ type: "text"; text: string }> {
+  if (role === "assistant") {
+    return [{ type: "text", text: content }];
+  }
+  return content;
 }
