@@ -29,6 +29,8 @@ export interface EngineOptions {
   llm: LLMAgent;
   /** Tool template system prompt (VTD/SWOT etc. triggered by "/") */
   toolPrompt?: string;
+  /** How to address the user (from their profile); optional. */
+  userNickname?: string;
 }
 
 const BASE_SYSTEM_PROMPT = [
@@ -42,9 +44,13 @@ const BASE_SYSTEM_PROMPT = [
 ].join("\n");
 
 /** Per-mode agent system prompt (mirror principle + mode behavior). */
-function systemPromptFor(mode: AnalysisMode, toolPrompt?: string): string {
+function systemPromptFor(mode: AnalysisMode, toolPrompt?: string, nickname?: string): string {
+  const greeting = nickname && nickname.trim()
+    ? `The user goes by the name "${nickname.trim()}"; address them by it when natural.`
+    : "";
+  const base = greeting ? `${BASE_SYSTEM_PROMPT}\n${greeting}` : BASE_SYSTEM_PROMPT;
   if (toolPrompt) {
-    return `${BASE_SYSTEM_PROMPT}\n\n${toolPrompt}`;
+    return `${base}\n\n${toolPrompt}`;
   }
   switch (mode) {
     case "transparent":
@@ -72,7 +78,7 @@ function systemPromptFor(mode: AnalysisMode, toolPrompt?: string): string {
 export class ThinkingEngine {
   mode: AnalysisMode;
   private round = 0;
-  private readonly opts: { llm: LLMAgent; toolPrompt?: string };
+  private readonly opts: { llm: LLMAgent; toolPrompt?: string; userNickname?: string };
   /** Session history (LLM context) */
   private history: ChatMessage[] = [];
   /** Profile read by tool calls (injected by the CLI/web) */
@@ -81,7 +87,7 @@ export class ThinkingEngine {
 
   constructor(initialMode: AnalysisMode = "stealth", opts: EngineOptions) {
     this.mode = initialMode;
-    this.opts = { llm: opts.llm, toolPrompt: opts.toolPrompt };
+    this.opts = { llm: opts.llm, toolPrompt: opts.toolPrompt, userNickname: opts.userNickname };
   }
 
   /** Process one user input; returns the reply to display */
@@ -117,7 +123,7 @@ export class ThinkingEngine {
     this.history.push({ role: "user", text: trimmed, timestamp: new Date().toISOString(), markers });
 
     // 3. LLM chat reply (tool calling + profile grounding)
-    const system = systemPromptFor(this.mode, this.opts.toolPrompt);
+    const system = systemPromptFor(this.mode, this.opts.toolPrompt, this.opts.userNickname);
     const result = await runChatAgent({
       provider: this.opts.llm,
       system,

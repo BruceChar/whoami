@@ -56,7 +56,11 @@ export async function POST(req: NextRequest) {
     session = beginSession(profile, mode, message.slice(0, 24));
   }
 
-  const engine = new ThinkingEngine(mode, { llm, toolPrompt: tool?.prompt });
+  const engine = new ThinkingEngine(mode, {
+    llm,
+    toolPrompt: tool?.prompt,
+    userNickname: profile.userInfo?.nickname,
+  });
   engine.llmProfile = profile;
   engine.rememberHistory(
     session.messages.map((m) => ({

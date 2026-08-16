@@ -77,12 +77,8 @@ export default function Sidebar() {
         </button>
       </div>
 
-      <nav className="px-3 text-sm">
-        <NavLink href="/" active={pathname === "/"}>💬 对话</NavLink>
-        <NavLink href="/insights" active={pathname === "/insights"}>📊 洞察</NavLink>
-      </nav>
-
-      <div className="mt-4 flex-1 overflow-y-auto px-3 pb-3">
+      <div className="mt-2 flex-1 overflow-y-auto px-3 pb-3">
+        <p className="px-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-ink-400">历史对话</p>
         {groups.length === 0 ? (
           <p className="px-2 text-xs text-ink-400">暂无会话历史</p>
         ) : (
@@ -108,7 +104,6 @@ export default function Sidebar() {
 
       <div className="border-t border-ink-200/70 px-3 py-3">
         <NavLink href="/settings" active={pathname === "/settings"}>⚙️ 设置</NavLink>
-        <p className="px-2 pt-2 text-[11px] text-ink-400">Be water my friend.</p>
       </div>
     </aside>
   );

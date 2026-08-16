@@ -32,7 +32,10 @@ export const CHAT_HELP = [
 export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; quiet?: boolean } = {}): Promise<void> {
   const profile = store.get();
   const llm = requireLLMProvider();
-  const engine = new ThinkingEngine(opts.mode || profile.settings.defaultMode, { llm });
+  const engine = new ThinkingEngine(opts.mode || profile.settings.defaultMode, {
+    llm,
+    userNickname: profile.userInfo?.nickname,
+  });
   engine.llmProfile = profile;
 
   if (!opts.quiet) {

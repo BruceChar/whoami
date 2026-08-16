@@ -12,6 +12,7 @@ import {
   resetLLMProvider,
   resolveDataDir,
 } from "@delphi/core";
+import type { SupportedProvider } from "@delphi/core";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
   }
 
   const dataDir = resolveDataDir();
-  saveLLMConfig({ provider, model, apiKey }, dataDir);
+  saveLLMConfig({ provider: provider as SupportedProvider, model, apiKey }, dataDir);
   resetLLMProvider(); // invalidate the server-side singleton; rebuilt on next request
 
   const status = getConfigStatus(dataDir);
