@@ -32,12 +32,11 @@ export async function main(argv: string[]): Promise<void> {
     .description("delphi —— 一面照向内心的镜子。自我认知 Agent（CLI 本地模式，需配置 LLM API Key）")
     .version(pkg.version);
 
-    // no args: interactive main menu
+    // no args: enter the chat directly (slash-command driven, no menu)
   program.action(async () => {
     const store = new ProfileStore();
-    const { runMenu } = await import("./commands/menu");
-    await runMenu(store);
-    closeRl();
+    const { runChat } = await import("./commands/chat");
+    await runChat(store, { mode: "stealth" });
   });
 
     // free chat

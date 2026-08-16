@@ -1,4 +1,4 @@
-/** delphi — free chat (the main arena of stealth analysis). */
+/** delphi — free chat (the main arena of stealth analysis, slash-command driven). */
 import {
   AnalysisMode,
   ProfileStore,
@@ -16,18 +16,56 @@ import { c, hr } from "../ui/render";
 const BANNER = [
   "",
   "🪞 delphi —— 一面照向内心的镜子。",
-  c.dim("我不会告诉你答案，但我会帮你看见你是怎么想的。"),
+  c.dim("Be water my friend. 我不会告诉你答案，但我会帮你看见你是怎么想的。"),
+  c.dim("输入 / 查看可用指令 · /help 查看帮助 · /quit 结束"),
   "",
 ];
 
-export const CHAT_HELP = [
-  c.dim("/stealth      切换到隐式模式（默认，静默分析）"),
-  c.dim("/transparent  切换到显式模式（实时展示分析）"),
-  c.dim("/guide        切换到引导式模式（主动元思考引导）"),
-  c.dim("/analyze      让 delphi 开始分析你刚才说的话"),
-  c.dim("/quit         结束本次对话"),
+const COMMAND_LIST = [
+  "/daily        每日回馈（回馈分析法）",
+  "/vtd          V-T-D 价值观-天赋-梦想",
+  "/sign         SIGN 天赋探测",
+  "/swot         SWOT 分析",
+  "/achievement  成就事件萃取（STAR）",
+  "/interest     兴趣矩阵",
+  "/capability   核心能力模型",
+  "/career       从业分析",
+  "/life         人生设计",
+  "/feedback     反馈收集（360°）",
+  "/persona      个人画像",
+  "/space        用户空间（dashboard/timeline/archive/insights/lab/settings）",
+  "/export       导出档案 JSON",
+  "/reset        清空全部数据（需确认）",
+  "/help         显示帮助",
+  "/quit         结束对话",
+];
+
+export const CHAT_HELP = ["可用指令：", ...COMMAND_LIST.map((l) => c.dim(l)), ""].join("\n");
+
+const QUICK_HELP = [
+  "可用指令：",
+  c.dim(COMMAND_LIST.map((l) => l.split(/\s+/)[0]).join(" ")),
+  c.dim("输入 /help 查看每条指令的说明"),
   "",
 ].join("\n");
+
+/** Tool commands run inside the chat loop (each runs its own flow, then returns). */
+const TOOL_RUNNERS: Record<string, (store: ProfileStore) => Promise<void>> = {
+  "/daily": (s) => import("./daily").then((m) => m.runDaily(s)),
+  "/vtd": (s) => import("./vtd").then((m) => m.runVtd(s)),
+  "/sign": (s) => import("./sign").then((m) => m.runSign(s)),
+  "/swot": (s) => import("./swot").then((m) => m.runSwot(s)),
+  "/achievement": (s) => import("./achievement").then((m) => m.runAchievement(s)),
+  "/interest": (s) => import("./interest").then((m) => m.runInterest(s)),
+  "/capability": (s) => import("./capability").then((m) => m.runCapability(s)),
+  "/career": (s) => import("./career").then((m) => m.runCareer(s)),
+  "/life": (s) => import("./lifeDesign").then((m) => m.runLifeDesign(s)),
+  "/feedback": (s) => import("./feedback").then((m) => m.runFeedback(s)),
+  "/persona": (s) => import("./persona").then((m) => m.runPersona(s)),
+};
+
+/** Engine-internal mode commands (kept for compatibility; default is stealth). */
+const MODE_COMMANDS = new Set(["/stealth", "/transparent", "/guide", "/deep", "/analyze", "/talk"]);
 
 export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; quiet?: boolean } = {}): Promise<void> {
   const profile = store.get();
@@ -41,7 +79,6 @@ export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; 
   if (!opts.quiet) {
     console.log(BANNER.join("\n"));
     console.log(c.green(`⚡ LLM Agent 已接入（${llm.id} / ${llm.model}）——由真实模型驱动，可调用档案工具`));
-    console.log(`当前模式: ${c.cyan(engine.getMode())}  | 输入 /help 查看命令`);
     console.log("");
   }
 
@@ -58,16 +95,48 @@ export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; 
     if (input === EOF_INPUT) break; // 输入耗尽 → 结束对话
     if (input === "") continue;
     const lower = input.toLowerCase();
+    const first = lower.split(/\s+/)[0];
 
-    if (lower === "/quit" || lower === "/exit" || lower === "q") {
+    // ---- slash commands ----
+    if (first === "/quit" || first === "/exit" || lower === "q") {
       running = false;
       break;
     }
-    if (lower === "/help" || lower === "help") {
-      console.log(CHAT_HELP);
+    if (first === "/" || first === "/help" || lower === "help") {
+      console.log(first === "/" ? QUICK_HELP : CHAT_HELP);
       continue;
     }
+    if (input.startsWith("/")) {
+      if (MODE_COMMANDS.has(first)) {
+        // pass through to the engine (mode commands kept for compatibility)
+      } else if (TOOL_RUNNERS[first]) {
+        await TOOL_RUNNERS[first](store);
+        continue;
+      } else if (first === "/space") {
+        const sub = input.trim().split(/\s+/)[1];
+        const { runSpace } = await import("./space");
+        await runSpace(store, (sub || undefined) as Parameters<typeof runSpace>[1]);
+        continue;
+      } else if (first === "/export") {
+        const dest = store.exportJson();
+        console.log(c.green(`✓ 档案已导出: ${dest}`));
+        continue;
+      } else if (first === "/reset") {
+        const confirm = await askLine(c.red("⚠ 确认清空全部数据？输入 yes 确认 > "));
+        if (confirm === "yes") {
+          store.reset();
+          console.log(c.green("✓ 数据已清空"));
+        } else {
+          console.log(c.dim("已取消"));
+        }
+        continue;
+      } else {
+        console.log(c.dim(`未知指令 ${first}，输入 /help 查看可用指令`));
+        continue;
+      }
+    }
 
+    // ---- normal message: LLM engine ----
     let result;
     try {
       result = await engine.process(input);
@@ -88,7 +157,7 @@ export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; 
     }
     console.log(`delphi> ${result.reply}`);
 
-        // LLM meta info (usage / tool calls)
+    // LLM meta info (usage / tool calls)
     if (result.llmGenerated) {
       const parts: string[] = [];
       if (result.usage) parts.push(`${result.usage.totalTokens} tokens · $${result.usage.cost.toFixed(4)}`);
@@ -97,14 +166,9 @@ export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; 
       if (tools.length > 0) parts.push(`工具: ${tools.join(", ")}`);
       console.log(c.dim(`  ↳ [llm-agent ${parts.join(" · ")}]`));
     }
-
-        // bias stats in meta-guide mode (snapshot rendered by the engine)
-    if (result.markers.biases.length > 0 && engine.getMode() === "meta_guide") {
-      console.log(c.dim(`  ↳ detected: ${result.markers.biases.map((b) => b.type).join(", ")}`));
-    }
   }
 
-    // session finalization
+  // session finalization
   const summary = engine.sessionSummary();
   if (summary.length > 0) {
     console.log("");
@@ -113,7 +177,7 @@ export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; 
     for (const line of summary) console.log(c.dim(line));
   }
 
-    // LLM deep analysis (session summary + auto insights)
+  // LLM deep analysis (session summary + auto insights)
   if (session.messages.some((m) => m.role === "user")) {
     console.log(c.dim("\n⚡ 正在深度分析这次对话（LLM）..."));
     try {
