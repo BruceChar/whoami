@@ -1,300 +1,150 @@
-/** delphi — Commander CLI entry. */
+/** delphi — 本地管理工具（用户与工作区管理；聊天请使用 Web 端）。 */
 import { Command } from "commander";
-import { ProfileStore, requireLLMProvider, LLMNotConfiguredError, getConfigStatus, llmConfigHelp, configFilePath } from "@delphi/core";
-import { closeRl } from "./ui/ask";
+import {
+  ProfileStore,
+  loadUsers,
+  createLocalUser,
+  resetUserPassword,
+  renameUser,
+  deleteUser,
+  clearUserWorkspace,
+  exportUserWorkspace,
+  publicUser,
+  getConfigStatus,
+  llmConfigHelp,
+  configFilePath,
+} from "@delphi/core";
+import { askLine, closeRl, EOF_INPUT } from "./ui/ask";
 import { c } from "./ui/render";
 
 const pkg = require("../package.json");
 
-function preflight(argv: string[]): void {
-  const args = argv.slice(2);
-  const isHelp = args.includes("--help") || args.includes("-h");
-  const isVersion = args.includes("--version") || args.includes("-V");
-  const isDoctor = args[0] === "doctor" || args[0] === "status";
-  if (isHelp || isVersion || isDoctor) return;
-  try {
-    requireLLMProvider();
-  } catch (err) {
-    if (err instanceof LLMNotConfiguredError) {
-      console.log(err.message);
-      process.exit(1);
-    }
-    throw err;
-  }
-}
-
 export async function main(argv: string[]): Promise<void> {
-  preflight(argv);
   const program = new Command();
 
   program
     .name("delphi")
-    .description("delphi —— 一面照向内心的镜子。自我认知 Agent（CLI 本地模式，需配置 LLM API Key）")
+    .description("delphi 本地管理工具：管理 Web 登录用户与工作区（聊天请使用 Web 端）")
     .version(pkg.version);
 
-    // no args: enter the chat directly (slash-command driven, no menu)
-  program.action(async () => {
-    const store = new ProfileStore();
-    const { runChat } = await import("./commands/chat");
-    await runChat(store, { mode: "stealth" });
-  });
+  // ------------------------------------------------------------------
+  // users
+  // ------------------------------------------------------------------
+  const users = program.command("users").description("用户管理（Web 端登录账号，同一份 users.json）");
 
-    // free chat
-  program
-    .command("chat")
-    .description("自由对话（隐式/显式/引导式模式切换）")
-    .option("-m, --mode <mode>", "初始模式: stealth|transparent|guide", "stealth")
-    .action(async (opts: { mode: string }) => {
-      const store = new ProfileStore();
-      const { runChat } = await import("./commands/chat");
-      const modeMap: Record<string, import("@delphi/core").AnalysisMode> = {
-        stealth: "stealth", transparent: "transparent", guide: "meta_guide",
-      };
-      await runChat(store, { mode: modeMap[opts.mode] || "stealth" });
-    });
-
-    // daily feedback
-  program
-    .command("daily")
-    .alias("d")
-    .description("每日回馈（回馈分析法）")
+  users
+    .command("list")
+    .description("列出所有用户")
     .action(async () => {
-      const store = new ProfileStore();
-      const { runDaily } = await import("./commands/daily");
-      await runDaily(store);
-      closeRl();
-    });
-
-  // V-T-D
-  program
-    .command("vtd")
-    .alias("v")
-    .description("价值观-天赋-梦想（V-T-D 完整流程）")
-    .action(async () => {
-      const store = new ProfileStore();
-      const { runVtd } = await import("./commands/vtd");
-      await runVtd(store);
-      closeRl();
-    });
-
-  // SIGN
-  program
-    .command("sign")
-    .alias("t")
-    .description("天赋信号探测（SIGN）")
-    .action(async () => {
-      const store = new ProfileStore();
-      const { runSign } = await import("./commands/sign");
-      await runSign(store);
-      closeRl();
-    });
-
-  // SWOT
-  program
-    .command("swot")
-    .alias("s")
-    .description("SWOT 分析（Agent 增强版）")
-    .action(async () => {
-      const store = new ProfileStore();
-      const { runSwot } = await import("./commands/swot");
-      await runSwot(store);
-      closeRl();
-    });
-
-    // achievement events
-  program
-    .command("achievement")
-    .alias("a")
-    .description("成就事件萃取（STAR）")
-    .action(async () => {
-      const store = new ProfileStore();
-      const { runAchievement } = await import("./commands/achievement");
-      await runAchievement(store);
-      closeRl();
-    });
-
-    // interest matrix
-  program
-    .command("interest")
-    .alias("m")
-    .description("兴趣矩阵（四象限能量评分）")
-    .action(async () => {
-      const store = new ProfileStore();
-      const { runInterest } = await import("./commands/interest");
-      await runInterest(store);
-      closeRl();
-    });
-
-  // core capability model
-  program
-    .command("capability")
-    .alias("k")
-    .description("核心能力模型（选领域→能力自评→交叉验证）")
-    .action(async () => {
-      const store = new ProfileStore();
-      const { runCapability } = await import("./commands/capability");
-      await runCapability(store);
-      closeRl();
-    });
-
-  // external feedback (360°)
-  program
-    .command("feedback")
-    .alias("r")
-    .description("反馈收集（360°外部视角：分享链接 + 共识报告）")
-    .action(async () => {
-      const store = new ProfileStore();
-      const { runFeedback } = await import("./commands/feedback");
-      await runFeedback(store);
-      closeRl();
-    });
-
-    // career analysis
-  program
-    .command("career")
-    .alias("c")
-    .description("从业分析（上班 vs 创业适配度）")
-    .action(async () => {
-      const store = new ProfileStore();
-      const { runCareer } = await import("./commands/career");
-      await runCareer(store);
-      closeRl();
-    });
-
-    // life design
-  program
-    .command("life")
-    .alias("l")
-    .description("人生设计（Connect The Dots / 多重人生 / 原型）")
-    .action(async () => {
-      const store = new ProfileStore();
-      const { runLifeDesign } = await import("./commands/lifeDesign");
-      await runLifeDesign(store);
-      closeRl();
-    });
-
-    // persona
-  program
-    .command("persona")
-    .alias("o")
-    .description("查看个人画像（我是谁？）")
-    .action(async () => {
-      const store = new ProfileStore();
-      const { runPersona } = await import("./commands/persona");
-      await runPersona(store);
-      closeRl();
-    });
-
-    // user space
-  const space = program
-    .command("space")
-    .alias("p")
-    .description("进入用户空间（认知成长记录）");
-  space
-    .command("dashboard")
-    .description("认知仪表盘")
-    .action(async () => {
-      const store = new ProfileStore();
-      const { runSpace } = await import("./commands/space");
-      await runSpace(store, "dashboard");
-      closeRl();
-    });
-  space
-    .command("timeline")
-    .description("成长时间线")
-    .action(async () => {
-      const store = new ProfileStore();
-      const { runSpace } = await import("./commands/space");
-      await runSpace(store, "timeline");
-      closeRl();
-    });
-  space
-    .command("archive")
-    .description("思维档案库")
-    .action(async () => {
-      const store = new ProfileStore();
-      const { runSpace } = await import("./commands/space");
-      await runSpace(store, "archive");
-      closeRl();
-    });
-  space
-    .command("insights")
-    .description("洞察收藏夹")
-    .action(async () => {
-      const store = new ProfileStore();
-      const { runSpace } = await import("./commands/space");
-      await runSpace(store, "insights");
-      closeRl();
-    });
-  space
-    .command("lab")
-    .description("原型实验室")
-    .action(async () => {
-      const store = new ProfileStore();
-      const { runSpace } = await import("./commands/space");
-      await runSpace(store, "lab");
-      closeRl();
-    });
-  space
-    .command("settings")
-    .description("设置与隐私")
-    .action(async () => {
-      const store = new ProfileStore();
-      const { runSpace } = await import("./commands/space");
-      await runSpace(store, "settings");
-      closeRl();
-    });
-  space.action(async () => {
-    const store = new ProfileStore();
-    const { runSpace } = await import("./commands/space");
-    await runSpace(store);
-    closeRl();
-  });
-
-    // data export
-  program
-    .command("export")
-    .alias("e")
-    .description("导出档案 JSON")
-    .action(async () => {
-      const store = new ProfileStore();
-      const dest = store.exportJson();
-      console.log(c.green(`✓ 档案已导出: ${dest}`));
-      closeRl();
-    });
-
-    // reset
-  program
-    .command("reset")
-    .description("清空全部数据（危险操作，需确认）")
-    .action(async () => {
-      const store = new ProfileStore();
-      const { askLine } = await import("./ui/ask");
-      const confirm = await askLine(c.red("⚠ 确认清空全部数据？输入 yes 确认 > "));
-      if (confirm === "yes") {
-        store.reset();
-        console.log(c.green("✓ 数据已清空"));
-      } else {
-        console.log(c.dim("已取消"));
+      const list = loadUsers();
+      if (list.length === 0) {
+        console.log(c.dim("（暂无用户，可在 Web 端注册或使用 `delphi users add` 创建）"));
+        closeRl();
+        return;
+      }
+      console.log(c.cyan(`共 ${list.length} 个用户：`));
+      for (const u of list) {
+        const pub = publicUser(u);
+        console.log(
+          `  ${u.username.padEnd(20)} ${(u.nickname || "—").padEnd(12)} [${u.provider}] ${u.createdAt.slice(0, 10)} id:${u.userId.slice(0, 8)}`
+        );
       }
       closeRl();
     });
 
-    // status
-  program
-    .command("status")
-    .description("查看数据目录与会话统计")
-    .action(async () => {
-      const store = new ProfileStore();
-      const profile = store.get();
-      console.log(`数据目录: ${profile.settings.dataDir}`);
-      console.log(`会话: ${profile.sessions.length} 次 | 洞察: ${profile.insights.length} | 原型: ${profile.prototypes.length}`);
-      console.log(`成长阶段: ${profile.growthTracking.growthStage}`);
-      console.log(`画像版本: ${profile.currentPersona ? profile.currentPersona.version : "（未生成）"}`);
+  users
+    .command("add <username>")
+    .option("--nickname <n>", "昵称（显示名）")
+    .option("--password <p>", "密码（≥6 位）")
+    .description("创建用户")
+    .action(async (username: string, opts: { nickname?: string; password?: string }) => {
+      const nickname = opts.nickname ?? (await askLine("昵称（显示名）> "));
+      const password = opts.password ?? (await askLine("密码（≥6 位）> "));
+      if (nickname === EOF_INPUT || password === EOF_INPUT || !nickname.trim() || !password) {
+        console.log(c.red("✗ 昵称与密码不能为空"));
+        closeRl();
+        return;
+      }
+      const res = createLocalUser({ username, password, nickname });
+      if (!res.ok) {
+        console.log(c.red(`✗ ${res.error}`));
+        closeRl();
+        return;
+      }
+      console.log(c.green(`✓ 已创建用户 ${res.user.username}（昵称 ${res.user.nickname}，id ${res.user.userId}）`));
       closeRl();
     });
 
-    // config check (runs without an API key)
+  users
+    .command("rename <username> <nickname>")
+    .description("修改用户昵称")
+    .action(async (username: string, nickname: string) => {
+      const res = renameUser(username, nickname);
+      console.log(res.ok ? c.green(`✓ 昵称已更新：${username} → ${nickname}`) : c.red(`✗ ${res.error}`));
+      closeRl();
+    });
+
+  users
+    .command("reset-password <username>")
+    .option("--password <p>", "新密码（≥6 位）")
+    .description("重置用户密码")
+    .action(async (username: string, opts: { password?: string }) => {
+      const password = opts.password ?? (await askLine(`为 ${username} 设置新密码（≥6 位）> `));
+      if (password === EOF_INPUT || !password) {
+        console.log(c.red("✗ 密码不能为空"));
+        closeRl();
+        return;
+      }
+      const res = resetUserPassword(username, password);
+      console.log(res.ok ? c.green(`✓ 密码已重置：${username}`) : c.red(`✗ ${res.error}`));
+      closeRl();
+    });
+
+  users
+    .command("delete <username>")
+    .description("删除用户及其工作区")
+    .action(async (username: string) => {
+      const confirm = await askLine(c.red(`⚠ 确认删除用户 ${username}（含其工作区数据）？输入 yes 确认 > `));
+      if (confirm !== "yes") {
+        console.log(c.dim("已取消"));
+        closeRl();
+        return;
+      }
+      const res = deleteUser(username);
+      console.log(res.ok ? c.green(`✓ 已删除用户 ${username}`) : c.red(`✗ ${res.error}`));
+      closeRl();
+    });
+
+  // ------------------------------------------------------------------
+  // workspace
+  // ------------------------------------------------------------------
+  const ws = program.command("workspace").description("用户工作区管理（<dataDir>/users/<id>/）");
+
+  ws.command("clear <username>")
+    .description("清空用户工作区（保留账号）")
+    .action(async (username: string) => {
+      const confirm = await askLine(c.red(`⚠ 确认清空用户 ${username} 的工作区？输入 yes 确认 > `));
+      if (confirm !== "yes") {
+        console.log(c.dim("已取消"));
+        closeRl();
+        return;
+      }
+      const res = clearUserWorkspace(username);
+      console.log(res.ok ? c.green(`✓ 已清空 ${username} 的工作区`) : c.red(`✗ ${res.error}`));
+      closeRl();
+    });
+
+  ws.command("export <username>")
+    .description("导出用户档案 JSON")
+    .action(async (username: string) => {
+      const res = exportUserWorkspace(username);
+      console.log(res.ok ? c.green(`✓ 已导出: ${res.path}`) : c.red(`✗ ${res.error}`));
+      closeRl();
+    });
+
+  // ------------------------------------------------------------------
+  // doctor
+  // ------------------------------------------------------------------
   program
     .command("doctor")
     .description("检查 LLM 配置状态（API Key / 提供商 / 模型）")
@@ -304,17 +154,19 @@ export async function main(argv: string[]): Promise<void> {
       console.log(c.cyan("\n🔍 delphi 配置检查"));
       console.log(`  数据目录: ${store.dataDir}`);
       if (!status.configured) {
-        console.log(c.red(`  LLM: 未配置 ✗`));
+        console.log(c.red("  LLM: 未配置 ✗"));
         console.log("");
         console.log(llmConfigHelp());
       } else {
-        console.log(c.green(`  LLM: 已配置 ✓`));
+        console.log(c.green("  LLM: 已配置 ✓"));
         console.log(`  提供商: ${status.provider}`);
         console.log(`  模型: ${status.model || "（默认）"}`);
         console.log(`  API Key: ${status.apiKeyMasked}`);
-        console.log(`  配置来源: ${status.source === "env" ? "环境变量" : status.source === "file" ? `配置文件 (${configFilePath(store.dataDir)})` : "—"}`);
+        console.log(
+          `  配置来源: ${status.source === "env" ? "环境变量" : status.source === "file" ? `配置文件 (${configFilePath(store.dataDir)})` : "—"}`
+        );
         console.log("");
-        console.log(c.dim("运行 `delphi chat` 开始对话。"));
+        console.log(c.dim("Web 端在 http://localhost:3088 登录使用。"));
       }
       closeRl();
     });

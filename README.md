@@ -31,20 +31,20 @@ export DEEPSEEK_API_KEY=sk-你的密钥
 
 数据保存在 `~/.delphi/`（可用环境变量 `DELPHI_DATA_DIR` 指定目录）。
 
-### CLI
+### CLI（本地管理工具）
+
+CLI 不再承担聊天（对话请使用 Web 端），而是**管理 Web 登录的同一批用户与工作区**：
 
 ```bash
-pnpm run delphi    # 进入对话（默认隐式模式，直接开聊）
-delphi doctor      # 检查 LLM 配置状态
+delphi users list                # 列出所有用户
+delphi users add <username>      # 创建用户（--nickname / --password 或交互输入）
+delphi users rename <u> <昵称>   # 修改用户昵称
+delphi users reset-password <u>  # 重置用户密码
+delphi users delete <u>          # 删除用户及其工作区（需确认）
+delphi workspace clear <u>       # 清空用户工作区（保留账号）
+delphi workspace export <u>      # 导出用户档案 JSON
+delphi doctor                    # 检查 LLM 配置状态
 ```
-
-启动后**直接以自然语言对话**，不再显示命令菜单；需要工具时通过斜杠指令：
-
-- `/` 查看可用指令快捷列表；`/help` 查看完整帮助
-- `/daily` 每日回馈 · `/vtd` 价值观-天赋-梦想 · `/sign` SIGN 天赋探测 · `/swot` SWOT 分析 · `/achievement` 成就事件萃取 · `/interest` 兴趣矩阵 · `/capability` 核心能力模型
-- `/career` 从业分析 · `/life` 人生设计 · `/feedback` 360° 反馈收集 · `/persona` 个人画像
-- `/space` 用户空间（dashboard / timeline / archive / insights / lab / settings）
-- `/export` 导出档案 · `/reset` 清空数据 · `/quit` 结束
 
 ### Web
 
@@ -57,7 +57,7 @@ Web 需要**登录**：用户名（系统唯一、不区分大小写、5–64 �
 
 ## 使用方法
 
-- **对话**：直接输入即可。delphi 默认在**隐式模式**下后台观察你的思维模式（归因、确定性、情绪-事实、思维漏洞等），不打断对话；CLI 输入 `/`、Web 输入 `/` 可调出工具模板。
+- **对话**：Web 端直接输入即可。delphi 默认在**隐式模式**下后台观察你的思维模式（归因、确定性、情绪-事实、思维漏洞等），不打断对话；输入 `/` 可调出工具模板。
 - **深度探索**：V-T-D（价值观-天赋-梦想）、SIGN 天赋探测、SWOT、成就事件萃取、兴趣矩阵、核心能力模型——均为 LLM 引导的对话式流程，不是固定问卷。
 - **反馈收集（360°）**：在 Web 设置页生成分享链接发给亲友，对方在独立公开页面（无任何你的数据）填写反馈；外部视角汇入档案，校准自我认知。
 - **洞察**：右侧洞察栏 / 洞察页查看成长时间线、六维画像（认知指纹、能量地图、思维地形等）、转折点与外部反馈共识。

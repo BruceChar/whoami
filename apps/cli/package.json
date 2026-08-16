@@ -1,12 +1,14 @@
 {
   "name": "@delphi/cli",
   "version": "0.1.0",
-  "description": "delphi CLI 本地模式 —— 需配置 LLM API Key",
+  "description": "delphi CLI —— 本地管理工具（用户与工作区管理；聊天请使用 Web 端）",
   "bin": {
     "delphi": "dist/index.js"
   },
   "main": "dist/index.js",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json"
   },

@@ -32,6 +32,10 @@ export * from "./outputs/lifeDesign";
 // service layer
 export * from "./services/profileService";
 
+// user accounts & auth (Web login + CLI management)
+export * from "./users/auth";
+export * from "./users/users";
+
 // LLM (pi-ai integration)
 export * from "./llm/types";
 export * from "./llm/json";
