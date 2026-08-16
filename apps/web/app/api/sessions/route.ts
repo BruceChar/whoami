@@ -1,11 +1,14 @@
 /** GET /api/sessions — session history for the sidebar */
 import { NextResponse } from "next/server";
-import { getStore } from "@/lib/server";
+import { getStore, currentUserId } from "@/lib/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export function GET() {
+  if (!currentUserId()) {
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
   const profile = getStore().get();
   const sessions = [...profile.sessions]
     .filter((s) => !s.hidden && s.messages.some((m) => m.role === "user"))

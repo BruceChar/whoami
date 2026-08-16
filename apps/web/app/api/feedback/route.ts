@@ -1,7 +1,8 @@
-/** POST /api/feedback — submit external feedback (public, via share link). */
+/** POST /api/feedback — public feedback submission via a share link (resolves the owner's profile). */
 import { NextRequest, NextResponse } from "next/server";
 import { submitFeedback, feedbackSummary } from "@delphi/core";
-import { getStore } from "@/lib/server";
+import { findProfileForShareLink } from "@/lib/links";
+import { getStore, currentUserId } from "@/lib/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,12 +19,15 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "无效请求体" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
   if (!body.linkId || !body.impression) {
-    return NextResponse.json({ error: "缺少链接或评价内容" }, { status: 400 });
+    return NextResponse.json({ error: "Missing link or feedback content" }, { status: 400 });
   }
-  const store = getStore();
+  const store = findProfileForShareLink(body.linkId);
+  if (!store) {
+    return NextResponse.json({ error: "Feedback link does not exist or has expired" }, { status: 400 });
+  }
   const profile = store.get();
   const result = submitFeedback(profile, body.linkId, {
     author: body.author || "",
@@ -39,7 +43,11 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-export async function GET() {
+/** GET — the signed-in user's own feedback summary. */
+export function GET() {
+  if (!currentUserId()) {
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
   const profile = getStore().get();
   const summary = feedbackSummary(profile);
   return NextResponse.json({

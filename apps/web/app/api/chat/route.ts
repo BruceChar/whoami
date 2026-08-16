@@ -15,7 +15,7 @@ import {
   getModelInfo,
   PROVIDER_DEFAULT_CONTEXT,
 } from "@delphi/core";
-import { getStore, getAgent } from "@/lib/server";
+import { getStore, getAgent, currentUserId } from "@/lib/server";
 
 export const runtime = "nodejs";
 
@@ -27,6 +27,9 @@ export interface ChatTurnRequest {
 }
 
 export async function POST(req: NextRequest) {
+  if (!currentUserId()) {
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
   let body: ChatTurnRequest;
   try {
     body = await req.json();

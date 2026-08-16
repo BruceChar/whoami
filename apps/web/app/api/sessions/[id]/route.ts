@@ -1,11 +1,14 @@
 /** GET/PATCH/DELETE /api/sessions/[id] — messages, rename, or archive-from-list. */
 import { NextRequest, NextResponse } from "next/server";
-import { getStore } from "@/lib/server";
+import { getStore, currentUserId } from "@/lib/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  if (!currentUserId()) {
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
   const profile = getStore().get();
   const session = profile.sessions.find((s) => s.id === params.id);
   if (!session) {
@@ -25,6 +28,9 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
 /** PATCH — rename the session title. */
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  if (!currentUserId()) {
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
   let body: { title?: string };
   try {
     body = await req.json();
@@ -51,6 +57,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
  * The record stays in the profile so the cognitive analysis is unaffected.
  */
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+  if (!currentUserId()) {
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
   const store = getStore();
   const profile = store.get();
   const session = profile.sessions.find((s) => s.id === params.id);

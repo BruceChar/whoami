@@ -1,12 +1,15 @@
 /** POST /api/feedback/link — create a share link for external feedback. */
 import { NextRequest, NextResponse } from "next/server";
 import { createShareLink } from "@delphi/core";
-import { getStore } from "@/lib/server";
+import { getStore, currentUserId } from "@/lib/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  if (!currentUserId()) {
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
   let body: { expiresDays?: number; maxEntries?: number };
   try {
     body = await req.json();

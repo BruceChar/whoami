@@ -1,11 +1,14 @@
 /** GET/POST /api/profile — profile summary + basic user info (nickname). */
 import { NextRequest, NextResponse } from "next/server";
-import { getProfile, getStore } from "@/lib/server";
+import { getProfile, getStore, currentUserId } from "@/lib/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export function GET() {
+  if (!currentUserId()) {
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
   const profile = getProfile();
   return NextResponse.json({
     nickname: profile.userInfo.nickname,
@@ -23,6 +26,9 @@ export function GET() {
 
 /** Update basic user info (nickname / how to address the user). */
 export async function POST(req: NextRequest) {
+  if (!currentUserId()) {
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
   const store = getStore();
   const profile = store.get();
   let body: { nickname?: string };

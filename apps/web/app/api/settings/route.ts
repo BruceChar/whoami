@@ -17,11 +17,15 @@ import {
   PROVIDER_DEFAULT_CONTEXT,
 } from "@delphi/core";
 import type { SupportedProvider, ReasoningLevel } from "@delphi/core";
+import { currentUserId } from "@/lib/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  if (!currentUserId()) {
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
   const dataDir = resolveDataDir();
   const status = getConfigStatus(dataDir);
   const file = loadLLMConfigFile(dataDir);
@@ -43,6 +47,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!currentUserId()) {
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
   let body: { provider?: string; model?: string; apiKey?: string; reasoning?: ReasoningLevel };
   try {
     body = await req.json();
@@ -85,6 +92,9 @@ export async function POST(req: NextRequest) {
 
 /** DELETE — clear the saved config */
 export async function DELETE() {
+  if (!currentUserId()) {
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
   const { configFilePath } = await import("@delphi/core");
   const fs = await import("fs");
   const p = configFilePath(resolveDataDir());
