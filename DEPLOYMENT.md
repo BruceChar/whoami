@@ -7,6 +7,24 @@
 | **local**（默认） | `DELPHI_MODE=local` | 无（首次聊天填昵称） | 本地 JSON 文件 `~/.delphi/` | 个人本地 / 自托管 |
 | **hosted** | `DELPHI_MODE=hosted` | 用户名 + 密码（多用户） | 数据库（每用户工作区） | Vercel / 商业化 |
 
+## 本地以 hosted 模式运行（无需数据库）
+
+hosted 模式在本地/自托管时**不需要数据库**：用户与工作区仍然落在本地文件（`<dataDir>/users.json` + `<dataDir>/users/<id>/`），与 local 模式唯一的区别是**需要登录**（多用户）。数据库适配器只在部署到 Vercel 这类无持久文件系统的平台时才必需。
+
+```bash
+# 开发模式
+DELPHI_MODE=hosted pnpm web                 # http://localhost:3088
+
+# 生产模式（先构建）
+pnpm web:build
+DELPHI_MODE=hosted pnpm --filter @delphi/web start
+```
+
+说明：
+- 首次访问会跳到 `/login`，注册后即可使用（第一个注册的账号会自动接管旧的单用户 `profile.json` 数据）。
+- `DELPHI_AUTH_SECRET` 本地可省略（自动生成并持久化到 `<dataDir>/.auth-secret`）；托管到 Vercel 时必须显式设置。
+- 本地的用户/工作区管理可用 CLI：`delphi users list|add|reset-password|...`、`delphi workspace clear|export <username>`。
+
 ## 为什么本地文件在 Vercel 上不可行
 
 Vercel 的函数是 **serverless**：文件系统是临时的，`/tmp` 里的写入在函数退出后可能丢失，跨请求不保证持久。因此 hosted 模式必须把当前基于文件的 `profile.json / users.json / config.json` 换成**持久化数据库**。
