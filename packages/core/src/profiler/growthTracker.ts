@@ -82,7 +82,7 @@ export function computeSessionPoint(profile: UserCognitiveProfile, session: Sess
   const pureDrives = fw.vtd.dreams.pureDrives.length;
   const extMotives = fw.vtd.dreams.externalMotivesFiltered.length;
   const dailyCount = fw.dailyFeedback.length;
-  const feedbackDone = fw.feedback.externalPerception.length > 0;
+  const feedbackDone = fw.feedback.records.length > 0;
 
   return {
     timestamp: session.endedAt,

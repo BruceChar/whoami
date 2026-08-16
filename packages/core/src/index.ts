@@ -17,6 +17,8 @@ export * from "./engine/thinkingEngine";
 export * from "./frameworks/flow";
 export * from "./frameworks/keywordExtract";
 export * from "./frameworks/toolTemplates";
+export * from "./frameworks/feedback360";
+export * from "./frameworks/capability";
 export * from "./frameworks/dailyFeedback";
 export * from "./frameworks/vtd";
 export * from "./frameworks/sign";

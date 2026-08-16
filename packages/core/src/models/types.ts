@@ -205,9 +205,50 @@ export interface InterestMatrixData {
   rating: InterestRatingData;
 }
 
+/** A share link for collecting external feedback (360°). */
+export interface ShareLink {
+  id: string;
+  createdAt: string;
+  expiresAt?: string;
+  maxEntries?: number;
+  status: "active" | "closed" | "expired";
+}
+
+/** One external feedback record submitted via a share link. */
+export interface FeedbackRecord {
+  id: string;
+  linkId: string;
+  author: string;
+  relationship: string;
+  knownFor: string;
+  impression: string;
+  evidence: string;
+  createdAt: string;
+  sentiment?: "positive" | "neutral" | "negative";
+  keywords?: string[];
+  selfExternalGap?: string;
+}
+
 export interface FeedbackData {
   externalPerception: string[];
   selfExternalGaps: string[];
+  shareLinks: ShareLink[];
+  records: FeedbackRecord[];
+  /** LLM-generated external-cognition consensus report */
+  consensusReport?: string;
+}
+
+export interface CapabilityRating {
+  capability: string;
+  score: number;
+}
+
+export interface CapabilityData {
+  field: string;
+  ratings: CapabilityRating[];
+  strengths: string[];
+  gaps: string[];
+  hiddenStrengths: string[];
 }
 
 export interface FrameworkData {
@@ -218,6 +259,7 @@ export interface FrameworkData {
   feedback: FeedbackData;
   dailyFeedback: DailyFeedbackEntry[];
   sign: { signals: Record<string, string> };
+  capability: CapabilityData | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -396,7 +438,8 @@ export function createEmptyFrameworkData(): FrameworkData {
     swot: { strengths: [], weaknesses: [], opportunities: [], threats: [], gravityProblems: [], anchorProblems: [] },
     achievements: [],
     interestMatrix: { highEnergyQuadrants: [], conflicts: [], rating: { creative: 0, analytical: 0, independent: 0, social: 0 } },
-    feedback: { externalPerception: [], selfExternalGaps: [] },
+    feedback: { externalPerception: [], selfExternalGaps: [], shareLinks: [], records: [] },
+    capability: null,
     dailyFeedback: [],
     sign: { signals: {} },
   };
