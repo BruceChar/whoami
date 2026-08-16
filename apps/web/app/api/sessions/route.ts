@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export function GET() {
   const profile = getStore().get();
   const sessions = [...profile.sessions]
-    .filter((s) => s.messages.some((m) => m.role === "user"))
+    .filter((s) => !s.hidden && s.messages.some((m) => m.role === "user"))
     .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
     .map((s) => ({
       id: s.id,

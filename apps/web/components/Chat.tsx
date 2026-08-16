@@ -18,12 +18,23 @@ interface ToolMeta {
   description: string;
 }
 
+interface HistoryItem {
+  id: string;
+  title: string;
+}
+
 type Mode = "stealth" | "transparent" | "meta_guide";
 
 const MODE_LABELS: Record<Mode, string> = {
   stealth: "隐式",
   transparent: "显式",
   meta_guide: "引导式",
+};
+
+const MODE_DESC: Record<Mode, string> = {
+  stealth: "后台静默分析，自然对话",
+  transparent: "实时展示思维快照",
+  meta_guide: "主动提问，引导元思考",
 };
 
 const SESSION_KEY = "delphi-session-id";
@@ -41,6 +52,7 @@ export default function Chat() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [mode, setMode] = useState<Mode>("stealth");
+  const [modeOpen, setModeOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [llmInfo, setLlmInfo] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -53,12 +65,15 @@ export default function Chat() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [nicknameInput, setNicknameInput] = useState("");
   const [savingNick, setSavingNick] = useState(false);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Initial load: session id, tool list, LLM config status, profile.
+  // Initial load: session id, tool list, LLM config status, profile, history.
   useEffect(() => {
     setSessionId(localStorage.getItem(SESSION_KEY));
+    setActiveId(localStorage.getItem(SESSION_KEY));
     fetch("/api/tools").then((r) => r.json()).then((d) => setTools(d.tools || [])).catch(() => {});
     const refreshConfig = () =>
       fetch("/api/settings").then((r) => r.json()).then((s) => setConfigured(s.configured)).catch(() => setConfigured(false));
@@ -74,14 +89,29 @@ export default function Chat() {
           });
         })
         .catch(() => setProfile(null));
+    const refreshHistory = () =>
+      fetch("/api/sessions")
+        .then((r) => r.json())
+        .then((d) =>
+          setHistory(
+            (d.sessions || []).map((s: { id: string; title: string }) => ({ id: s.id, title: s.title || "未命名会话" }))
+          )
+        )
+        .catch(() => setHistory([]));
     refreshConfig();
     refreshProfile();
+    refreshHistory();
+    const onSessionsChanged = () => {
+      refreshHistory();
+      refreshProfile();
+      setActiveId(localStorage.getItem(SESSION_KEY));
+    };
     window.addEventListener("delphi:settings-changed", refreshConfig);
-    window.addEventListener("delphi:sessions-changed", refreshProfile);
+    window.addEventListener("delphi:sessions-changed", onSessionsChanged);
     window.addEventListener("delphi:profile-changed", refreshProfile);
     return () => {
       window.removeEventListener("delphi:settings-changed", refreshConfig);
-      window.removeEventListener("delphi:sessions-changed", refreshProfile);
+      window.removeEventListener("delphi:sessions-changed", onSessionsChanged);
       window.removeEventListener("delphi:profile-changed", refreshProfile);
     };
   }, []);
@@ -100,6 +130,7 @@ export default function Chat() {
       if (!res.ok) throw new Error("保存失败");
       setProfile((p) => ({ ...(p || { sessions: 0, insights: 0, personaVersion: null }), nickname: nick }));
       setNicknameInput("");
+      window.dispatchEvent(new Event("delphi:profile-changed"));
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -110,10 +141,12 @@ export default function Chat() {
   const loadSession = useCallback((id: string | null) => {
     if (!id) {
       setSessionId(null);
+      setActiveId(null);
       setMessages([]);
       return;
     }
     setSessionId(id);
+    setActiveId(id);
     fetch(`/api/sessions/${id}`)
       .then((r) => r.json())
       .then((d) => {
@@ -131,9 +164,14 @@ export default function Chat() {
 
   // Sidebar-driven session open / new-chat events.
   useEffect(() => {
-    const open = () => loadSession(localStorage.getItem(SESSION_KEY));
+    const open = () => {
+      const id = localStorage.getItem(SESSION_KEY);
+      setActiveId(id);
+      loadSession(id);
+    };
     const reset = () => {
       setSessionId(null); // do not append to the previous session
+      setActiveId(null);
       setMessages([]);
       setActiveTool(null);
       setError(null);
@@ -175,6 +213,7 @@ export default function Chat() {
         if (!res.ok) throw new Error(data.error || "请求失败");
         if (data.sessionId && data.sessionId !== sessionId) {
           setSessionId(data.sessionId);
+          setActiveId(data.sessionId);
           localStorage.setItem(SESSION_KEY, data.sessionId);
           window.dispatchEvent(new Event("delphi:sessions-changed"));
         }
@@ -213,36 +252,36 @@ export default function Chat() {
     localStorage.removeItem(TOOL_KEY);
   };
 
+  const openHistory = (id: string) => {
+    localStorage.setItem(SESSION_KEY, id);
+    setActiveId(id);
+    loadSession(id);
+  };
+
+  // "Delete" hides the session from the list only; data is kept for analysis.
+  const deleteHistory = async (id: string) => {
+    try {
+      await fetch(`/api/sessions/${id}`, { method: "DELETE" });
+    } catch {
+      // ignore network errors; still refresh
+    }
+    window.dispatchEvent(new Event("delphi:sessions-changed"));
+    if (id === sessionId) {
+      localStorage.removeItem(SESSION_KEY);
+      loadSession(null);
+    }
+  };
+
   const userLabel = profile?.nickname || "你";
 
   return (
     <div className="flex h-full">
-      <div className="flex h-full min-w-0 flex-1 flex-col">
-        {/* Header: slogan title + global stats + actions */}
-        <header className="flex items-center justify-between gap-4 border-b border-ink-200/70 px-6 py-3">
-          <div className="min-w-0">
-            <h1 className="truncate text-lg font-semibold tracking-tight text-ink-900">🪞 Be water my friend.</h1>
-            <p className="text-[11px] text-ink-400">delphi · 自我认知 Agent</p>
-          </div>
-          <div className="flex shrink-0 items-center gap-3 text-xs">
-            <button
-              onClick={() => router.push("/insights")}
-              title="查看详细分析面板"
-              className="rounded-full border border-ink-200 bg-surface px-3 py-1.5 text-ink-600 shadow-soft transition hover:border-mirror-300 hover:text-mirror-700"
-            >
-              会话 {profile?.sessions ?? 0} · 洞察 {profile?.insights ?? 0}
-              {profile?.personaVersion ? ` · ${profile.personaVersion}` : ""}
-            </button>
-            <button
-              onClick={() => setPanelOpen((v) => !v)}
-              className={`rounded-full border px-3 py-1.5 transition ${
-                panelOpen
-                  ? "border-mirror-300 bg-mirror-50 text-mirror-700"
-                  : "border-ink-200 bg-surface text-ink-500 hover:border-mirror-300 hover:text-mirror-700"
-              }`}
-            >
-              {panelOpen ? "收起洞察 ›" : "洞察 ‹"}
-            </button>
+      {/* main chat column */}
+      <div className="relative flex h-full min-w-0 flex-1 flex-col">
+        {/* Header: centered slogan */}
+        <header className="relative flex items-center justify-center border-b border-ink-200/70 px-20 py-3">
+          <h1 className="text-lg font-semibold tracking-tight text-ink-900">Be water my friend.</h1>
+          <div className="absolute right-6 flex items-center gap-3 text-xs">
             {configured === false && (
               <Link href="/settings" className="rounded-full border border-rose-300 bg-rose-50 px-3 py-1 text-rose-500 hover:bg-rose-100">
                 ⚠ 未配置 API Key
@@ -264,8 +303,7 @@ export default function Chat() {
           {/* Onboarding: collect the nickname on first run */}
           {profile && !profile.nickname && messages.length === 0 && (
             <div className="mx-auto mt-10 w-full max-w-md rounded-2xl border border-ink-200/70 bg-surface p-6 text-center shadow-soft">
-              <p className="text-3xl">🪞</p>
-              <h2 className="mt-3 text-lg font-semibold text-ink-900">你好，我是 delphi。</h2>
+              <h2 className="text-lg font-semibold text-ink-900">你好，我是 delphi。</h2>
               <p className="mt-1 text-sm text-ink-400">你希望我怎么称呼你？之后我会用这个名字和你对话。</p>
               <div className="mt-4 flex gap-2">
                 <input
@@ -291,7 +329,6 @@ export default function Chat() {
 
           {messages.length === 0 && profile?.nickname && (
             <div className="mx-auto mt-16 max-w-md text-center">
-              <p className="text-2xl">🪞</p>
               <p className="mt-3 text-lg font-medium text-ink-800">你好，{profile.nickname}。Be water my friend.</p>
               <p className="mt-2 text-sm text-ink-400">
                 随便聊聊，我会在后台悄悄观察你的思维模式。输入 <span className="rounded bg-ink-100 px-1.5 py-0.5 font-mono text-xs">/</span> 选择工具模板。
@@ -300,7 +337,6 @@ export default function Chat() {
           )}
           {messages.length === 0 && !profile && (
             <div className="mx-auto mt-16 max-w-md text-center">
-              <p className="text-2xl">🪞</p>
               <p className="mt-3 text-lg font-medium text-ink-800">Be water my friend.</p>
             </div>
           )}
@@ -313,8 +349,10 @@ export default function Chat() {
                   <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-mirror-50 text-sm">🪞</span>
                 )}
                 <div
-                  className={`max-w-[78%] rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed ${
-                    m.role === "user" ? "bg-mirror-500 text-white" : "bg-surface text-ink-800 shadow-soft"
+                  className={`w-fit break-words rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed ${
+                    m.role === "user"
+                      ? "min-w-[7.5rem] max-w-[78%] bg-mirror-500 text-white"
+                      : "max-w-[78%] bg-surface text-ink-800 shadow-soft"
                   }`}
                 >
                   {m.role === "assistant" ? renderReply(m.content) : <span className="whitespace-pre-wrap">{m.content}</span>}
@@ -336,25 +374,8 @@ export default function Chat() {
           <div ref={bottomRef} />
         </div>
 
-        {/* Composer: mode switcher sits above the input */}
-        <div className="relative border-t border-ink-200/70 px-6 pb-6 pt-3">
-          <div className="mb-2 flex items-center justify-between">
-            <div className="flex items-center gap-1 rounded-lg bg-ink-100 p-0.5 text-xs">
-              {(Object.keys(MODE_LABELS) as Mode[]).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setMode(m)}
-                  className={`rounded-md px-3 py-1 transition ${
-                    mode === m ? "bg-surface text-ink-900 shadow-soft" : "text-ink-500 hover:text-ink-700"
-                  }`}
-                >
-                  {MODE_LABELS[m]}
-                </button>
-              ))}
-            </div>
-            <span className="text-[11px] text-ink-300">Enter 发送 · / 打开工具模板</span>
-          </div>
-
+        {/* Composer + stats + history */}
+        <div className="relative border-t border-ink-200/70 px-6 pb-5 pt-3">
           {activeTool && (
             <div className="mb-2 flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-mirror-50 px-3 py-1 text-xs text-mirror-700">
@@ -382,7 +403,40 @@ export default function Chat() {
             </div>
           )}
 
-          <div className="flex items-end gap-2 rounded-2xl border border-ink-200 bg-surface px-4 py-2 shadow-soft focus-within:border-mirror-300">
+          {/* input row: mode drawer at the bottom-left INSIDE the input */}
+          <div className="flex items-end gap-2 rounded-2xl border border-ink-200 bg-surface px-2 py-1.5 shadow-soft focus-within:border-mirror-300">
+            <div className="relative shrink-0">
+              <button
+                onClick={() => setModeOpen((v) => !v)}
+                className={`flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs transition ${
+                  modeOpen ? "bg-mirror-50 text-mirror-700" : "text-ink-500 hover:bg-ink-100"
+                }`}
+                title="分析模式"
+              >
+                {MODE_LABELS[mode]} <span className="text-[10px]">▾</span>
+              </button>
+              {modeOpen && (
+                <div className="absolute bottom-full left-0 z-20 mb-1 w-52 rounded-xl border border-ink-200 bg-surface p-1 shadow-soft">
+                  {(Object.keys(MODE_LABELS) as Mode[]).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => {
+                        setMode(m);
+                        setModeOpen(false);
+                      }}
+                      className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition ${
+                        mode === m ? "bg-mirror-50 text-mirror-700" : "text-ink-600 hover:bg-ink-100"
+                      }`}
+                    >
+                      <span>{MODE_LABELS[m]}</span>
+                      {mode === m && <span className="text-xs">✓</span>}
+                    </button>
+                  ))}
+                  <p className="border-t border-ink-100 px-3 pb-1 pt-1.5 text-[11px] text-ink-400">{MODE_DESC[mode]}</p>
+                </div>
+              )}
+            </div>
+
             <input
               ref={inputRef}
               value={input}
@@ -394,7 +448,7 @@ export default function Chat() {
                 }
               }}
               placeholder={activeTool ? `继续 ${activeTool.label}…（回答 LLM 的提问）` : "说点什么…（/ 选择工具，Enter 发送）"}
-              className="flex-1 bg-transparent py-1 text-[15px] text-ink-800 outline-none placeholder:text-ink-300"
+              className="flex-1 bg-transparent px-1 py-1.5 text-[15px] text-ink-800 outline-none placeholder:text-ink-300"
             />
             <button
               onClick={() => send(undefined, activeTool?.id)}
@@ -404,11 +458,66 @@ export default function Chat() {
               发送
             </button>
           </div>
+
+          {/* global stats below the input */}
+          <div className="mt-3 flex items-center justify-center gap-3 text-xs text-ink-500">
+            <button onClick={() => router.push("/insights")} className="transition hover:text-mirror-700" title="查看分析面板">
+              会话 {profile?.sessions ?? 0}
+            </button>
+            <span className="text-ink-200">·</span>
+            <button onClick={() => router.push("/insights")} className="transition hover:text-mirror-700" title="查看分析面板">
+              洞察 {profile?.insights ?? 0}
+            </button>
+            <span className="text-ink-200">·</span>
+            <button onClick={() => router.push("/insights")} className="transition hover:text-mirror-700" title="查看分析面板">
+              {profile?.personaVersion ? `画像 ${profile.personaVersion}` : "画像 未生成"}
+            </button>
+          </div>
+
+          {/* history strip at the bottom */}
+          {history.length > 0 && (
+            <div className="mt-3 border-t border-ink-100 pt-2">
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                <span className="shrink-0 text-[11px] text-ink-400">历史对话</span>
+                {history.map((s) => (
+                  <span
+                    key={s.id}
+                    className="inline-flex shrink-0 items-center gap-1 rounded-full border border-ink-200 bg-surface py-1 pl-3 pr-1.5 text-xs shadow-soft"
+                  >
+                    <button
+                      onClick={() => openHistory(s.id)}
+                      className={`max-w-36 truncate ${activeId === s.id ? "text-mirror-700" : "text-ink-600 hover:text-mirror-700"}`}
+                      title={s.title}
+                    >
+                      {s.title}
+                    </button>
+                    <button
+                      onClick={() => deleteHistory(s.id)}
+                      className="rounded-full p-0.5 text-ink-300 transition hover:bg-rose-50 hover:text-rose-500"
+                      title="从列表移除"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <p className="pt-0.5 text-[10px] text-ink-300">删除仅从列表移除，数据仍保留用于分析。</p>
+            </div>
+          )}
         </div>
+
+        {/* insights edge tab (middle of the right border) */}
+        <button
+          onClick={() => setPanelOpen((v) => !v)}
+          title={panelOpen ? "收起洞察" : "展开洞察"}
+          className="absolute right-0 top-1/2 z-30 flex h-24 w-6 -translate-y-1/2 items-center justify-center rounded-l-lg border border-r-0 border-ink-200 bg-surface text-xs text-ink-400 shadow-soft transition hover:border-mirror-300 hover:text-mirror-600"
+        >
+          {panelOpen ? "›" : "📊"}
+        </button>
       </div>
 
-      {/* Right sidebar: collapsible insights */}
-      {panelOpen && <InsightsPanel />}
+      {/* right sidebar: collapsible insights */}
+      {panelOpen && <InsightsPanel onClose={() => setPanelOpen(false)} />}
     </div>
   );
 }

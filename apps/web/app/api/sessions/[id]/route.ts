@@ -1,4 +1,4 @@
-/** GET /api/sessions/[id] — messages of one session */
+/** GET/DELETE /api/sessions/[id] — messages of one session, or hide it from the list. */
 import { NextRequest, NextResponse } from "next/server";
 import { getStore } from "@/lib/server";
 
@@ -21,4 +21,20 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       timestamp: m.timestamp,
     })),
   });
+}
+
+/**
+ * DELETE — hide a session from the history list.
+ * The record stays in the profile so the cognitive analysis is unaffected.
+ */
+export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+  const store = getStore();
+  const profile = store.get();
+  const session = profile.sessions.find((s) => s.id === params.id);
+  if (!session) {
+    return NextResponse.json({ error: "会话不存在" }, { status: 404 });
+  }
+  session.hidden = true;
+  store.save();
+  return NextResponse.json({ ok: true });
 }

@@ -42,7 +42,7 @@ const INFLECTION_ICONS: Record<string, string> = {
   external_validation: "■", energy_shift: "★", prototype_insight: "◇", crisis_recovery: "▼",
 };
 
-export default function InsightsPanel() {
+export default function InsightsPanel({ onClose }: { onClose?: () => void }) {
   const [data, setData] = useState<InsightsData | null>(null);
 
   useEffect(() => {
@@ -56,12 +56,23 @@ export default function InsightsPanel() {
     <aside className="flex h-full w-80 shrink-0 flex-col border-l border-ink-200/70 bg-surface/70">
       <div className="flex items-center justify-between border-b border-ink-200/70 px-4 py-3">
         <span className="text-sm font-semibold text-ink-800">📊 洞察</span>
-        <Link
-          href="/insights"
-          className="rounded-lg border border-ink-200 px-2.5 py-1 text-xs text-ink-500 transition hover:border-mirror-300 hover:text-mirror-700"
-        >
-          展开 ↗
-        </Link>
+        <div className="flex items-center gap-1.5">
+          <Link
+            href="/insights"
+            className="rounded-lg border border-ink-200 px-2.5 py-1 text-xs text-ink-500 transition hover:border-mirror-300 hover:text-mirror-700"
+          >
+            展开 ↗
+          </Link>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="rounded-lg border border-ink-200 px-2 py-1 text-xs text-ink-400 transition hover:border-rose-300 hover:text-rose-500"
+              title="收起"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm">
