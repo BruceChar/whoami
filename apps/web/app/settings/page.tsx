@@ -180,7 +180,11 @@ export default function SettingsPage() {
           <label className="mb-1 block text-sm text-ink-500">LLM 提供商</label>
           <select
             value={provider}
-            onChange={(e) => setProvider(e.target.value)}
+            onChange={(e) => {
+              setProvider(e.target.value);
+              setModel("");
+              setApiKey("");
+            }}
             className="w-full rounded-xl border border-ink-200 bg-surface px-3 py-2 text-ink-800 focus:outline-none focus:ring-1 focus:ring-mirror-400"
           >
             {providers.map((p) => (

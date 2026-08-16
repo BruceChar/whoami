@@ -62,20 +62,28 @@ export default function Chat() {
     fetch("/api/tools").then((r) => r.json()).then((d) => setTools(d.tools || [])).catch(() => {});
     const refreshConfig = () =>
       fetch("/api/settings").then((r) => r.json()).then((s) => setConfigured(s.configured)).catch(() => setConfigured(false));
+    const refreshProfile = () =>
+      fetch("/api/profile")
+        .then((r) => r.json())
+        .then((d) => {
+          setProfile({
+            nickname: d.nickname || "",
+            sessions: d.sessions || 0,
+            insights: d.insights || 0,
+            personaVersion: d.personaVersion || null,
+          });
+        })
+        .catch(() => setProfile(null));
     refreshConfig();
+    refreshProfile();
     window.addEventListener("delphi:settings-changed", refreshConfig);
-    fetch("/api/profile")
-      .then((r) => r.json())
-      .then((d) => {
-        setProfile({
-          nickname: d.nickname || "",
-          sessions: d.sessions || 0,
-          insights: d.insights || 0,
-          personaVersion: d.personaVersion || null,
-        });
-      })
-      .catch(() => setProfile(null));
-    return () => window.removeEventListener("delphi:settings-changed", refreshConfig);
+    window.addEventListener("delphi:sessions-changed", refreshProfile);
+    window.addEventListener("delphi:profile-changed", refreshProfile);
+    return () => {
+      window.removeEventListener("delphi:settings-changed", refreshConfig);
+      window.removeEventListener("delphi:sessions-changed", refreshProfile);
+      window.removeEventListener("delphi:profile-changed", refreshProfile);
+    };
   }, []);
 
   const saveNickname = useCallback(async () => {
