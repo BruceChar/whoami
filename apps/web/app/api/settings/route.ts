@@ -11,8 +11,9 @@ import {
   loadLLMConfigFile,
   resetLLMProvider,
   resolveDataDir,
+  REASONING_LEVELS,
 } from "@delphi/core";
-import type { SupportedProvider } from "@delphi/core";
+import type { SupportedProvider, ReasoningLevel } from "@delphi/core";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,7 +30,7 @@ export function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  let body: { provider?: string; model?: string; apiKey?: string };
+  let body: { provider?: string; model?: string; apiKey?: string; reasoning?: ReasoningLevel };
   try {
     body = await req.json();
   } catch {
@@ -38,6 +39,9 @@ export async function POST(req: NextRequest) {
   const provider = (body.provider || "").trim().toLowerCase();
   const model = (body.model || "").trim() || undefined;
   const apiKey = (body.apiKey || "").trim();
+  const reasoning = body.reasoning && (REASONING_LEVELS as readonly string[]).includes(body.reasoning)
+    ? body.reasoning
+    : undefined;
 
   if (!provider) {
     return NextResponse.json({ error: "请选择提供商" }, { status: 400 });
@@ -59,7 +63,7 @@ export async function POST(req: NextRequest) {
   }
 
   const dataDir = resolveDataDir();
-  saveLLMConfig({ provider: provider as SupportedProvider, model, apiKey }, dataDir);
+  saveLLMConfig({ provider: provider as SupportedProvider, model, apiKey, reasoning }, dataDir);
   resetLLMProvider(); // invalidate the server-side singleton; rebuilt on next request
 
   const status = getConfigStatus(dataDir);

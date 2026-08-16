@@ -31,7 +31,12 @@ export interface LLMConfigFile {
   apiKey?: string; // legacy single-key field (kept for backward compatibility)
   /** Per-provider API keys; the active provider's key is read from here. */
   apiKeys?: Record<string, string>;
+  /** Reasoning depth preference (UI display; may be wired to provider params later). */
+  reasoning?: "low" | "medium" | "high";
 }
+
+export const REASONING_LEVELS = ["low", "medium", "high"] as const;
+export type ReasoningLevel = (typeof REASONING_LEVELS)[number];
 
 // ---------------------------------------------------------------------------
 // config file read/write
@@ -59,7 +64,7 @@ export function saveLLMConfigFile(cfg: LLMConfigFile, dataDir?: string): void {
 
 /** Save/merge a provider config: keeps already-configured provider keys, updates the given one. */
 export function saveLLMConfig(
-  cfg: { provider: SupportedProvider; model?: string; apiKey?: string },
+  cfg: { provider: SupportedProvider; model?: string; apiKey?: string; reasoning?: ReasoningLevel },
   dataDir?: string
 ): void {
   const existing = loadLLMConfigFile(dataDir) || {};
@@ -70,6 +75,7 @@ export function saveLLMConfig(
   const next: LLMConfigFile = {
     provider: cfg.provider,
     ...(cfg.model?.trim() ? { model: cfg.model.trim() } : {}),
+    ...(cfg.reasoning ? { reasoning: cfg.reasoning } : {}),
     apiKeys,
   };
   const dir = dataDir || resolveDataDir();
@@ -84,6 +90,7 @@ export interface LLMConfigStatus {
   model?: string;
   apiKeyMasked?: string;
   source?: "env" | "file" | "none";
+  reasoning?: ReasoningLevel;
   /** Per-provider key status (env + file-configured keys). */
   providers?: Record<string, { configured: boolean; apiKeyMasked?: string; source: "env" | "file" | "none" }>;
 }
@@ -103,7 +110,7 @@ export function getConfigStatus(dataDir?: string): LLMConfigStatus {
   }
 
   if (!config) {
-    return { configured: false, source: "none", providers };
+    return { configured: false, source: "none", providers, reasoning: file?.reasoning || "medium" };
   }
   const masked = config.apiKey
     ? `${config.apiKey.slice(0, 4)}****${config.apiKey.slice(-4)}`
@@ -115,6 +122,7 @@ export function getConfigStatus(dataDir?: string): LLMConfigStatus {
     apiKeyMasked: masked,
     source: config.source,
     providers,
+    reasoning: file?.reasoning || "medium",
   };
 }
 

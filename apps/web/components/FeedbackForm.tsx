@@ -34,7 +34,7 @@ export default function FeedbackForm({ linkId }: { linkId: string }) {
   if (done) {
     return (
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center text-emerald-700">
-        已收到你的反馈，感谢你的真诚分享。🪞
+        已收到你的反馈，感谢你的真诚分享。
       </div>
     );
   }
@@ -42,7 +42,7 @@ export default function FeedbackForm({ linkId }: { linkId: string }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Field label="你的称呼（可匿名）">
+        <Field label="你的称呼">
           <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="如 张三 / 匿名" className={inputCls} />
         </Field>
         <Field label="与 ta 的关系">
