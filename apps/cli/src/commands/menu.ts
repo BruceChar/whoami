@@ -22,11 +22,13 @@ export async function runMenu(store: ProfileStore, quiet = false): Promise<void>
       "  [t] 天赋信号探测（SIGN）",
       "  [s] SWOT分析",
       "  [a] 成就事件萃取",
+      "  [k] 核心能力模型",
     ], 56));
     console.log(box(" 方向与决策 ", [
       "  [c] 从业分析（适合上班还是创业？）",
       "  [l] 人生设计（Connect The Dots / 原型设计）",
       "  [m] 兴趣矩阵",
+      "  [r] 反馈收集（360°外部视角）",
     ], 56));
     console.log(box(" 你的空间 ", [
       "  [p] 进入用户空间（成长曲线、思维档案、洞察收藏）",
@@ -82,6 +84,16 @@ export async function runMenu(store: ProfileStore, quiet = false): Promise<void>
       case "m": {
         const { runInterest } = await import("./interest");
         await runInterest(store);
+        break;
+      }
+      case "k": {
+        const { runCapability } = await import("./capability");
+        await runCapability(store);
+        break;
+      }
+      case "r": {
+        const { runFeedback } = await import("./feedback");
+        await runFeedback(store);
         break;
       }
       case "p": {

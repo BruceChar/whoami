@@ -126,6 +126,30 @@ export async function main(argv: string[]): Promise<void> {
       closeRl();
     });
 
+  // core capability model
+  program
+    .command("capability")
+    .alias("k")
+    .description("核心能力模型（选领域→能力自评→交叉验证）")
+    .action(async () => {
+      const store = new ProfileStore();
+      const { runCapability } = await import("./commands/capability");
+      await runCapability(store);
+      closeRl();
+    });
+
+  // external feedback (360°)
+  program
+    .command("feedback")
+    .alias("r")
+    .description("反馈收集（360°外部视角：分享链接 + 共识报告）")
+    .action(async () => {
+      const store = new ProfileStore();
+      const { runFeedback } = await import("./commands/feedback");
+      await runFeedback(store);
+      closeRl();
+    });
+
     // career analysis
   program
     .command("career")
