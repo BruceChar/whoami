@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   const llm = getAgent();
   if (!llm) {
     return NextResponse.json(
-      { error: "未配置 LLM API Key（离线模式已取消）。请前往 /settings 配置或设置环境变量。", helpUrl: "/settings" },
+      { error: "未配置 LLM API Key。请前往 /settings 配置或设置环境变量。", helpUrl: "/settings" },
       { status: 400 }
     );
   }

@@ -1,6 +1,5 @@
 /**
  * GET/POST /api/settings —— LLM 配置（写入 <dataDir>/config.json，Web「设置」按钮）
- * 离线模式已取消：API Key 必须配置。
  */
 import { NextRequest, NextResponse } from "next/server";
 import {
@@ -47,7 +46,7 @@ export async function POST(req: NextRequest) {
     );
   }
   if (!apiKey) {
-    return NextResponse.json({ error: "API Key 不能为空（离线模式已取消）" }, { status: 400 });
+    return NextResponse.json({ error: "API Key 不能为空" }, { status: 400 });
   }
 
   const dataDir = resolveDataDir();

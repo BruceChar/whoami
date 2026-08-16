@@ -1,7 +1,7 @@
 /**
  * delphi —— LLM 注册表（配置解析 + 单例 + 配置文件支持）
  *
- * 离线模式已取消：API Key 必须配置，否则 CLI 弹出帮助信息、Web 提示去设置。
+ * API Key 必须配置，否则 CLI 弹出帮助信息、Web 提示去设置。
  *
  * 配置来源（优先级：环境变量 > 配置文件）：
  *   1. 环境变量
@@ -193,7 +193,7 @@ export function resetLLMProvider(): void {
 /** 配置帮助信息（CLI 未配置时弹出） */
 export function llmConfigHelp(): string {
   return [
-    "⚠ delphi 需要配置 LLM API Key 才能使用（离线模式已取消）。",
+    "⚠ delphi 需要配置 LLM API Key 才能使用。",
     "",
     "方式一：环境变量",
     "  export DELPHI_LLM_PROVIDER=deepseek      # deepseek|openai|anthropic|openrouter|google",

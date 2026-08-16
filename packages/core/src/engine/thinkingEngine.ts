@@ -2,7 +2,6 @@
  * delphi —— 思维分析引擎（三层模式统一入口）
  * 隐式 / 显式 / 引导式 的切换与执行都在这里完成。
  *
- * LLM Agent 必需（离线模式已取消）：回复由真实模型生成（pi-ai，带工具调用接地档案），
  * 规则引擎仅用于实时产出认知标记（偏差/归因/情绪等）作为 LLM 的提示与快照。
  */
 import { AnalysisMode, ChatMessage, MessageMarkers } from "../models/types";
@@ -42,7 +41,7 @@ export interface EngineTurnResult {
 export interface EngineOptions {
   sensitivity?: AnalyzeOptions["sensitivity"];
   lightTouch?: boolean;
-  /** LLM Agent（pi-ai）——必需，离线模式已取消 */
+  /** LLM Agent（pi-ai）——必需 */
   llm: LLMAgent;
   /** 逐条消息 LLM 标记增强（较耗 token，默认关；会话级深度分析不受此开关影响） */
   deepAnalyze?: boolean;
@@ -178,7 +177,6 @@ export class ThinkingEngine {
     this.analyzer.observe(trimmed, markers);
     this.history.push({ role: "user", text: trimmed, timestamp: new Date().toISOString(), markers });
 
-    // 3. 生成回复（LLM 必需：离线模式已取消；LLM 失败时向上抛错，由调用方处理）
     let reply: string;
     let usage: LLMUsage | undefined;
     let llmModel: string | undefined;

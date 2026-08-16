@@ -166,12 +166,6 @@ export default function Chat() {
         </div>
       </header>
 
-      {configured === false && (
-        <div className="border-b border-rose-200 bg-rose-50 px-6 py-2 text-sm text-rose-500">
-          离线模式已取消：请先在 <a href="/settings" className="underline">⚙️ 设置</a> 配置 LLM API Key。
-        </div>
-      )}
-
       {/* 消息区 */}
       <div className="flex-1 space-y-5 overflow-y-auto px-6 py-6">
         {messages.length === 0 && (

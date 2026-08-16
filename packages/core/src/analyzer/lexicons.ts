@@ -1,9 +1,5 @@
 /**
- * delphi —— 分析词库（中文优先的轻量规则词库）
- *
- * 说明：CLI 完全离线运行，不依赖云端 LLM。思维分析采用
- * 可解释的规则引擎（关键词 + 模式），后续可平滑替换为
- * LLM/NLP Provider（compromise.js 等）而不改数据结构。
+ * 
  */
 import { BiasType } from "../models/types";
 

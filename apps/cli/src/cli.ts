@@ -8,7 +8,6 @@ import { c } from "./ui/render";
 
 const pkg = require("../package.json");
 
-/** 全局预检：离线模式已取消，除帮助/版本/doctor 外所有命令都需要 LLM */
 function preflight(argv: string[]): void {
   const args = argv.slice(2);
   const isHelp = args.includes("--help") || args.includes("-h");

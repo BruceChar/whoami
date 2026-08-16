@@ -136,11 +136,6 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
-
-      <div className="mirror-card text-sm text-ink-400">
-        <h2 className="mirror-title">离线模式已取消</h2>
-        <p>delphi 需要真实的 LLM API Key 才能运行。配置后立即生效（CLI 与 Web 共享同一份配置）。</p>
-      </div>
     </div>
   );
 }

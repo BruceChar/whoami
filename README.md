@@ -1,4 +1,3 @@
-
 # whoami (delphi )🪞 —— 一面照向内心的镜子
 
 > Be water my friend.
@@ -11,7 +10,7 @@
 
 ## 快速开始
 
-要求：Node.js 20+、pnpm 9+。**必须配置 LLM API Key（离线模式已取消）**。
+要求：Node.js 20+、pnpm 9+。
 
 ```bash
 pnpm install
@@ -43,18 +42,19 @@ pnpm web:build
 ## LLM Agent（pi-ai 接入，必需）
 
 delphi 通过 [@earendil-works/pi-ai](https://github.com/earendil-works/pi)（Unified LLM API）接入真实大模型。
-**离线模式已取消**：未配置 API Key 时，CLI 弹出配置帮助并退出，Web 提示去「设置」页配置。
+未配置 API Key 时，CLI 弹出配置帮助并退出，Web 提示去「设置」页配置。
 
-| 环境变量 | 说明 |
-| --- | --- |
-| `DELPHI_LLM_PROVIDER` | `deepseek` / `openai` / `anthropic` / `openrouter` / `google`；缺省自动探测已配置 Key 的提供商 |
-| `DELPHI_LLM_MODEL` | 模型 id（缺省用各提供商默认模型，如 deepseek-v4-flash） |
-| `<PROVIDER>_API_KEY` | 鉴权（如 `DEEPSEEK_API_KEY`、`OPENROUTER_API_KEY`） |
-| `DELPHI_LLM_DEEP_ANALYZE` | `1` 开启逐条消息 LLM 标记增强（耗 token） |
+| 环境变量                    | 说明                                                                                                     |
+| --------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `DELPHI_LLM_PROVIDER`     | `deepseek` / `openai` / `anthropic` / `openrouter` / `google`；缺省自动探测已配置 Key 的提供商 |
+| `DELPHI_LLM_MODEL`        | 模型 id（缺省用各提供商默认模型，如 deepseek-v4-flash）                                                  |
+| `<PROVIDER>_API_KEY`      | 鉴权（如`DEEPSEEK_API_KEY`、`OPENROUTER_API_KEY`）                                                   |
+| `DELPHI_LLM_DEEP_ANALYZE` | `1` 开启逐条消息 LLM 标记增强（耗 token）                                                              |
 
 **配置优先级**：环境变量 > 配置文件 `<dataDir>/config.json`（Web「设置」页写入，`delphi doctor` 可查看）。
 
 **LLM 能力**：
+
 - 对话回复由真实模型生成（工具调用循环：`get_cognitive_profile` / `search_memory` 读取你的认知档案）
 - 会话结束自动深度分析：摘要 + 自动洞察（⭐）
 - 个人画像六维自然语言叙事、从业分析综合评述
@@ -127,12 +127,12 @@ whoami/
 
 ## 与文档的工程取舍（说明）
 
-| 文档建议                | 本实现                                    | 原因                                                                                      |
-| ----------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------- |
-| SQLite (better-sqlite3) | JSON 单文件档案（`store.ts`，原子写入） | 零原生依赖、跨平台零编译、可直接导出/备份/恢复；SQLite 可后续无缝替换                     |
-| Ink (React for CLI)     | readline + chalk（ASCII 艺术）            | Ink 依赖 yoga 原生模块且难以脚本化测试；当前实现全部命令均可管道输入自动化验证            |
-| compromise.js (NLP)     | 中文规则词库 + pi-ai LLM 双引擎        | 离线零成本规则引擎兜底；配置 API Key 后由真实模型深度分析（可解释、可降级）             |
-| Turborepo               | pnpm workspaces                          | 减少工具链复杂度；构建为`tsc` 项目引用，可随时升级 turbo                                |
+| 文档建议                | 本实现                                    | 原因                                                                           |
+| ----------------------- | ----------------------------------------- | ------------------------------------------------------------------------------ |
+| SQLite (better-sqlite3) | JSON 单文件档案（`store.ts`，原子写入） | 零原生依赖、跨平台零编译、可直接导出/备份/恢复；SQLite 可后续无缝替换          |
+| Ink (React for CLI)     | readline + chalk（ASCII 艺术）            | Ink 依赖 yoga 原生模块且难以脚本化测试；当前实现全部命令均可管道输入自动化验证 |
+| compromise.js (NLP)     | 中文规则词库 + pi-ai LLM 双引擎           | 零成本规则引擎兜底；配置 API Key 后由真实模型深度分析（可解释、可降级）        |
+| Turborepo               | pnpm workspaces                           | 减少工具链复杂度；构建为`tsc` 项目引用，可随时升级 turbo                     |
 
 ## 测试
 
