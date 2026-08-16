@@ -8,7 +8,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // 极简舒适浅色主题
+          // minimal, comfortable light theme
         canvas: "#fafaf9",
         surface: "#ffffff",
         ink: {

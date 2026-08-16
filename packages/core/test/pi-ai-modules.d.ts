@@ -1,6 +1,7 @@
 /**
- * pi-ai 子路径模块的轻量类型声明（moduleResolution: Node 无法解析 ESM exports 子路径）
- * 仅用于测试；运行时通过动态 import 使用。
+ * Lightweight type declarations for pi-ai subpath modules (moduleResolution:
+ * Node cannot resolve ESM exports subpaths).
+ * For tests only; runtime uses dynamic import.
  */
 declare module "@earendil-works/pi-ai/providers/faux" {
   export function fauxProvider(options?: Record<string, unknown>): any;

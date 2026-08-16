@@ -24,7 +24,7 @@ function tmpDir(): string {
 }
 
 // ---------------------------------------------------------------------------
-// JSON 提取
+// JSON extraction
 // ---------------------------------------------------------------------------
 
 test("extractJSON：从围栏/前后缀文本提取对象", () => {
@@ -75,7 +75,7 @@ test("ScriptedLLMProvider：JSON 模式", async () => {
 });
 
 // ---------------------------------------------------------------------------
-// PiAiProvider（faux provider 注入，真实 pi-ai 管道）
+// PiAiProvider (faux provider injection; real pi-ai pipeline)
 // ---------------------------------------------------------------------------
 
 test("PiAiProvider：faux 注入完成对话", async () => {
@@ -89,7 +89,7 @@ test("PiAiProvider：faux 注入完成对话", async () => {
       faux.setResponses([mod.fauxAssistantMessage("我注意到你提到了'总是'。")]);
     },
     resolveModel: (models, _providerId, modelId) => {
-      // 无法直接拿到 faux handle，用 getModel 查找
+        // cannot reach the faux handle here; look up via getModel
       return models.getModel("faux", modelId);
     },
   });
@@ -138,10 +138,10 @@ test("resolveLLMConfig：显式提供商 + 自动探测；无 Key 时抛错", ()
   process.env.DEEPSEEK_API_KEY = "test-key";
   assert.equal(resolveLLMConfig()?.provider, "deepseek");
   assert.equal(resolveLLMConfig()?.apiKey, "test-key");
-  // 无 Key → 抛 LLMNotConfiguredError
+    // no key -> throws LLMNotConfiguredError
   delete process.env.DEEPSEEK_API_KEY;
   assert.throws(() => resolveLLMConfig(), LLMNotConfiguredError);
-  // 自动探测
+    // auto-detect
   process.env.OPENAI_API_KEY = "sk-test";
   delete process.env.DELPHI_LLM_PROVIDER;
   assert.equal(resolveLLMConfig()?.provider, "openai");
@@ -160,7 +160,7 @@ test("配置文件：保存/读取/优先级/脱敏/缓存失效", () => {
   assert.equal(config?.apiKey, "sk-file-key");
   assert.equal(config?.source, "file");
 
-  // 环境变量覆盖文件
+    // env vars override the file
   process.env.DELPHI_LLM_PROVIDER = "openai";
   process.env.OPENAI_API_KEY = "sk-env-key";
   const envConfig = resolveLLMConfig(dir);

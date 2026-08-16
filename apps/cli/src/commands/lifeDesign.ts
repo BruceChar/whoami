@@ -1,6 +1,4 @@
-/**
- * delphi —— 人生设计（Connect The Dots / 多重人生 / 原型设计）
- */
+/** delphi — life design (Connect The Dots / multiple lives / prototypes). */
 import {
   ProfileStore,
   buildLifeDesign,
@@ -45,7 +43,7 @@ export async function runLifeDesign(store: ProfileStore): Promise<void> {
   }
 }
 
-/** 多重人生推演（文档 6.4） */
+/** Multiple-lives scenario walkthrough */
 async function runMultipleLives(store: ProfileStore): Promise<void> {
   const profile = store.get();
   console.log("");
@@ -68,7 +66,7 @@ async function runMultipleLives(store: ProfileStore): Promise<void> {
   store.save();
 }
 
-/** 添加原型试验（文档 6.5 原型设计） */
+/** Add a prototype experiment */
 async function runAddPrototype(store: ProfileStore): Promise<void> {
   const profile = store.get();
   console.log("");

@@ -1,6 +1,4 @@
-/**
- * delphi —— 成就事件萃取（STAR 深度挖掘）
- */
+/** delphi — achievement event extraction (STAR deep mining). */
 import {
   ProfileStore,
   createAchievementFlow,

@@ -1,11 +1,7 @@
-/**
- * delphi —— 关键词提取工具
- * 从自由文本中提取价值观锚点、技能、主题、内驱源等结构化信息。
- * 全部为可解释的规则，后续可替换为 LLM Provider。
- */
+/** delphi — keyword extraction helpers. */
 
 // ---------------------------------------------------------------------------
-// 价值观锚点
+// value anchors
 // ---------------------------------------------------------------------------
 
 export const VALUE_KEYWORDS: Array<{ value: string; words: string[] }> = [
@@ -27,7 +23,7 @@ export const VALUE_KEYWORDS: Array<{ value: string; words: string[] }> = [
   { value: "平静", words: ["平静", "宁静", "松弛", "放松", "慢", "休息", "平衡"] },
 ];
 
-/** 从文本中提取价值观锚点 */
+/** Extract value anchors from text */
 export function extractValues(text: string): string[] {
   const found: string[] = [];
   for (const { value, words } of VALUE_KEYWORDS) {
@@ -38,7 +34,7 @@ export function extractValues(text: string): string[] {
   return found;
 }
 
-/** 价值观冲突检测：常见张力对 */
+/** Value conflict detection: common tension pairs */
 export const VALUE_CONFLICT_PAIRS: Array<[string, string]> = [
   ["自由", "稳定"],
   ["创造", "被认可"],
@@ -61,7 +57,7 @@ export function detectValueConflicts(anchors: string[]): string[] {
 }
 
 // ---------------------------------------------------------------------------
-// 技能提取（成就事件用）
+// skill extraction (achievement events)
 // ---------------------------------------------------------------------------
 
 export const SKILL_KEYWORDS: Array<{ skill: string; words: string[] }> = [
@@ -88,17 +84,17 @@ export function extractSkills(text: string): string[] {
 }
 
 // ---------------------------------------------------------------------------
-// 内驱源（V-T-D 梦想阶段）
+// intrinsic drives (V-T-D dream phase)
 // ---------------------------------------------------------------------------
 
-/** 内驱源活动词 */
+/** Intrinsic-drive activity words */
 export const DRIVE_WORDS = [
   "写", "画", "教", "讲", "研究", "设计", "创造", "做", "帮", "陪伴", "整理",
   "探索", "旅行", "做饭", "运动", "阅读", "思考", "解决问题", "搭建", "修复",
   "照顾", "分享", "记录", "拍摄", "编程", "手工",
 ];
 
-/** 外部动机词（需要过滤：钱、面子、他人期待） */
+/** External-motive words to filter out (money, face, others' expectations) */
 export const EXTERNAL_MOTIVE_WORDS = [
   "钱", "赚钱", "收入", "工资", "面子", "别人", "父母", "家人希望", "应该",
   "体面", "社会地位", "出名", "成功学", "光宗耀祖", "攀比",
@@ -114,7 +110,7 @@ export function detectExternalMotives(text: string): string[] {
 }
 
 // ---------------------------------------------------------------------------
-// 主题提取（每日回馈）
+// theme extraction (daily feedback)
 // ---------------------------------------------------------------------------
 
 export const THEME_KEYWORDS: Array<{ theme: string; words: string[] }> = [
@@ -137,7 +133,7 @@ export function extractThemes(...texts: string[]): string[] {
   return themes;
 }
 
-/** 通用高频词统计（去停用词） */
+/** General top-keyword stats (stop words removed) */
 const STOP_WORDS = new Set([
   "我", "你", "他", "她", "它", "我们", "你们", "他们", "的", "了", "是", "在",
   "有", "和", "就", "都", "而", "及", "与", "着", "或", "一个", "没有", "不是",
@@ -146,7 +142,7 @@ const STOP_WORDS = new Set([
 
 export function topKeywords(text: string, n = 5): string[] {
   const counts = new Map<string, number>();
-  // 简单分词：按 2-3 字滑动窗口 + 已知词优先
+    // simple tokenization: 2-3 char sliding windows + known words first
   const knownWords = [
     ...VALUE_KEYWORDS.flatMap((v) => v.words),
     ...SKILL_KEYWORDS.flatMap((s) => s.words),

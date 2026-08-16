@@ -1,6 +1,4 @@
-/**
- * delphi —— 每日回馈（回馈分析法）
- */
+/** delphi — daily feedback. */
 import {
   ProfileStore,
   createDailyFlow,

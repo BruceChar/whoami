@@ -1,6 +1,4 @@
-/**
- * delphi —— SIGN 天赋信号探测（独立命令）
- */
+/** delphi — SIGN talent signal detection (standalone command). */
 import {
   ProfileStore,
   createSignFlow,

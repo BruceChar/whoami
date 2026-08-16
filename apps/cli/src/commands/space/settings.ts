@@ -1,6 +1,4 @@
-/**
- * delphi —— 设置与隐私（文档 7.7）
- */
+/** delphi — settings & privacy. */
 import { ProfileStore, AnalysisMode } from "@delphi/core";
 import { askLine, EOF_INPUT } from "../../ui/ask";
 import { c, box } from "../../ui/render";

@@ -1,6 +1,4 @@
-/**
- * delphi —— 方法论流程的交互驱动（CLI 侧）
- */
+/** delphi — CLI-side driver for methodology flows. */
 import { FlowRunner } from "@delphi/core";
 import { askLine, EOF_INPUT } from "../ui/ask";
 import { c, section } from "../ui/render";
@@ -11,7 +9,7 @@ export interface RunFlowOptions {
   onCancel?: () => void;
 }
 
-/** 驱动一个 FlowRunner：逐个渲染问题、收集回答 */
+/** Drive a FlowRunner: render each question and collect answers */
 export async function runFlow(runner: FlowRunner, opts: RunFlowOptions): Promise<boolean> {
   console.log("");
   console.log(section(opts.title));

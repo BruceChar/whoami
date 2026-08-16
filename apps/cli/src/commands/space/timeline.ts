@@ -1,7 +1,4 @@
-/**
- * delphi —— 成长时间线（文档 7.3）
- * 维度选择 → ASCII 火花线 + 阶段划分 + 转折点记录
- */
+/** delphi — growth timeline. */
 import { ProfileStore, DIMENSION_LABELS, INFLECTION_LABELS, UP_IS_GOOD } from "@delphi/core";
 import { askLine } from "../../ui/ask";
 import { c, sparkline, hr } from "../../ui/render";

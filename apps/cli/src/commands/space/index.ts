@@ -1,6 +1,4 @@
-/**
- * delphi —— 用户空间入口（文档 10.2）
- */
+/** delphi — user space entry. */
 import { ProfileStore } from "@delphi/core";
 import { askLine, EOF_INPUT } from "../../ui/ask";
 import { c, box } from "../../ui/render";

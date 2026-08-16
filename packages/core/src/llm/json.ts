@@ -1,12 +1,9 @@
-/**
- * delphi —— LLM 输出的健壮 JSON 提取
- * 处理代码围栏、前后缀文本、嵌套括号等常见噪音。
- */
+/** delphi — robust JSON extraction from LLM output. */
 
-/** 提取文本中第一个平衡的 JSON 对象/数组 */
+/** Extract the first balanced JSON object/array from text */
 export function extractJSON(text: string): unknown | null {
   if (!text) return null;
-  // 去掉代码围栏
+    // strip code fences
   const fenced = text.replace(/```(?:json)?\s*([\s\S]*?)```/g, "$1");
   const start = fenced.search(/[[{]/);
   if (start === -1) return null;
@@ -40,7 +37,7 @@ export function extractJSON(text: string): unknown | null {
   return null;
 }
 
-/** 提取并尝试解析为指定类型；失败返回 null */
+/** Extract and parse as T; null on failure */
 export function extractJSONAs<T>(text: string): T | null {
   const value = extractJSON(text);
   return value === null || value === undefined ? null : (value as T);

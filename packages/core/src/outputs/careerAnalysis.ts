@@ -1,8 +1,4 @@
-/**
- * delphi —— 从业分析引擎（文档 5）
- * 基于认知档案数据，输出职业方向建议：
- * 工作形态 / 组织环境 / 工作内容 / 价值观对齐 / 风险耐受
- */
+/** delphi — Based on the cognitive profile, recommends work form / content direction / */
 import { CareerAnalysis, UserCognitiveProfile } from "../models/types";
 import { satisfiedDrivers } from "../frameworks/dailyFeedback";
 import { signAreas } from "../frameworks/sign";
@@ -23,7 +19,7 @@ export function buildCareerAnalysis(profile: UserCognitiveProfile): CareerAnalys
   const fw = profile.frameworkData;
   const reasoning: string[] = [];
 
-  // ---- 1. 工作形态适配 ----
+    // ---- 1. work form fit ----
   const anchors = fw.vtd.values.anchors;
   const workFormParts: string[] = [];
   const autonomy = anchors.includes("自由") || anchors.includes("掌控");
@@ -65,7 +61,7 @@ export function buildCareerAnalysis(profile: UserCognitiveProfile): CareerAnalys
   }
   reasoning.push(`工作形态建议基于：${workFormParts.join("、") || "数据不足，采用默认"} `);
 
-  // ---- 2. 工作内容方向 ----
+    // ---- 2. work content direction ----
   const areas = signAreas({ signals: fw.sign.signals });
   const skills = aggregateSkills(fw.achievements);
   const energyQuadrants = fw.interestMatrix.highEnergyQuadrants;
@@ -87,7 +83,7 @@ export function buildCareerAnalysis(profile: UserCognitiveProfile): CareerAnalys
     mappedDirections.push("数据积累中——先完成 SIGN 与成就事件萃取");
   }
 
-  // ---- 3. 避坑提醒（基于思维漏洞频率）----
+    // ---- 3. pitfalls (based on bias frequencies) ----
   const avoid: string[] = [];
   const dim = profile.growthTracking.dimensions;
   if ((dim.shouldTyrannyFreq?.currentLevel || 0) > 0.3) {
@@ -105,7 +101,7 @@ export function buildCareerAnalysis(profile: UserCognitiveProfile): CareerAnalys
   }
   if (avoid.length === 0) avoid.push("暂无显著避坑信号（数据积累中）");
 
-  // ---- 4. 风险耐受 ----
+    // ---- 4. risk tolerance ----
   const riskProfile =
     fw.swot.gravityProblems.length + fw.swot.anchorProblems.length >= 4
       ? "保守型路径（稳定优先，低风险偏好）"

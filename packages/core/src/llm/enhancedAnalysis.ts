@@ -1,12 +1,4 @@
-/**
- * delphi —— LLM 增强分析（真正的深度认知分析）
- * 规则引擎负责确定性基础（偏差/归因/情绪词），LLM 补充语义层：
- * - 会话级深度分析（隐式后台分析：摘要 + 自动洞察）
- * - 画像六维自然语言叙事
- * - 从业分析综合评述
- * - 单条消息标记增强（可选，DELPHI_LLM_DEEP_ANALYZE=1）
- * 所有函数在 LLM 不可用/失败时返回 null，调用方回退规则结果。
- */
+/** delphi — LLM-enhanced analysis. */
 import {
   CareerAnalysis,
   Insight,
@@ -20,7 +12,7 @@ import { newInsightId } from "../services/profileService";
 import { BiasType } from "../models/types";
 
 // ---------------------------------------------------------------------------
-// 会话级深度分析（隐式后台分析升级版）
+// session-level deep analysis
 // ---------------------------------------------------------------------------
 
 export interface SessionDeepAnalysis {
@@ -63,7 +55,7 @@ export async function llmAnalyzeSession(
   };
 }
 
-/** 把会话深度分析写入档案（摘要 + 自动洞察），返回新增洞察 */
+/** Persist session deep analysis (summary + auto insights); returns new insights */
 export function applySessionDeepAnalysis(
   profile: UserCognitiveProfile,
   session: SessionRecord,
@@ -73,7 +65,7 @@ export function applySessionDeepAnalysis(
   const created: Insight[] = [];
   for (const ins of analysis.insights) {
     if (!ins.title || !ins.analysis) continue;
-    // 去重：同标题 30 天内不重复
+        // de-dup: same analysis within 30 days
     const dup = profile.insights.some(
       (i) => i.agentDetected && i.analysis === ins.analysis
     );
@@ -96,7 +88,7 @@ export function applySessionDeepAnalysis(
 }
 
 // ---------------------------------------------------------------------------
-// 画像叙事（六维自然语言）
+// persona narratives (six dimensions, natural language)
 // ---------------------------------------------------------------------------
 
 const PERSONA_SCHEMA = `{
@@ -159,7 +151,7 @@ export async function llmEnrichPersona(
 }
 
 // ---------------------------------------------------------------------------
-// 从业分析综合评述
+// career analysis review
 // ---------------------------------------------------------------------------
 
 const CAREER_SCHEMA = `{
@@ -201,7 +193,7 @@ export async function llmRefineCareer(
 }
 
 // ---------------------------------------------------------------------------
-// 单条消息标记增强（可选，逐条调用较耗 token）
+// per-message marker enhancement (optional; token-heavy per call)
 // ---------------------------------------------------------------------------
 
 const MARKER_SCHEMA = `{
@@ -233,7 +225,7 @@ export async function llmExtractMarkers(
   return result;
 }
 
-/** 合并 LLM 标记到规则标记（LLM 优先，偏差取并集） */
+/** Merge LLM markers into rule markers (LLM wins; biases are unioned) */
 export function mergeMarkers(rule: MessageMarkers, llm: NonNullable<Awaited<ReturnType<typeof llmExtractMarkers>>>): MessageMarkers {
   const merged: MessageMarkers = { ...rule };
   if (llm.attribution) merged.attribution = llm.attribution;

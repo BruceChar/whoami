@@ -1,8 +1,4 @@
-/**
- * delphi —— 隐式模式（Stealth Mode）
- * 自由对话默认模式：后台静默分析，用户无感知。
- * 前 3 轮纯隐式建立安全感，第 4 轮起可轻量显式标记（文档 4.1.2）。
- */
+/** delphi — stealth mode. */
 import { MessageMarkers } from "../models/types";
 import { ATTRIBUTION_LABEL } from "./transparent";
 
@@ -23,19 +19,21 @@ const OPEN_QUESTIONS = [
 ];
 
 /**
- * 隐式模式的陪伴式回应：先确认，再轻微反射，不评价。
- * @param round 当前对话轮次（0 起）
- * @param withLightTouch 是否允许第 4 轮起的轻量标记
+  * Stealth-mode companion reply: acknowledge, lightly reflect, never judge.
+  * @param round current turn number (0-based)
+  * @param withLightTouch allow light-touch markers from round 4 onward
+  * @param round current turn number (0-based)
+  * @param withLightTouch allow light-touch markers from round 4 onward
  */
 export function stealthReply(markers: MessageMarkers, round: number, withLightTouch: boolean): string {
   const ack = ACKS[round % ACKS.length];
 
-  // 情绪脆弱时只陪伴
+    // crisis: companion only
   if (Object.keys(markers.emotionTone).length > 0 && markers.emotionTone.sadness) {
     return `${ack}听起来你有点低落，谢谢你愿意告诉我。`;
   }
 
-  // 第 4 轮起可轻量显式标记（自然融入，不用专业术语）
+    // from round 4, light-touch markers woven into the reply
   if (withLightTouch && round >= 3 && markers.biases.length > 0 && round % 2 === 0) {
     const b = markers.biases[0];
     if (b.type === "overgeneralization") {
@@ -49,12 +47,12 @@ export function stealthReply(markers: MessageMarkers, round: number, withLightTo
     }
   }
 
-  // 归因反射（轻量，不用术语）
+    // light attribution reflection, no jargon
   if (withLightTouch && round >= 3 && markers.attribution === "external") {
     return `${ack}听起来这件事主要是外界的原因。如果只看你能控制的部分，会有什么不同？`;
   }
 
-  // 普通回应
+    // plain reply
   if (markers.isQuestion || round % 3 === 2) {
     return OPEN_QUESTIONS[round % OPEN_QUESTIONS.length];
   }

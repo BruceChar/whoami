@@ -1,11 +1,9 @@
-/**
- * delphi —— CLI 渲染工具（ASCII 艺术 + 盒式边框 + 进度条）
- */
+/** delphi — CLI rendering helpers (ASCII art + boxes + progress bars). */
 import chalk from "chalk";
 
 export const c = chalk;
 
-/** 显示宽度：CJK 全角字符按 2 列计（终端渲染宽度） */
+/** Display width: CJK full-width chars count as 2 columns */
 export function displayWidth(s: string): number {
   let w = 0;
   for (const ch of s) {
@@ -20,7 +18,7 @@ export function displayWidth(s: string): number {
   return w;
 }
 
-/** 按显示宽度截断 */
+/** Truncate by display width */
 export function truncate(s: string, maxWidth: number): string {
   let w = 0;
   let out = "";
@@ -33,7 +31,7 @@ export function truncate(s: string, maxWidth: number): string {
   return out;
 }
 
-/** 盒式边框 */
+/** Boxed border */
 export function box(title: string, lines: string[], width = 60): string {
   const inner = width - 4;
   const titleLine = title ? ` ${title} ` : "";
@@ -47,12 +45,12 @@ export function box(title: string, lines: string[], width = 60): string {
   return [head, ...body, foot].join("\n");
 }
 
-/** 横线 */
+/** Horizontal rule */
 export function hr(width = 60, char = "━"): string {
   return char.repeat(width);
 }
 
-/** 进度条 */
+/** Progress bar */
 export function progressBar(value: number, width = 20): string {
   const v = Math.max(0, Math.min(1, value));
   const filled = Math.round(v * width);
@@ -61,7 +59,7 @@ export function progressBar(value: number, width = 20): string {
   return `${bar} ${pct}`;
 }
 
-/** ASCII 火花线（成长曲线迷你图） */
+/** ASCII sparkline (mini growth curve) */
 export function sparkline(values: number[], width = 20): string {
   if (values.length === 0) return "(数据不足)";
   const min = Math.min(...values);
@@ -75,12 +73,12 @@ export function sparkline(values: number[], width = 20): string {
     .join("");
 }
 
-/** 分节标题 */
+/** Section heading */
 export function section(title: string): string {
   return `${hr(20, "─")} ${title} ${hr(20, "─")}`;
 }
 
-/** 简单柱状对比（两个时间点的维度对比） */
+/** Simple bar comparison of two time points */
 export function deltaBar(before: number, after: number, width = 12): string {
   const max = Math.max(before, after, 0.01);
   const b = Math.round((before / max) * width);

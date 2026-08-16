@@ -1,15 +1,11 @@
-/**
- * delphi —— LLM Agent（真正的 Agent：工具调用 + 档案接地）
- * 模型通过工具 get_cognitive_profile / search_memory 读取用户认知档案，
- * 让对话真正"知道"用户是谁，而不是空泛的聊天。
- */
+/** delphi — LLM agent (real agent: tool calling + profile grounding). */
 import { ChatMessage, UserCognitiveProfile } from "../models/types";
 import { LLMMessage, LLMProvider, LLMUsage } from "./types";
 import { DIMENSION_LABELS, UP_IS_GOOD } from "../profiler/growthTracker";
 import { PERSONA_STAGE_LABELS } from "../persona/persona";
 import { EMOTION_LABELS } from "../persona/fingerprint";
 
-/** JSON Schema 子集（用于工具参数） */
+/** JSON Schema subset (for tool parameters) */
 export interface JsonSchema {
   type?: "object" | "string" | "number" | "boolean" | "array" | "integer";
   description?: string;
@@ -34,11 +30,11 @@ export interface LLMAgentResult {
   text: string;
   usage?: LLMUsage;
   model: string;
-  /** 本次执行过的工具名 */
+    /** Tool names executed this turn */
   toolCalls: string[];
 }
 
-/** 具备工具调用能力的 LLM Agent 接口（pi-ai 实现 + 测试实现） */
+/** LLM agent interface with tool calling (pi-ai impl + test impl) */
 export interface LLMAgent extends LLMProvider {
   agentChat(opts: {
     messages: LLMMessage[];
@@ -50,7 +46,7 @@ export interface LLMAgent extends LLMProvider {
 }
 
 // ---------------------------------------------------------------------------
-// delphi 工具定义
+// delphi tool definitions
 // ---------------------------------------------------------------------------
 
 export const DELPHI_TOOLS: AgentToolDef[] = [
@@ -73,7 +69,7 @@ export const DELPHI_TOOLS: AgentToolDef[] = [
   },
 ];
 
-/** 生成档案摘要 JSON（供 get_cognitive_profile 工具） */
+/** Build the profile summary JSON (for the get_cognitive_profile tool) */
 export function buildProfileSummaryJSON(profile: UserCognitiveProfile): string {
   const g = profile.growthTracking;
   const dims = Object.entries(g.dimensions)
@@ -112,7 +108,7 @@ export function buildProfileSummaryJSON(profile: UserCognitiveProfile): string {
   return JSON.stringify(summary, null, 1);
 }
 
-/** 关键词搜索档案（供 search_memory 工具） */
+/** Keyword search across the profile (for the search_memory tool) */
 export function searchMemoryJSON(profile: UserCognitiveProfile, query: string): string {
   const q = query.trim();
   if (!q) return JSON.stringify({ error: "缺少搜索词" });
@@ -143,13 +139,13 @@ export function searchMemoryJSON(profile: UserCognitiveProfile, query: string): 
   return JSON.stringify(hits.length ? hits : { message: "未找到相关记录" }, null, 1);
 }
 
-/** 情绪基调中文名（供上下文提示） */
+/** Chinese label for an emotion tone key (for context hints) */
 export function emotionLabel(key: string): string {
   return EMOTION_LABELS[key] || key;
 }
 
 // ---------------------------------------------------------------------------
-// 高层入口：把会话历史 + 系统提示交给 Agent
+// High-level entry: hand session history + system prompt to the agent
 // ---------------------------------------------------------------------------
 
 export interface ChatAgentOptions {

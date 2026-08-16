@@ -1,6 +1,4 @@
-/**
- * delphi —— Commander 命令入口
- */
+/** delphi — Commander CLI entry. */
 import { Command } from "commander";
 import { ProfileStore, requireLLMProvider, LLMNotConfiguredError, getConfigStatus, llmConfigHelp, configFilePath } from "@delphi/core";
 import { closeRl } from "./ui/ask";
@@ -34,7 +32,7 @@ export async function main(argv: string[]): Promise<void> {
     .description("delphi —— 一面照向内心的镜子。自我认知 Agent（CLI 本地模式，需配置 LLM API Key）")
     .version(pkg.version);
 
-  // 无参数：进入主菜单（交互）
+    // no args: interactive main menu
   program.action(async () => {
     const store = new ProfileStore();
     const { runMenu } = await import("./commands/menu");
@@ -42,7 +40,7 @@ export async function main(argv: string[]): Promise<void> {
     closeRl();
   });
 
-  // 自由对话
+    // free chat
   program
     .command("chat")
     .description("自由对话（隐式/显式/引导式模式切换）")
@@ -56,7 +54,7 @@ export async function main(argv: string[]): Promise<void> {
       await runChat(store, { mode: modeMap[opts.mode] || "stealth" });
     });
 
-  // 每日回馈
+    // daily feedback
   program
     .command("daily")
     .alias("d")
@@ -104,7 +102,7 @@ export async function main(argv: string[]): Promise<void> {
       closeRl();
     });
 
-  // 成就事件
+    // achievement events
   program
     .command("achievement")
     .alias("a")
@@ -116,7 +114,7 @@ export async function main(argv: string[]): Promise<void> {
       closeRl();
     });
 
-  // 兴趣矩阵
+    // interest matrix
   program
     .command("interest")
     .alias("m")
@@ -128,7 +126,7 @@ export async function main(argv: string[]): Promise<void> {
       closeRl();
     });
 
-  // 从业分析
+    // career analysis
   program
     .command("career")
     .alias("c")
@@ -140,7 +138,7 @@ export async function main(argv: string[]): Promise<void> {
       closeRl();
     });
 
-  // 人生设计
+    // life design
   program
     .command("life")
     .alias("l")
@@ -152,7 +150,7 @@ export async function main(argv: string[]): Promise<void> {
       closeRl();
     });
 
-  // 个人画像
+    // persona
   program
     .command("persona")
     .alias("o")
@@ -164,7 +162,7 @@ export async function main(argv: string[]): Promise<void> {
       closeRl();
     });
 
-  // 用户空间
+    // user space
   const space = program
     .command("space")
     .alias("p")
@@ -230,7 +228,7 @@ export async function main(argv: string[]): Promise<void> {
     closeRl();
   });
 
-  // 数据导出
+    // data export
   program
     .command("export")
     .alias("e")
@@ -242,7 +240,7 @@ export async function main(argv: string[]): Promise<void> {
       closeRl();
     });
 
-  // 重置
+    // reset
   program
     .command("reset")
     .description("清空全部数据（危险操作，需确认）")
@@ -259,7 +257,7 @@ export async function main(argv: string[]): Promise<void> {
       closeRl();
     });
 
-  // 状态
+    // status
   program
     .command("status")
     .description("查看数据目录与会话统计")
@@ -273,7 +271,7 @@ export async function main(argv: string[]): Promise<void> {
       closeRl();
     });
 
-  // 配置检查（不需要 API Key 也能运行）
+    // config check (runs without an API key)
   program
     .command("doctor")
     .description("检查 LLM 配置状态（API Key / 提供商 / 模型）")

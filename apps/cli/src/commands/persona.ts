@@ -1,6 +1,4 @@
-/**
- * delphi —— 个人画像（我是谁？）
- */
+/** delphi — persona (who am I?). */
 import {
   ProfileStore,
   canGeneratePersona,
@@ -29,7 +27,7 @@ export async function runPersona(store: ProfileStore): Promise<void> {
     store.save();
   }
 
-  // LLM 画像叙事增强（已生成过则跳过）
+    // LLM persona narratives (skip if already generated)
   const llm = getLLMProvider();
   if (llm && profile.currentPersona && !profile.currentPersona.narratives) {
     console.log(c.dim("\n⚡ 正在生成画像叙事（LLM）..."));

@@ -56,7 +56,7 @@ test("模式切换命令生效", async () => {
 });
 
 // ---------------------------------------------------------------------------
-// LLM Agent 路径
+// LLM agent path
 // ---------------------------------------------------------------------------
 
 test("LLM Agent：回复由 LLM 生成，标记仍由规则引擎产出", async () => {
@@ -68,7 +68,7 @@ test("LLM Agent：回复由 LLM 生成，标记仍由规则引擎产出", async 
   assert.equal(r.llmGenerated, true);
   assert.equal(r.llmModel, "scripted-1");
   assert.ok(r.reply.includes("总是"));
-  // 规则标记照常
+    // rule markers still produced
   assert.ok(r.markers.biases.some((b) => b.type === "overgeneralization"));
   assert.ok(r.usage !== undefined);
 });
@@ -93,7 +93,7 @@ test("LLM Agent：LLM 失败时回退规则引擎", async () => {
   const engine = new ThinkingEngine("stealth", { llm });
   engine.llmProfile = createEmptyProfile("u1", "/tmp");
   const r = await engine.process("今天有点累");
-  // 脚本耗尽不会抛错（返回占位文本），此处验证占位被采用
+    // no script left -> placeholder text is used
   assert.equal(r.llmGenerated, true);
   assert.ok(r.reply.length > 0);
 });
@@ -109,7 +109,7 @@ test("LLM Agent：情绪崩溃走陪伴模式（不调用 LLM）", async () => {
 });
 
 // ---------------------------------------------------------------------------
-// 工具实现
+// tool implementations
 // ---------------------------------------------------------------------------
 
 test("buildProfileSummaryJSON：包含成长阶段与锚点", () => {

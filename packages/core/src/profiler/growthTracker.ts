@@ -1,8 +1,4 @@
-/**
- * delphi —— 成长追踪引擎（文档 7.2 / 7.3 / 7.8）
- * 17 项指标的计算、成长曲线、练习效应校正、成长阶段判定。
- * 档案每更新一次，这里全量重算（设计原则 4：迭代进化）。
- */
+/** delphi — Computes the 17 metrics, growth curves, practice-effect correction and */
 import {
   CognitiveMetricPoint,
   CognitiveMarkers,
@@ -46,10 +42,10 @@ function clamp01(n: number): number {
 }
 
 // ---------------------------------------------------------------------------
-// 会话指标计算
+// session metric computation
 // ---------------------------------------------------------------------------
 
-/** 由一条会话记录计算 CognitiveMetricPoint（框架驱动指标取当前档案状态） */
+/** Compute a CognitiveMetricPoint from a session (framework metrics read current profile) */
 export function computeSessionPoint(profile: UserCognitiveProfile, session: SessionRecord): CognitiveMetricPoint {
   const userMsgs = session.messages.filter((m) => m.role === "user");
   const n = Math.max(1, userMsgs.length);
@@ -117,7 +113,7 @@ export function computeSessionPoint(profile: UserCognitiveProfile, session: Sess
   };
 }
 
-/** 练习效应估计：前 5 次会话的"表面提升"更多来自熟悉工具 */
+/** Practice-effect estimate: early sessions gain more from tool familiarity */
 export function sessionPracticeEffect(profile: UserCognitiveProfile, session: SessionRecord): number {
   const idx = profile.sessions.findIndex((s) => s.id === session.id);
   if (idx < 0) return 0;
@@ -127,7 +123,7 @@ export function sessionPracticeEffect(profile: UserCognitiveProfile, session: Se
 }
 
 // ---------------------------------------------------------------------------
-// 工具函数
+// helpers
 // ---------------------------------------------------------------------------
 
 function mean(xs: number[]): number {
@@ -141,7 +137,7 @@ function stddev(xs: number[]): number {
   return Math.sqrt(xs.reduce((a, b) => a + (b - m) ** 2, 0) / xs.length);
 }
 
-/** 线性回归斜率（x = 序号，y = 数值） */
+/** Linear-regression slope (x = index, y = value) */
 export function trendSlope(xs: number[]): number {
   const n = xs.length;
   if (n < 2) return 0;
@@ -156,18 +152,18 @@ export function trendSlope(xs: number[]): number {
 }
 
 // ---------------------------------------------------------------------------
-// 全量重算
+// full recompute
 // ---------------------------------------------------------------------------
 
-/** 重算档案：指标点、成长追踪、认知标记、成长阶段（每次档案更新后调用） */
+/** Recompute the profile (metric points, growth, markers, stage) after every update */
 export function recomputeProfile(profile: UserCognitiveProfile): void {
-  // 1. 为每条会话计算/更新指标点
+    // 1. compute/update the metric point per session
   for (const session of profile.sessions) {
     if (!session.messages.some((m) => m.role === "user" && m.markers)) continue;
     session.metricPoint = computeSessionPoint(profile, session);
   }
 
-  // 2. 重建各维度数据点
+    // 2. rebuild per-dimension data series
   const dimKeys = Object.keys(DIMENSION_LABELS);
   const series: Record<string, number[]> = {};
   for (const k of dimKeys) series[k] = [];
@@ -182,7 +178,7 @@ export function recomputeProfile(profile: UserCognitiveProfile): void {
     }
   }
 
-  // 3. 更新成长追踪
+    // 3. update growth tracking
   for (const k of dimKeys) {
     const pts = series[k];
     const dim = profile.growthTracking.dimensions[k] || {
@@ -202,7 +198,7 @@ export function recomputeProfile(profile: UserCognitiveProfile): void {
         timestamp: s?.endedAt || new Date().toISOString(),
         sessionId: s?.id || "",
         source: "free_chat" as const,
-        // 仅保留数值字段用于图表演示
+                // keep only numeric fields for chart display
         ...(Object.fromEntries(dimKeys.map((dk) => [dk, series[dk][i]])) as unknown as Record<string, number>),
         practiceEffectEstimate: s?.metricPoint?.practiceEffectEstimate || 0,
       } as unknown as CognitiveMetricPoint;
@@ -210,13 +206,13 @@ export function recomputeProfile(profile: UserCognitiveProfile): void {
     profile.growthTracking.dimensions[k] = dim;
   }
 
-  // 4. 认知标记聚合
+    // 4. aggregate cognitive markers
   profile.cognitiveMarkers = aggregateCognitiveMarkers(profile);
 
-  // 5. 成长阶段判定
+    // 5. determine the growth stage
   profile.growthTracking.growthStage = determineStage(profile);
 
-  // 6. 练习效应基线（前 5 次会话的斜率作为基线）
+    // 6. practice-effect baseline (slope of the first 5 sessions)
   if (profile.settings.practiceEffectCorrection && orderedSessions.length >= 3) {
     const first5 = orderedSessions.slice(0, Math.min(5, orderedSessions.length));
     for (const k of dimKeys) {
@@ -264,14 +260,13 @@ function aggregateCognitiveMarkers(profile: UserCognitiveProfile): CognitiveMark
   };
 }
 
-/** 成长阶段判定（文档 7.8） */
 export function determineStage(profile: UserCognitiveProfile): GrowthStage {
   const sessions = profile.sessions.length;
   const g = profile.growthTracking;
 
   if (sessions < 3) return "exploration";
 
-  // 突破期：任一正向维度近期显著提升（>30%）
+    // breakthrough: any positive dimension improves >30% recently
   for (const [k, dim] of Object.entries(g.dimensions)) {
     const vals = dim.dataPoints.map((p) => (p as unknown as Record<string, number>)[k]);
     if (vals.length < 4) continue;
@@ -282,7 +277,7 @@ export function determineStage(profile: UserCognitiveProfile): GrowthStage {
     if (delta > 0.3) return "breakthrough";
   }
 
-  // 整合期：多个维度协同提升且波动小
+    // integration: multiple dimensions improving steadily, low volatility
   let improving = 0;
   for (const dim of Object.values(g.dimensions)) {
     const up = UP_IS_GOOD[Object.keys(g.dimensions).find((k) => g.dimensions[k] === dim) || ""] ? -1 : 1;

@@ -1,6 +1,4 @@
-/**
- * delphi —— 从业分析（上班 vs 创业适配度 / 工作内容方向）
- */
+/** delphi — career analysis (employment vs startup fit / content direction). */
 import {
   ProfileStore,
   canAnalyzeCareer,
@@ -27,7 +25,7 @@ export async function runCareer(store: ProfileStore): Promise<void> {
 
   const report = buildCareerAnalysis(profile);
 
-  // LLM 综合评述增强
+    // LLM review enhancement
   const llm = getLLMProvider();
   if (llm) {
     console.log(c.dim("\n⚡ 正在生成从业分析评述（LLM）..."));

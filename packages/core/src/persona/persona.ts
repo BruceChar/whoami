@@ -1,8 +1,4 @@
-/**
- * delphi —— 个人画像组装（文档 8.x）
- * 六大维度：认知指纹 / 能量地图 / 思维地形 / 关系模式 / 决策风格 / 成长轨迹
- * 画像不是静态标签，而是随数据演化的活图谱（版本化快照）。
- */
+/** delphi — Six dimensions: cognitive fingerprint / energy map / thinking terrain / */
 import {
   PersonaSnapshot,
   UserCognitiveProfile,
@@ -20,7 +16,6 @@ export const PERSONA_STAGE_LABELS: Record<string, string> = {
   integration: "整合期 (Integration)",
 };
 
-/** 生成时机检查：至少 3 次会话 + 1 个完整方法论工具（文档 8.8） */
 export function canGeneratePersona(profile: UserCognitiveProfile): boolean {
   const fw = profile.frameworkData;
   const toolDone =
@@ -54,7 +49,7 @@ export function buildPersona(profile: UserCognitiveProfile, version?: string): P
     }
   }
 
-  // 关系模式（启发式）
+    // relational pattern (heuristic)
   const combinedText = profile.sessions
     .flatMap((s) => s.messages)
     .filter((m) => m.role === "user")
@@ -67,7 +62,7 @@ export function buildPersona(profile: UserCognitiveProfile, version?: string): P
   const coreNeeds = fw.vtd.values.anchors.filter((v) => ["被认可", "连接", "真实", "意义"].includes(v)).slice(0, 3);
   if (coreNeeds.length === 0) coreNeeds.push("被理解（数据积累中）");
 
-  // 决策风格（启发式）
+    // decision style (heuristic)
   const certainty = fingerprint.certaintyLevel;
   const speed = certainty > 0.65 ? "fast" : certainty < 0.35 ? "slow" : "moderate";
   const riskRaw = fw.swot.gravityProblems.length + fw.swot.anchorProblems.length;
@@ -78,7 +73,7 @@ export function buildPersona(profile: UserCognitiveProfile, version?: string): P
   const anchors = fw.vtd.values.anchors;
   const decisionAnchors = anchors.length >= 3 ? anchors.slice(0, 3) : ["价值观（数据积累中）", "逻辑", "情感"];
 
-  // 成长轨迹
+    // growth trajectory
   const g = profile.growthTracking;
   const dims = Object.entries(g.dimensions)
     .map(([k, d]) => ({ k, ...d }))
@@ -134,7 +129,7 @@ export function buildPersona(profile: UserCognitiveProfile, version?: string): P
   };
 }
 
-/** 生成/更新画像（含版本历史） */
+/** Generate/update the persona (with version history) */
 export function updatePersona(profile: UserCognitiveProfile): PersonaSnapshot | null {
   if (!canGeneratePersona(profile)) return null;
   const prev = profile.currentPersona;
@@ -150,7 +145,6 @@ function bumpVersion(v: string): string {
   return `v${m[1]}.${parseInt(m[2], 10) + 1}`;
 }
 
-/** 画像版本对比（文档 8.8） */
 export function comparePersonas(a: PersonaSnapshot, b: PersonaSnapshot): Array<{ dimension: string; change: string }> {
   const changes: Array<{ dimension: string; change: string }> = [];
   const fmt = (n: number) => n.toFixed(2);

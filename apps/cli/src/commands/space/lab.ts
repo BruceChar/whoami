@@ -1,6 +1,4 @@
-/**
- * delphi —— 原型实验室（文档 7.6）
- */
+/** delphi — prototype lab. */
 import { ProfileStore } from "@delphi/core";
 import { askLine, EOF_INPUT } from "../../ui/ask";
 import { c, box } from "../../ui/render";

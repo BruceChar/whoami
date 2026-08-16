@@ -1,8 +1,4 @@
-/**
- * delphi —— 档案服务层
- * 把 引擎分析 / 工具产出 / 成长追踪 / 画像 串成完整的数据流：
- *   每次对话、每个工具 → 更新档案 → 重算成长 → 检测转折 → 更新画像
- */
+/** delphi — profile service layer. */
 import {
   AnalysisMode,
   ChatMessage,
@@ -28,7 +24,7 @@ export function newInsightId(): string {
   return `ins-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 }
 
-/** 开启一条会话记录（加入档案） */
+/** Start a session record (added to the profile) */
 export function beginSession(profile: UserCognitiveProfile, mode: AnalysisMode, title?: string): SessionRecord {
   const session: SessionRecord = {
     id: newSessionId(),
@@ -42,15 +38,17 @@ export function beginSession(profile: UserCognitiveProfile, mode: AnalysisMode, 
   return session;
 }
 
-/** 追加消息到会话 */
+/** Append a message to a session */
 export function appendMessage(session: SessionRecord, msg: ChatMessage): void {
   session.messages.push(msg);
   session.endedAt = new Date().toISOString();
 }
 
 /**
- * 档案更新后的统一收尾：
- * 1. 重算成长追踪  2. 偏差突破检测  3. 自动更新画像  4. 重算分析输出
+  * Unified finalization after a profile update:
+  * 1. recompute growth  2. bias-breakthrough detection  3. auto-update persona
+  * 4. recompute analysis outputs
+  * 1. recompute growth  2. bias-breakthrough detection  3. auto-update persona
  */
 export function afterProfileUpdate(profile: UserCognitiveProfile): {
   inflections: InflectionPoint[];
@@ -69,7 +67,7 @@ export function afterProfileUpdate(profile: UserCognitiveProfile): {
   return { inflections, persona };
 }
 
-/** 工具完成里程碑（转折点） */
+/** Framework-completion milestone (inflection point) */
 export function markMilestone(
   profile: UserCognitiveProfile,
   title: string,

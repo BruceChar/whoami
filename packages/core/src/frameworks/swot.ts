@@ -1,7 +1,4 @@
-/**
- * delphi —— SWOT 分析（Agent 增强版，文档 4.3.1）
- * S 优势阴影检测 / W 劣势再框定 / O 机会-能力匹配 / T 控制圈分离（识别重力问题）
- */
+/** delphi — S strength-shadow detection / W weakness reframing / O opportunity-capability */
 import { FlowRunner, FlowStep } from "./flow";
 
 export const SWOT_STEPS: FlowStep[] = [
@@ -49,7 +46,7 @@ export function buildSwotResult(runner: FlowRunner): SwotResult {
   const opportunities = split(runner.answers.o || "");
   const threats = split(runner.answers.t || "");
 
-  // 控制圈分离：包含"不可控/控制不了/没办法/注定/客观"等词 → 重力问题
+    // control-circle split: uncontrollable keywords -> gravity problem
   const uncontrollable = /不可控|控制不了|没办法|注定|客观|改变不了|无法改变|大势|时代|出身|年龄/;
   const gravity = threats.filter((t) => uncontrollable.test(t));
   const anchor = threats.filter((t) => !uncontrollable.test(t));

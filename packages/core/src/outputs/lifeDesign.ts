@@ -1,14 +1,9 @@
-/**
- * delphi —— 人生设计引擎（文档 6）
- * Connect The Dots / 重力问题 / 多重人生假设 / 原型设计 / Choosing Well
- */
+/** delphi — Connect The Dots / gravity problems / multiple lives / prototype design */
 import { LifeDesignData, UserCognitiveProfile } from "../models/types";
 import { satisfiedDrivers } from "../frameworks/dailyFeedback";
 import { signAreas } from "../frameworks/sign";
 import { aggregateSkills } from "../frameworks/achievement";
 
-// ---------------------------------------------------------------------------
-// Connect The Dots（文档 6.2）
 // ---------------------------------------------------------------------------
 
 export function buildConnectTheDots(profile: UserCognitiveProfile) {
@@ -19,7 +14,7 @@ export function buildConnectTheDots(profile: UserCognitiveProfile) {
   const skills = aggregateSkills(fw.achievements);
   const identity = skills[0] || "（成就事件数据不足）";
 
-  // 对齐度：belief / workView / identity 是否指向同一主题
+    // alignment: whether belief / workView / identity point to the same theme
   const combined = `${belief} ${workView} ${identity}`;
   const overlaps = fw.vtd.values.anchors.filter((a) => combined.includes(a));
   const alignmentScore = Math.min(1, 0.3 + overlaps.length * 0.2);
@@ -36,8 +31,6 @@ export function buildConnectTheDots(profile: UserCognitiveProfile) {
   return { belief, workView, identity, alignmentScore, gaps };
 }
 
-// ---------------------------------------------------------------------------
-// 多重人生假设（文档 6.4）
 // ---------------------------------------------------------------------------
 
 export const MULTIPLE_LIVES_STEPS = [
@@ -83,7 +76,7 @@ export function detectCommonElements(answers: Record<string, string>): string[] 
 }
 
 // ---------------------------------------------------------------------------
-// 人生设计主入口
+// life design entry point
 // ---------------------------------------------------------------------------
 
 export function buildLifeDesign(profile: UserCognitiveProfile): LifeDesignData {

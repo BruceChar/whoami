@@ -1,8 +1,4 @@
-/**
- * delphi —— 工具模板（对话框输入 / 触发的方法论模板）
- * 每个模板复用 frameworks 的问题序列，由 LLM 以对话方式主持流程：
- * 一次一个问题（镜子原则），收集回答，结束时反射/总结。
- */
+/** delphi — tool templates (methodology templates triggered by "/" in chat). */
 import { V_STEPS, D_STEPS } from "./vtd";
 import { SIGN_STEPS } from "./sign";
 import { SWOT_STEPS } from "./swot";
@@ -15,7 +11,7 @@ export interface ToolTemplate {
   label: string;
   emoji: string;
   description: string;
-  /** 主持该工具的系统提示（追加在镜子原则之后） */
+    /** System prompt for conducting this tool (appended after the mirror principle) */
   prompt: string;
 }
 

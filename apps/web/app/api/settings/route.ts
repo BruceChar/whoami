@@ -1,5 +1,6 @@
 /**
- * GET/POST /api/settings —— LLM 配置（写入 <dataDir>/config.json，Web「设置」按钮）
+ * GET/POST /api/settings — LLM config, persisted to <dataDir>/config.json
+ * (written by the web Settings page). Offline mode is removed: an API key is required.
  */
 import { NextRequest, NextResponse } from "next/server";
 import {
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true, ...status });
 }
 
-/** DELETE —— 清除配置 */
+/** DELETE — clear the saved config */
 export async function DELETE() {
   const { configFilePath } = await import("@delphi/core");
   const fs = await import("fs");

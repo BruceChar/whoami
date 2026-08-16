@@ -1,8 +1,4 @@
-/**
- * delphi —— 回馈分析法（文档 4.1.1）
- * 每日结束时记录：一件满意的事 + 原因；一件不满意的事 + 原因。
- * 数据驱动从业分析（什么类型的工作让你持续满意）与人生设计（能量流向）。
- */
+/** delphi — Records one satisfying event + reason and one unsatisfying event + reason */
 import { DailyFeedbackEntry } from "../models/types";
 import { FlowRunner, FlowStep } from "./flow";
 import { extractThemes } from "./keywordExtract";
@@ -18,7 +14,7 @@ export function createDailyFlow(): FlowRunner {
   return new FlowRunner(DAILY_STEPS);
 }
 
-/** 从 FlowRunner 收集结果生成回馈条目 */
+/** Build a feedback entry from the FlowRunner answers */
 export function buildDailyEntry(runner: FlowRunner, date?: string): DailyFeedbackEntry {
   const a = runner.answers;
   const satisfied = { event: a.satisfiedEvent || "", reason: a.satisfiedReason || "" };
@@ -31,7 +27,7 @@ export function buildDailyEntry(runner: FlowRunner, date?: string): DailyFeedbac
   };
 }
 
-/** 汇总多次回馈的满意驱动主题（能量源） */
+/** Aggregate satisfying-driver themes (energy sources) */
 export function satisfiedDrivers(entries: DailyFeedbackEntry[]): string[] {
   const counts = new Map<string, number>();
   for (const e of entries) {
@@ -40,7 +36,7 @@ export function satisfiedDrivers(entries: DailyFeedbackEntry[]): string[] {
   return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([t]) => t);
 }
 
-/** 不满意驱动主题（能量黑洞） */
+/** Unsatisfying-driver themes (energy black holes) */
 export function unsatisfiedDrivers(entries: DailyFeedbackEntry[]): string[] {
   const counts = new Map<string, number>();
   for (const e of entries) {

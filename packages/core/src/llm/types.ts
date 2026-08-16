@@ -1,7 +1,4 @@
-/**
- * delphi —— LLM Provider 抽象（与具体实现解耦）
- * 规则引擎仍是默认路径；LLM 可用时作为增强（真正的 Agent 对话 / 深度分析）。
- */
+/** delphi — LLM provider abstraction (decoupled from implementations). */
 
 export interface LLMMessage {
   role: "system" | "user" | "assistant";
@@ -30,7 +27,7 @@ export interface LLMCompleteOptions {
 
 export interface LLMJSONOptions {
   messages: LLMMessage[];
-  /** 期望 JSON 结构的自然语言描述（注入 system prompt 引导） */
+    /** Natural-language description of the expected JSON shape (injected into the system prompt) */
   schema: string;
   temperature?: number;
   maxTokens?: number;
@@ -43,14 +40,14 @@ export class LLMError extends Error {
   }
 }
 
-/** 统一 LLM 接口：pi-ai 实现 + 测试用脚本实现 */
+/** Unified LLM interface: pi-ai implementation + scripted test implementation */
 export interface LLMProvider {
   readonly id: string;
   readonly model: string;
-  /** 是否已配置可用（如存在 API Key） */
+    /** Whether the provider is configured (e.g. an API key exists) */
   isConfigured(): Promise<boolean>;
-  /** 普通对话补全 */
+    /** Plain chat completion */
   complete(opts: LLMCompleteOptions): Promise<LLMResult>;
-  /** 结构化 JSON 补全（失败/非 JSON 返回 null） */
+    /** Structured JSON completion (null on failure / non-JSON) */
   completeJSON<T>(opts: LLMJSONOptions): Promise<T | null>;
 }

@@ -1,7 +1,4 @@
-/**
- * delphi —— V-T-D 完整流程（价值观 → 天赋 → 梦想）
- * V 阶段：5 题深度探索；T 阶段：SIGN 联动；D 阶段：动机净化
- */
+/** delphi — full V-T-D flow (values -> talent -> dream). */
 import {
   ProfileStore,
   createVFlow,
@@ -20,7 +17,7 @@ import { c } from "../ui/render";
 export async function runVtd(store: ProfileStore): Promise<void> {
   const profile = store.get();
 
-  // ---- V 价值观 ----
+    // ---- V values ----
   const vRunner = createVFlow();
   const vOk = await runFlow(vRunner, {
     title: "V · 价值观探索（5 题）",
@@ -42,7 +39,7 @@ export async function runVtd(store: ProfileStore): Promise<void> {
     for (const conflict of v.conflicts) console.log(`  ⚠ ${conflict}`);
   }
 
-  // ---- T 天赋（SIGN 联动）----
+    // ---- T talent (SIGN linkage) ----
   const tRunner = createSignFlow();
   await runFlow(tRunner, {
     title: "T · 天赋探测（SIGN 模型）",
@@ -51,7 +48,7 @@ export async function runVtd(store: ProfileStore): Promise<void> {
   const sign = buildSignResult(tRunner);
   profile.frameworkData.sign.signals = sign.signals;
 
-  // ---- D 梦想（动机净化）----
+    // ---- D dream (motive purification) ----
   const dRunner = createDFlow();
   const dOk = await runFlow(dRunner, {
     title: "D · 梦想探索（动机净化）",

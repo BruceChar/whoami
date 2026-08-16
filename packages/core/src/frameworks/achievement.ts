@@ -1,8 +1,4 @@
-/**
- * delphi —— 成就事件分析（STAR 深度萃取，文档 4.3.3）
- * 情境/任务 → 行动（追问决策点）→ 结果（追问长期影响）
- * 产出：成就事件库 + 可迁移技能萃取
- */
+/** delphi — Situation/task -> action (decision points) -> result (long-term impact). */
 import { AchievementEntry } from "../models/types";
 import { FlowRunner, FlowStep } from "./flow";
 import { extractSkills } from "./keywordExtract";
@@ -51,7 +47,7 @@ export function buildAchievement(runner: FlowRunner): AchievementResult {
   return { entry, skills };
 }
 
-/** 从成就库提取最高频技能（能力画像） */
+/** Top skills across the achievement library (capability profile) */
 export function aggregateSkills(entries: AchievementEntry[]): string[] {
   const counts = new Map<string, number>();
   for (const e of entries) {

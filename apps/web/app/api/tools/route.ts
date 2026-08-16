@@ -1,4 +1,4 @@
-/** GET /api/tools —— 工具模板列表（输入 / 弹出） */
+/** GET /api/tools — tool templates for the / menu */
 import { NextResponse } from "next/server";
 import { TOOL_TEMPLATES } from "@delphi/core";
 

@@ -1,7 +1,7 @@
 /**
- * POST /api/chat —— 对话接口（服务端运行 ThinkingEngine + LLM Agent）
- * 会话化：sessionId 复用会话；缺省新建会话（标题取自首条消息）。
- * toolId 指定工具模板（VTD/SWOT/SIGN/...，输入 / 触发）。
+ * POST /api/chat — chat endpoint (runs ThinkingEngine + LLM Agent server-side).
+ * Sessions: reuse by sessionId, or create a new one (title from first message).
+ * toolId selects a tool template (VTD/SWOT/SIGN/..., triggered by "/").
  */
 import { NextRequest, NextResponse } from "next/server";
 import {
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   const mode: AnalysisMode = body.mode || "stealth";
   const tool = body.toolId ? getToolTemplate(body.toolId) : undefined;
 
-  // 会话：复用或新建
+  // reuse the session or create a new one
   let session: SessionRecord | undefined;
   if (body.sessionId) {
     session = profile.sessions.find((s) => s.id === body.sessionId);

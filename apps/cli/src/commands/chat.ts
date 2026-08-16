@@ -1,6 +1,4 @@
-/**
- * delphi —— 自由对话（隐式分析的主战场）
- */
+/** delphi — free chat (the main arena of stealth analysis). */
 import {
   AnalysisMode,
   ProfileStore,
@@ -88,7 +86,7 @@ export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; 
     }
     console.log(`delphi> ${result.reply}`);
 
-    // LLM 元信息（用量 / 工具调用）
+        // LLM meta info (usage / tool calls)
     if (result.llmGenerated) {
       const parts: string[] = [];
       if (result.usage) parts.push(`${result.usage.totalTokens} tokens · $${result.usage.cost.toFixed(4)}`);
@@ -98,13 +96,13 @@ export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; 
       console.log(c.dim(`  ↳ [llm-agent ${parts.join(" · ")}]`));
     }
 
-    // 显式模式下偏差统计（思维快照已由 engine 渲染）
+        // bias stats in meta-guide mode (snapshot rendered by the engine)
     if (result.markers.biases.length > 0 && engine.getMode() === "meta_guide") {
       console.log(c.dim(`  ↳ 检测: ${result.markers.biases.map((b) => BIAS_LABELS[b.type]).join("、")}`));
     }
   }
 
-  // 会话收尾
+    // session finalization
   const summary = engine.sessionSummary();
   if (summary.length > 0) {
     console.log("");
@@ -113,7 +111,7 @@ export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; 
     for (const line of summary) console.log(c.dim(line));
   }
 
-  // LLM 深度分析（隐式后台分析升级版）：会话摘要 + 自动洞察
+    // LLM deep analysis (session summary + auto insights)
   if (session.messages.some((m) => m.role === "user")) {
     console.log(c.dim("\n⚡ 正在深度分析这次对话（LLM）..."));
     try {

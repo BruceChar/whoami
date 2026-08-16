@@ -1,14 +1,9 @@
-/**
- * delphi —— V-T-D 模型（价值观-天赋-梦想，文档 4.2.1）
- * V：5 题深度探索 + 价值观锚点提取与冲突检测
- * T：SIGN 联动（见 sign.ts）
- * D：动机净化（内驱源 vs 外部动机）
- */
+/** delphi — V: 5 deep questions + value anchor/conflict extraction */
 import { FlowRunner, FlowStep } from "./flow";
 import { extractValues, detectValueConflicts, extractPureDrives, detectExternalMotives } from "./keywordExtract";
 
 // ---------------------------------------------------------------------------
-// V 价值观阶段（5 题）
+// V values phase (5 questions)
 // ---------------------------------------------------------------------------
 
 export const V_STEPS: FlowStep[] = [
@@ -57,7 +52,7 @@ export function buildVResult(runner: FlowRunner): VResult {
 }
 
 // ---------------------------------------------------------------------------
-// D 梦想阶段（动机净化）
+// D dream phase (motive purification)
 // ---------------------------------------------------------------------------
 
 export const D_STEPS: FlowStep[] = [

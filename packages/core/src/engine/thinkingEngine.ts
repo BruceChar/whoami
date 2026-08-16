@@ -1,9 +1,4 @@
-/**
- * delphi —— 思维分析引擎（三层模式统一入口）
- * 隐式 / 显式 / 引导式 的切换与执行都在这里完成。
- *
- * 规则引擎仅用于实时产出认知标记（偏差/归因/情绪等）作为 LLM 的提示与快照。
- */
+/** delphi — thinking engine (three analysis modes). */
 import { AnalysisMode, ChatMessage, MessageMarkers } from "../models/types";
 import { analyzeMessage, AnalyzeOptions } from "../analyzer/cognitiveMarker";
 import {
@@ -18,34 +13,34 @@ import { llmExtractMarkers, mergeMarkers } from "../llm/enhancedAnalysis";
 import { BIAS_LABELS } from "../analyzer/biasDetector";
 
 export interface EngineTurnResult {
-  /** 需要展示给用户的 Agent 回复文本 */
+    /** Agent reply text to display */
   reply: string;
-  /** 本次输入的分析标记 */
+    /** Cognitive markers of this input */
   markers: MessageMarkers;
-  /** 处理后的模式 */
+    /** Mode after processing */
   modeAfter: AnalysisMode;
-  /** 是否触发了模式切换 */
+    /** Whether a mode switch happened */
   modeChanged: boolean;
   modeChangeReason?: string;
-  /** 情绪脆弱（陪伴模式） */
+    /** Emotional crisis (companion mode) */
   companion: boolean;
-  /** 是否为纯命令输入（不参与分析） */
+    /** Whether the input was a pure command (no analysis) */
   isCommand: boolean;
-  /** LLM 用量（LLM 模式时存在） */
+    /** LLM usage, when LLM-generated */
   usage?: LLMUsage;
   llmModel?: string;
-  /** 是否由 LLM 生成回复 */
+    /** Whether the reply was LLM-generated */
   llmGenerated?: boolean;
 }
 
 export interface EngineOptions {
   sensitivity?: AnalyzeOptions["sensitivity"];
   lightTouch?: boolean;
-  /** LLM Agent（pi-ai）——必需 */
+    /** LLM agent (pi-ai) — required */
   llm: LLMAgent;
-  /** 逐条消息 LLM 标记增强（较耗 token，默认关；会话级深度分析不受此开关影响） */
+    /** Per-message LLM marker enhancement (token-heavy, off by default) */
   deepAnalyze?: boolean;
-  /** 工具模板系统提示（输入 / 触发的 VTD/SWOT 等） */
+    /** Tool template system prompt (VTD/SWOT etc. triggered by "/") */
   toolPrompt?: string;
 }
 
@@ -53,7 +48,7 @@ const COMMANDS = new Set([
   "/stealth", "/transparent", "/guide", "/deep", "/analyze", "/talk",
 ]);
 
-/** 各模式对应的 Agent 系统提示（镜子原则 + 模式行为） */
+/** Per-mode agent system prompt (mirror principle + mode behavior) */
 function systemPromptFor(mode: AnalysisMode, markers: MessageMarkers, input: string, toolPrompt?: string): string {
   const base =
     "你是 delphi，一面照向内心的镜子——一个自我认知 Agent。\n" +
@@ -61,7 +56,7 @@ function systemPromptFor(mode: AnalysisMode, markers: MessageMarkers, input: str
     "关注用户「怎么想」而非「想了什么」。用中文回复，保持简洁自然（一般 2-4 句），像朋友一样对话。\n" +
     "你可以调用工具 get_cognitive_profile / search_memory 读取用户的认知档案，让回答真正基于用户的数据。";
 
-  // 工具模板：优先于模式（/vtd 等由 LLM 主持流程）
+    // tool template: takes priority over the mode (LLM conducts the flow)
   if (toolPrompt) {
     return base + "\n\n" + toolPrompt;
   }
@@ -120,9 +115,9 @@ export class ThinkingEngine {
     llm: LLMAgent;
     toolPrompt?: string;
   };
-  /** 会话历史（用于 LLM 上下文） */
+    /** Session history (LLM context) */
   private history: ChatMessage[] = [];
-  /** 供工具调用读取的档案（由 CLI 注入） */
+    /** Profile read by tool calls (injected by the CLI/web) */
   llmProfile: import("../models/types").UserCognitiveProfile | null = null;
   private lastToolCalls: string[] = [];
 
@@ -137,12 +132,12 @@ export class ThinkingEngine {
     };
   }
 
-  /** 处理一条用户输入，返回 Agent 应展示的回复 */
+    /** Process one user input; returns the reply to display */
   async process(input: string): Promise<EngineTurnResult> {
     const trimmed = input.trim();
     const isCommand = COMMANDS.has(trimmed.split(/\s+/)[0]);
 
-    // 1. 模式切换（含情绪危机检测）
+        // 1. mode switch (incl. crisis detection)
     const sw = resolveModeSwitch(trimmed, this.mode);
     let companion = false;
     if (sw) {
@@ -161,16 +156,16 @@ export class ThinkingEngine {
       }
     }
 
-    // 2. 规则分析（始终运行，产出认知标记）
+        // 2. rule analysis (always runs, produces markers)
     let markers = analyzeMessage(trimmed, { sensitivity: this.opts.sensitivity });
 
-    // 2.1 可选：LLM 逐条标记增强（deepAnalyze 开关）
+        // 2.1 optional: per-message LLM marker enhancement (deepAnalyze)
     if (this.opts.deepAnalyze) {
       try {
         const llmMarkers = await llmExtractMarkers(this.opts.llm, trimmed);
         if (llmMarkers) markers = mergeMarkers(markers, llmMarkers);
       } catch {
-        // 增强失败不影响主流程
+                // enhancement failure must not break the main flow
       }
     }
 
@@ -214,24 +209,24 @@ export class ThinkingEngine {
     };
   }
 
-  /** 当前模式 */
+    /** Current mode */
   getMode(): AnalysisMode {
     return this.mode;
   }
 
-  /** 本次会话最近执行的工具（供 CLI 展示） */
+    /** Tools executed this session (for CLI display) */
   getLastToolCalls(): string[] {
     return this.lastToolCalls;
   }
 
-  /** 注入历史消息（仅用于 LLM 上下文，不重新分析、不重复计数） */
+    /** Seed history messages (LLM context only; no re-analysis or recounting) */
   rememberHistory(messages: Array<{ role: "user" | "agent"; text: string }>): void {
     for (const m of messages.slice(-24)) {
       this.history.push({ role: m.role, text: m.text, timestamp: new Date().toISOString() });
     }
   }
 
-  /** 会话结束时的摘要 */
+    /** Session-end summary */
   sessionSummary(): string[] {
     return this.analyzer.sessionSummary();
   }

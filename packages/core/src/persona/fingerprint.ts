@@ -1,7 +1,4 @@
-/**
- * delphi —— 认知指纹（文档 8.2）
- * 归因指纹 / 抽象指纹 / 确定指纹 / 时间指纹 / 情绪指纹
- */
+/** delphi — attribution / abstraction / certainty / time orientation / emotional tone */
 import { UserCognitiveProfile } from "../models/types";
 
 export interface CognitiveFingerprint {
@@ -25,7 +22,7 @@ export const EMOTION_LABELS: Record<string, string> = {
 export function computeFingerprint(profile: UserCognitiveProfile): CognitiveFingerprint {
   const markers = profile.cognitiveMarkers;
 
-  // 时间指纹：跨会话汇总
+    // time fingerprint: aggregated across sessions
   let past = 0, present = 0, future = 0;
   const emotionTone: Record<string, number> = {};
   for (const s of profile.sessions) {
@@ -53,7 +50,7 @@ export function computeFingerprint(profile: UserCognitiveProfile): CognitiveFing
   };
 }
 
-/** 把情绪指纹转换为中文描述 */
+/** Convert the emotional fingerprint to a Chinese description */
 export function describeEmotionalTone(emotionTone: Record<string, number>): string {
   const entries = Object.entries(emotionTone).sort((a, b) => b[1] - a[1]);
   if (entries.length === 0) return "情绪表达较少（数据不足）";

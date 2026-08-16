@@ -1,6 +1,4 @@
-/**
- * delphi —— 洞察收藏夹（文档 7.5）
- */
+/** delphi — insights collection. */
 import { ProfileStore, newInsightId } from "@delphi/core";
 import { askLine, EOF_INPUT } from "../../ui/ask";
 import { c, box } from "../../ui/render";

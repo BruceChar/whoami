@@ -1,6 +1,4 @@
-/**
- * delphi —— 兴趣矩阵（四象限能量评分）
- */
+/** delphi — interest matrix. */
 import {
   ProfileStore,
   createInterestFlow,

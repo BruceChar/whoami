@@ -1,11 +1,4 @@
-/**
- * delphi —— 本地 JSON 文件存储（隐私优先，所有数据在本地）
- *
- * 存储布局（默认 ~/.delphi/）：
- *   profile.json      用户认知档案（统一数据模型，全部数据）
- *   backups/          历史备份
- *   exports/          导出文件
- */
+/** delphi — local JSON file storage (privacy-first; all data stays local). */
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
@@ -22,10 +15,13 @@ export interface StoreOptions {
 }
 
 /**
- * 数据目录解析优先级：
- * 1. 显式传入 opts.dataDir
- * 2. 环境变量 DELPHI_DATA_DIR（便于测试与多实例隔离）
- * 3. 默认 ~/.delphi
+  * Data-dir resolution order:
+  * 1. explicit opts.dataDir
+  * 2. DELPHI_DATA_DIR env (tests / multi-instance isolation)
+  * 3. default ~/.delphi
+  * 1. explicit opts.dataDir
+  * 2. DELPHI_DATA_DIR env (tests / multi-instance isolation)
+  * 3. default ~/.delphi
  */
 export function resolveDataDir(opts?: StoreOptions): string {
   if (opts?.dataDir) return opts.dataDir;
@@ -50,13 +46,13 @@ export class ProfileStore {
     this.profile = this.load();
   }
 
-  /** 读取档案（每次启动从磁盘加载，保证跨进程一致） */
+  /** Load the profile from disk on every start (consistent across processes) */
   private load(): UserCognitiveProfile {
     try {
       if (fs.existsSync(this.profilePath)) {
         const raw = fs.readFileSync(this.profilePath, "utf-8");
         const parsed = JSON.parse(raw) as UserCognitiveProfile;
-        // 兜底：旧版本档案缺少新字段时合并默认值
+            // merge defaults for fields missing from older profiles
         const base = createEmptyProfile(this.userId, this.dataDir);
         return mergeProfile(base, parsed);
       }
@@ -66,7 +62,7 @@ export class ProfileStore {
     return createEmptyProfile(this.userId, this.dataDir);
   }
 
-  /** 原子写入档案 */
+  /** Atomic profile write */
   save(): void {
     this.profile.updatedAt = new Date().toISOString();
     const tmp = this.profilePath + ".tmp";
@@ -74,12 +70,12 @@ export class ProfileStore {
     fs.renameSync(tmp, this.profilePath);
   }
 
-  /** 获取当前档案（可变引用，修改后调用 save() 持久化） */
+    /** Get the profile (mutable; call save() to persist) */
   get(): UserCognitiveProfile {
     return this.profile;
   }
 
-  /** 生成当前档案的备份文件 */
+    /** Write a backup of the current profile */
   backup(label = "manual"): string {
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     const dest = path.join(this.dataDir, "backups", `profile-${label}-${stamp}.json`);
@@ -87,7 +83,7 @@ export class ProfileStore {
     return dest;
   }
 
-  /** 导出档案 JSON 到 exports 目录，返回文件路径 */
+    /** Export the profile JSON to the exports dir; returns the path */
   exportJson(): string {
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     const dest = path.join(this.dataDir, "exports", `profile-${stamp}.json`);
@@ -95,7 +91,7 @@ export class ProfileStore {
     return dest;
   }
 
-  /** 从 JSON 文件恢复档案 */
+    /** Restore the profile from a JSON file */
   importJson(filePath: string): void {
     const raw = fs.readFileSync(filePath, "utf-8");
     const parsed = JSON.parse(raw) as UserCognitiveProfile;
@@ -105,14 +101,14 @@ export class ProfileStore {
     this.save();
   }
 
-  /** 清空全部数据（重置档案） */
+    /** Clear all data (reset the profile) */
   reset(): void {
     this.profile = createEmptyProfile(this.userId, this.dataDir);
     this.save();
   }
 }
 
-/** 深度合并：以 base 为骨架，用 incoming 覆盖已有字段（用于版本兼容） */
+/** Deep merge: keep base as the skeleton, overlay incoming fields (version compat) */
 function mergeProfile(base: UserCognitiveProfile, incoming: Partial<UserCognitiveProfile>): UserCognitiveProfile {
   const merged: UserCognitiveProfile = {
     ...base,

@@ -4,7 +4,7 @@ interface Props {
   height?: number;
 }
 
-/** 迷你 SVG 折线图（成长曲线） */
+/** Minimal SVG sparkline for growth curves */
 export default function Sparkline({ values, width = 300, height = 40 }: Props) {
   if (values.length < 2) {
     return <div className="h-10 text-xs leading-10 text-slate-600">（数据不足）</div>;

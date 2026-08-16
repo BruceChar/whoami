@@ -1,32 +1,28 @@
-/**
- * 
- */
+/** delphi */
 import { BiasType } from "../models/types";
 
 // ---------------------------------------------------------------------------
-// 7 种基础思维偏差（P0 差异化价值）
-// ---------------------------------------------------------------------------
 
 export const BIAS_PATTERNS: Record<BiasType, string[]> = {
-  // 过度概括 / 绝对化：总是、从不、永远、所有人
+    // overgeneralization: always / never / everyone
   overgeneralization: [
     "总是", "从不", "从来都", "永远", "所有人", "每个人", "没有人", "根本", "彻底",
     "一点都", "每次都", "一直", "全都", "凡是", "从来", "压根",
     "always", "never", "everyone", "nobody", "everything", "nothing",
   ],
-  // 应该暴政：应该、必须、不该、不得不
+    // should tyranny: should / must / have to
   should_tyranny: [
     "应该", "必须", "不该", "不应该", "不得不", "一定要", "非得", "理应", "应当",
     "怎么能", "怎么可以", "规定", "必须得",
     "should", "must", "ought to", "have to", "supposed to",
   ],
-  // 灾难化想象：完蛋、毁了、受不了、活不下去
+    // catastrophizing: ruined / unbearable / can't go on
   catastrophizing: [
     "完蛋", "毁了", "全完了", "崩溃", "受不了", "活不下去", "糟糕透", "世界末日",
     "没救了", "彻底失败", "最坏", "灾难", "死定", "天塌", "完了", "不行了",
     "disaster", "ruined", "worst", "unbearable", "end of the world", "doomed", "catastrophe",
   ],
-  // 读心术：他肯定觉得、他们一定认为
+    // mind reading: they must think...
   mind_reading: [
     "他肯定觉得", "她肯定觉得", "他们肯定", "大家都觉得", "别人都认为", "他肯定想",
     "她肯定想", "我知道他肯定", "我知道她肯定", "他一定觉得", "她一定觉得",
@@ -34,20 +30,20 @@ export const BIAS_PATTERNS: Record<BiasType, string[]> = {
     "一定觉得", "一定认为", "一定想", "他以为我", "她以为我",
     "he thinks i", "she thinks i", "they think i", "i know he", "i know she",
   ],
-  // 情绪推理：感觉就是、因为我感觉
+    // emotional reasoning: I feel that means...
   emotional_reasoning: [
     "感觉就是", "我感觉是", "我觉得就是", "因为我觉得", "所以我觉得", "我感到",
     "我感觉到", "直觉告诉我", "心里觉得", "潜意识觉得", "莫名觉得", "总觉得",
     "就是感觉", "感觉好像", "我感觉好像",
     "i feel like it", "i feel that means", "because i feel",
   ],
-  // 确认偏误：果然、我就知道、不出所料
+    // confirmation bias: I knew it / as expected
   confirmation_bias: [
     "果然", "我就知道", "早就说", "不出所料", "果真", "我就说", "看吧", "我早就知道",
     "印证了", "证明我是对的", "和我预想的一样", "果然如此", "意料之中",
     "i knew it", "as expected", "told you", "proves my point", "just as i thought",
   ],
-  // 非黑即白：要么…要么、必须完美、二选一
+    // all-or-nothing: either/or, must be perfect
   all_or_nothing: [
     "要么", "非黑即白", "不是", "就是", "只能", "没有中间", "必须完美", "不完美就是失败",
     "二选一", "全有或全无", "非此即彼",
@@ -56,7 +52,7 @@ export const BIAS_PATTERNS: Record<BiasType, string[]> = {
 };
 
 // ---------------------------------------------------------------------------
-// 归因
+// attribution
 // ---------------------------------------------------------------------------
 
 export const ATTRIBUTION_PATTERNS: Record<"internal" | "external" | "situational", string[]> = {
@@ -76,7 +72,7 @@ export const ATTRIBUTION_PATTERNS: Record<"internal" | "external" | "situational
 };
 
 // ---------------------------------------------------------------------------
-// 确定性
+// certainty
 // ---------------------------------------------------------------------------
 
 export const CERTAINTY_HIGH = [
@@ -90,7 +86,7 @@ export const CERTAINTY_LOW = [
 ];
 
 // ---------------------------------------------------------------------------
-// 时间取向
+// time orientation
 // ---------------------------------------------------------------------------
 
 export const TIME_PAST = [
@@ -106,7 +102,7 @@ export const TIME_FUTURE = [
 ];
 
 // ---------------------------------------------------------------------------
-// 情绪基调（类别 → 情绪词）
+// emotional tones (category -> words)
 // ---------------------------------------------------------------------------
 
 export const EMOTION_TONES: Record<string, string[]> = {
@@ -120,7 +116,7 @@ export const EMOTION_TONES: Record<string, string[]> = {
 };
 
 // ---------------------------------------------------------------------------
-// 自我反思信号
+// self-reflection signals
 // ---------------------------------------------------------------------------
 
 export const SELF_REFLECTION_SIGNALS = [
@@ -131,7 +127,7 @@ export const SELF_REFLECTION_SIGNALS = [
 ];
 
 // ---------------------------------------------------------------------------
-// 抽象层级（跳跃检测用）
+// abstraction levels (for jump detection)
 // ---------------------------------------------------------------------------
 
 export const ABSTRACT_WORDS = [
@@ -147,7 +143,7 @@ export const CONCRETE_WORDS = [
 ];
 
 // ---------------------------------------------------------------------------
-// 问题句信号（引导式模式判断是否需要追问）
+// question markers (meta-guide: whether to follow up)
 // ---------------------------------------------------------------------------
 
 export const QUESTION_MARKERS = [
@@ -156,7 +152,7 @@ export const QUESTION_MARKERS = [
 ];
 
 // ---------------------------------------------------------------------------
-// 通用工具
+// helpers
 // ---------------------------------------------------------------------------
 
 export interface KeywordHit {
@@ -166,7 +162,7 @@ export interface KeywordHit {
 
 const QUOTE_RADIUS = 8;
 
-/** 在文本中查找所有关键词命中（含上下文引用片段） */
+/** Find all keyword hits in text (with surrounding quote fragments) */
 export function findHits(text: string, keywords: string[]): KeywordHit[] {
   const hits: KeywordHit[] = [];
   for (const kw of keywords) {

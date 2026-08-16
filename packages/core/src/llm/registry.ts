@@ -1,17 +1,4 @@
-/**
- * delphi —— LLM 注册表（配置解析 + 单例 + 配置文件支持）
- *
- * API Key 必须配置，否则 CLI 弹出帮助信息、Web 提示去设置。
- *
- * 配置来源（优先级：环境变量 > 配置文件）：
- *   1. 环境变量
- *      DELPHI_LLM_PROVIDER  提供商: deepseek|openai|anthropic|openrouter|google
- *      DELPHI_LLM_MODEL     模型 id（缺省用各提供商默认模型）
- *      <PROVIDER>_API_KEY   pi-ai 鉴权（如 DEEPSEEK_API_KEY）
- *   2. 配置文件  <dataDir>/config.json
- *      { "provider": "...", "model": "...", "apiKey": "..." }
- *      （Web 端「设置」按钮写入；dataDir = DELPHI_DATA_DIR 或 ~/.delphi）
- */
+/** delphi — LLM registry (config resolution + singleton + config file). */
 import * as fs from "fs";
 import * as path from "path";
 import { LLMProvider } from "./types";
@@ -26,11 +13,11 @@ export interface LLMConfig {
   provider: SupportedProvider;
   model?: string;
   apiKey?: string;
-  /** 配置来源：env=环境变量 file=配置文件 */
+    /** Config source: env=environment variable, file=config file */
   source: "env" | "file";
 }
 
-/** 未配置 LLM 时抛出（消息即帮助信息） */
+/** Thrown when no LLM is configured (message doubles as help text) */
 export class LLMNotConfiguredError extends Error {
   constructor(message?: string) {
     super(message || llmConfigHelp());
@@ -45,7 +32,7 @@ export interface LLMConfigFile {
 }
 
 // ---------------------------------------------------------------------------
-// 配置文件读写
+// config file read/write
 // ---------------------------------------------------------------------------
 
 export function configFilePath(dataDir?: string): string {
@@ -68,7 +55,7 @@ export function saveLLMConfigFile(cfg: LLMConfigFile, dataDir?: string): void {
   fs.writeFileSync(configFilePath(dir), JSON.stringify(cfg, null, 2), "utf-8");
 }
 
-/** 当前配置状态（doctor / Web 设置页用），key 脱敏 */
+/** Current config status (for doctor / web settings); key masked */
 export interface LLMConfigStatus {
   configured: boolean;
   provider?: string;
@@ -95,10 +82,10 @@ export function getConfigStatus(dataDir?: string): LLMConfigStatus {
 }
 
 // ---------------------------------------------------------------------------
-// 配置解析
+// config resolution
 // ---------------------------------------------------------------------------
 
-/** 解析 LLM 配置；未配置任何 Key 时返回 null */
+/** Resolve the LLM config; null when no key is configured */
 export function resolveLLMConfig(dataDir?: string): LLMConfig | null {
   const file = loadLLMConfigFile(dataDir);
 
@@ -106,7 +93,7 @@ export function resolveLLMConfig(dataDir?: string): LLMConfig | null {
   const model = (process.env.DELPHI_LLM_MODEL || file?.model || "").trim() || undefined;
   const fileKey = file?.apiKey?.trim() || undefined;
 
-  // 1) 显式环境变量提供商（需配对应 Key）
+    // 1) explicit env provider (needs its key)
   if (explicitProvider) {
     if (!(SUPPORTED_PROVIDERS as readonly string[]).includes(explicitProvider)) {
       throw new LLMNotConfiguredError(
@@ -125,7 +112,7 @@ export function resolveLLMConfig(dataDir?: string): LLMConfig | null {
     };
   }
 
-  // 2) 配置文件（Web「设置」页写入）
+    // 2) config file (written by the web Settings page)
   if (fileKey && file?.provider) {
     const provider = file.provider.trim().toLowerCase() as SupportedProvider;
     if ((SUPPORTED_PROVIDERS as readonly string[]).includes(provider)) {
@@ -133,7 +120,7 @@ export function resolveLLMConfig(dataDir?: string): LLMConfig | null {
     }
   }
 
-  // 3) 自动探测环境变量
+    // 3) auto-detect env vars
   for (const provider of SUPPORTED_PROVIDERS) {
     const key = process.env[PROVIDER_ENV_KEYS[provider]];
     if (key) {
@@ -144,21 +131,21 @@ export function resolveLLMConfig(dataDir?: string): LLMConfig | null {
 }
 
 // ---------------------------------------------------------------------------
-// 单例（按配置签名缓存，配置变化自动重建）
+// singleton (cached by config signature; rebuilt when config changes)
 // ---------------------------------------------------------------------------
 
 let cached: { key: string; value: (LLMProvider & LLMAgent) | null } | null = null;
-/** 由本模块注入到 process.env 的 Key（便于清除配置时一并清理） */
+  /** Env keys injected by this module (cleaned up when config is cleared) */
 const injectedEnvKeys = new Set<string>();
 
-/** 获取 LLM Provider 单例；未配置时返回 null */
+  /** Get the LLM provider singleton; null when unconfigured */
 export function getLLMProvider(dataDir?: string): (LLMProvider & LLMAgent) | null {
   const config = resolveLLMConfig(dataDir);
   const key = config ? JSON.stringify(config) : "null";
   if (cached && cached.key === key) return cached.value;
   let value: (LLMProvider & LLMAgent) | null = null;
   if (config) {
-    // 文件配置：把 apiKey 注入 pi-ai 读取的环境变量（跟踪以便清理）
+        // file config: inject the apiKey into the env pi-ai reads (tracked for cleanup)
     if (config.source === "file" && config.apiKey) {
       const envKey = PROVIDER_ENV_KEYS[config.provider];
       if (!process.env[envKey]) {
@@ -172,7 +159,7 @@ export function getLLMProvider(dataDir?: string): (LLMProvider & LLMAgent) | nul
   return value;
 }
 
-/** 必须拿到 LLM Provider，否则抛出 LLMNotConfiguredError（含配置帮助） */
+  /** Get the LLM provider or throw LLMNotConfiguredError (with help text) */
 export function requireLLMProvider(dataDir?: string): LLMProvider & LLMAgent {
   const provider = getLLMProvider(dataDir);
   if (!provider) {
@@ -181,7 +168,7 @@ export function requireLLMProvider(dataDir?: string): LLMProvider & LLMAgent {
   return provider;
 }
 
-/** 测试/配置变更用：清理注入的 Key 并重置单例缓存 */
+  /** Tests/config changes: clear injected keys and reset the cache */
 export function resetLLMProvider(): void {
   for (const k of injectedEnvKeys) {
     delete process.env[k];
@@ -190,7 +177,7 @@ export function resetLLMProvider(): void {
   cached = null;
 }
 
-/** 配置帮助信息（CLI 未配置时弹出） */
+/** Config help text (shown by the CLI when unconfigured) */
 export function llmConfigHelp(): string {
   return [
     "⚠ delphi 需要配置 LLM API Key 才能使用。",

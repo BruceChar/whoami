@@ -1,4 +1,4 @@
-/** GET /api/career —— 从业分析 JSON */
+/** GET /api/career — career analysis JSON */
 import { NextResponse } from "next/server";
 import { canAnalyzeCareer, buildCareerAnalysis, formatCareerReport } from "@delphi/core";
 import { getProfile } from "@/lib/server";

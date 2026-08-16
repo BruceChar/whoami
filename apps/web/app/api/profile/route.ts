@@ -1,4 +1,4 @@
-/** GET /api/profile —— 档案摘要 JSON */
+/** GET /api/profile — profile summary JSON */
 import { NextResponse } from "next/server";
 import { getProfile } from "@/lib/server";
 

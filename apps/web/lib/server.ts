@@ -1,6 +1,7 @@
 /**
- * delphi Web —— 服务端共享工具
- * 与 CLI 共用同一套 core 引擎与本地档案（DELPHI_DATA_DIR 或 ~/.delphi）。
+ * delphi Web — shared server-side helpers.
+ * Uses the same core engine and local profile store as the CLI
+ * (DELPHI_DATA_DIR or ~/.delphi).
  */
 import {
   ProfileStore,

@@ -1,10 +1,4 @@
-/**
- * delphi —— 认知标记提取（隐式分析的最小单元）
- *
- * 对单条用户消息做静默分析，产出 MessageMarkers：
- * 偏差、归因、确定性、时间取向、情绪基调、自我反思、抽象跳跃。
- * 该标记会写入会话记录，并汇入认知档案驱动指标计算。
- */
+/** delphi — cognitive marker extraction (smallest unit of stealth analysis). */
 import {
   AttributionType,
   MessageMarkers,
@@ -41,7 +35,7 @@ function countHits(text: string, keywords: string[]): number {
   return total;
 }
 
-/** 归因判定：统计三类归因词，取最高者；无命中返回 null */
+/** Attribution: count the three types, return the highest; null when none */
 function detectAttribution(text: string): AttributionType | null {
   const internal = countHits(text, ATTRIBUTION_PATTERNS.internal);
   const external = countHits(text, ATTRIBUTION_PATTERNS.external);
@@ -53,7 +47,7 @@ function detectAttribution(text: string): AttributionType | null {
   return "situational";
 }
 
-/** 确定性：0-1，高确定性词占比 */
+/** Certainty: 0-1, share of high-certainty words */
 function detectCertainty(text: string): number {
   const high = countHits(text, CERTAINTY_HIGH);
   const low = countHits(text, CERTAINTY_LOW);
@@ -79,7 +73,7 @@ function detectEmotions(text: string): Record<string, number> {
   return result;
 }
 
-/** 情绪-事实区分：0=纯情绪无事实 0.5=无情绪 1=情绪与事实并存 */
+/** Emotion-fact separation: 0=pure emotion 0.5=no emotion 1=both */
 export function emotionFactScore(text: string): number {
   const emotions = countHits(text, Object.values(EMOTION_TONES).flat());
   const facts = countHits(text, CONCRETE_WORDS);
@@ -87,7 +81,7 @@ export function emotionFactScore(text: string): number {
   return facts > 0 ? 1 : 0;
 }
 
-/** 抽象层级跳跃：同时出现抽象词与具体词，且抽象词之后出现具体词（或反之） */
+/** Abstraction jump: abstract and concrete words interleaved */
 export function detectAbstractionJump(text: string): boolean {
   const absHits = findHits(text, ABSTRACT_WORDS);
   const conHits = findHits(text, CONCRETE_WORDS);
@@ -96,11 +90,11 @@ export function detectAbstractionJump(text: string): boolean {
   const firstCon = text.indexOf(conHits[0].keyword);
   const lastAbs = text.lastIndexOf(absHits[absHits.length - 1].keyword);
   const lastCon = text.lastIndexOf(conHits[conHits.length - 1].keyword);
-  // 若抽象词与具体词交错出现（抽象在具体前且具体在抽象后，或反之），视为跳跃
+    // abstract and concrete words interleaved -> treat as a jump
   return (firstAbs < lastCon && firstCon < lastAbs) || absHits.length + conHits.length >= 3;
 }
 
-/** 对单条用户消息做完整认知标记分析 */
+/** Full cognitive-marker analysis of one user message */
 export function analyzeMessage(text: string, opts: AnalyzeOptions = {}): MessageMarkers {
   const biases: BiasHit[] = detectBiases(text, opts.sensitivity || "medium");
   return {
@@ -115,7 +109,7 @@ export function analyzeMessage(text: string, opts: AnalyzeOptions = {}): Message
   };
 }
 
-/** 汇总多条消息的标记到认知档案的 cognitiveMarkers */
+/** Aggregate markers from multiple messages into profile cognitiveMarkers */
 export function aggregateMarkers(
   markers: MessageMarkers[],
   prev: { attributionPattern: { internal: number; external: number; situational: number }; certaintyIndex: number; abstractionJumpsPerSession: number; selfReflectionRatio: number; emotionFactRatio: number; biasFrequency: Record<string, number> },

@@ -1,5 +1,5 @@
 /**
- * 洞察页 —— 仪表盘 + 画像 + 时间线 合并
+ * Insights page — dashboard, persona and timeline merged
  */
 import { getProfile, getAgent } from "@/lib/server";
 import {
@@ -38,7 +38,7 @@ export default async function InsightsPage() {
   const g = profile.growthTracking;
   const firstUse = profile.sessions[0]?.startedAt?.slice(0, 10) || profile.createdAt.slice(0, 10);
 
-  // 画像生成/叙事
+  // persona generation / LLM narratives
   let persona = profile.currentPersona;
   let narratives = persona?.narratives;
   if (canGeneratePersona(profile) && persona && !narratives && llm) {

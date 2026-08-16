@@ -1,4 +1,4 @@
-/** GET /api/sessions —— 会话历史列表（侧边栏） */
+/** GET /api/sessions — session history for the sidebar */
 import { NextResponse } from "next/server";
 import { getStore } from "@/lib/server";
 

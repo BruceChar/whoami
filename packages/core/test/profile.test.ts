@@ -46,7 +46,7 @@ test("对话 → 会话记录 → 指标重算 → 档案更新", async () => {
   assert.equal(profile.sessions.length, 1);
   assert.ok(session.metricPoint, "会话应有指标点");
   assert.ok(profile.growthTracking.dimensions.selfReflectionDepth.currentLevel >= 0);
-  // 过度概括频率应 > 0
+    // overgeneralization frequency should be > 0
   assert.ok(profile.growthTracking.dimensions.overgeneralizationFreq.currentLevel > 0);
 });
 
@@ -63,12 +63,12 @@ test("个人画像：数据不足时不生成，足够后生成", () => {
   const store = new ProfileStore({ dataDir: tmpDir() });
   const profile = store.get();
 
-  // 3 次会话
+    // 3 sessions
   for (let i = 0; i < 3; i++) {
     const s = beginSession(profile, "stealth");
     appendMessage(s, { role: "user", text: `第${i}次对话，我总觉得自己不够好`, timestamp: new Date().toISOString(), markers: { biases: [], attribution: "internal", certainty: 0.7, timeOrientation: { past: 0.5, present: 0.3, future: 0.2 }, emotionTone: { anxiety: 1 }, selfReflection: true, abstractionJump: false, isQuestion: false } });
   }
-  // 一个工具
+    // one framework tool
   profile.frameworkData.dailyFeedback.push({
     date: "2025-01-01",
     satisfied: { event: "完成了写作", reason: "有创造感" },

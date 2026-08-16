@@ -1,7 +1,4 @@
-/**
- * delphi —— 能量地图（文档 8.3）
- * 能量源（满意事件主题）/ 能量黑洞（不满意事件主题）
- */
+/** delphi — Energy sources (satisfying themes) / black holes (unsatisfying themes) */
 import { UserCognitiveProfile } from "../models/types";
 import { satisfiedDrivers, unsatisfiedDrivers } from "../frameworks/dailyFeedback";
 
@@ -17,7 +14,7 @@ export function computeEnergyMap(profile: UserCognitiveProfile): EnergyMap {
   const sources = satisfiedDrivers(entries);
   const blackHoles = unsatisfiedDrivers(entries);
 
-  // 能量伪装：SWOT 中列为优势（自认擅长）但成就事件能量低 → 疑似伪装
+    // disguises: listed as a strength (self-claimed) but low achievement energy
   const disguises: EnergyMap["disguises"] = [];
   const lowEnergyAchievements = profile.frameworkData.achievements.filter((a) => a.energyLevel === "low");
   for (const ach of lowEnergyAchievements) {
@@ -31,7 +28,7 @@ export function computeEnergyMap(profile: UserCognitiveProfile): EnergyMap {
     if (disguises.length >= 2) break;
   }
 
-  // 能量波动：按天聚合满意主题数量
+    // fluctuations: satisfying themes aggregated per day
   const fluctuations: EnergyMap["fluctuations"] = [];
   const byDate = new Map<string, number>();
   for (const e of entries) {

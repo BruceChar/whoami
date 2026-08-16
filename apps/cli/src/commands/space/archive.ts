@@ -1,6 +1,4 @@
-/**
- * delphi —— 思维档案库（文档 7.4）
- */
+/** delphi — thinking archive. */
 import { ProfileStore } from "@delphi/core";
 import { c, box, hr } from "../../ui/render";
 

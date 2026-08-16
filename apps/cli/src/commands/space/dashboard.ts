@@ -1,6 +1,4 @@
-/**
- * delphi —— 认知仪表盘（文档 7.2）
- */
+/** delphi — cognitive dashboard. */
 import { ProfileStore, DIMENSION_LABELS, UP_IS_GOOD, PERSONA_STAGE_LABELS } from "@delphi/core";
 import { c, box, progressBar, hr } from "../../ui/render";
 

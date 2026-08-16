@@ -1,22 +1,19 @@
-/**
- * @delphi/core —— delphi 核心引擎
- * 纯 TypeScript，零运行时依赖，CLI 与未来 Web 端共享。
- */
+/** delphi — @delphi/core — delphi core engine. */
 export * from "./models/types";
 export * from "./storage/store";
 
-// 分析器
+// analyzer
 export * from "./analyzer/lexicons";
 export * from "./analyzer/biasDetector";
 export * from "./analyzer/cognitiveMarker";
 
-// 引擎（三层模式）
+// engine (three modes)
 export * from "./engine/modeSwitcher";
 export * from "./engine/stealth";
 export * from "./engine/transparent";
 export * from "./engine/thinkingEngine";
 
-// 方法论工具库
+// framework library
 export * from "./frameworks/flow";
 export * from "./frameworks/keywordExtract";
 export * from "./frameworks/toolTemplates";
@@ -27,21 +24,21 @@ export * from "./frameworks/swot";
 export * from "./frameworks/achievement";
 export * from "./frameworks/interestMatrix";
 
-// 成长追踪与画像
+// growth tracking & persona
 export * from "./profiler/growthTracker";
 export * from "./profiler/inflectionDetector";
 export * from "./persona/fingerprint";
 export * from "./persona/energyMap";
 export * from "./persona/persona";
 
-// 分析输出
+// analysis outputs
 export * from "./outputs/careerAnalysis";
 export * from "./outputs/lifeDesign";
 
-// 服务层
+// service layer
 export * from "./services/profileService";
 
-// LLM（pi-ai 集成）
+// LLM (pi-ai integration)
 export * from "./llm/types";
 export * from "./llm/json";
 export * from "./llm/dynamicImport";

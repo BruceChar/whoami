@@ -1,12 +1,4 @@
-/**
- * delphi —— pi-ai LLM Provider 实现
- * 基于 @earendil-works/pi-ai（Unified LLM API：自动模型发现 + 提供商配置 + 工具调用）。
- *
- * 说明：
- * - pi-ai 为 ESM-only 包，这里通过动态 import() 从 CJS 调用（Node 20+ 支持）。
- * - 只注册选中的提供商工厂（按需加载，不引入全部 SDK）。
- * - 鉴权走环境变量（DEEPSEEK_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY / OPENROUTER_API_KEY / GOOGLE_API_KEY）。
- */
+/** delphi — pi-ai LLM provider. */
 import { LLMCompleteOptions, LLMError, LLMJSONOptions, LLMMessage, LLMProvider, LLMResult } from "./types";
 import { extractJSONAs } from "./json";
 import { dynamicImport } from "./dynamicImport";
@@ -14,7 +6,7 @@ import { AgentToolDef, LLMAgent, LLMAgentResult } from "./agent";
 
 type AnyModels = any;
 
-/** 提供商 id → 工厂模块子路径 */
+/** provider id -> factory module subpath */
 const PROVIDER_MODULES: Record<string, string> = {
   deepseek: "@earendil-works/pi-ai/providers/deepseek",
   openai: "@earendil-works/pi-ai/providers/openai",
@@ -23,7 +15,7 @@ const PROVIDER_MODULES: Record<string, string> = {
   google: "@earendil-works/pi-ai/providers/google",
 };
 
-/** 提供商 id → 环境变量名（用于 isConfigured） */
+/** provider id -> env var name (used by isConfigured) */
 export const PROVIDER_ENV_KEYS: Record<string, string> = {
   deepseek: "DEEPSEEK_API_KEY",
   openai: "OPENAI_API_KEY",
@@ -32,7 +24,7 @@ export const PROVIDER_ENV_KEYS: Record<string, string> = {
   google: "GOOGLE_API_KEY",
 };
 
-/** 各提供商的默认模型候选（按性价比优先） */
+/** Default model candidates per provider (cost-effective first) */
 export const DEFAULT_MODEL_CANDIDATES: Record<string, string[]> = {
   deepseek: ["deepseek-v4-flash", "deepseek-v4-pro"],
   openai: ["gpt-4o-mini", "gpt-5.4-mini", "gpt-4.1-mini"],
@@ -44,9 +36,9 @@ export const DEFAULT_MODEL_CANDIDATES: Record<string, string[]> = {
 export interface PiAiProviderOptions {
   providerId: string;
   modelId?: string;
-  /** 测试注入：自定义 models 集合装配（覆盖默认提供商注册） */
+    /** Test injection: custom models setup (overrides default provider registration) */
   setup?: (models: AnyModels) => void | Promise<void>;
-  /** 测试注入：自定义模型查找 */
+    /** Test injection: custom model lookup */
   resolveModel?: (models: AnyModels, providerId: string, modelId: string | undefined) => Promise<unknown> | unknown;
 }
 
@@ -97,7 +89,7 @@ export class PiAiProvider implements LLMProvider, LLMAgent {
     return models;
   }
 
-  /** 解析模型对象（含默认模型回退） */
+    /** Resolve the model object (with default-model fallback) */
   private async resolveModel(): Promise<unknown> {
     if (!this.modelPromise) {
       this.modelPromise = this.doResolveModel();
@@ -115,12 +107,12 @@ export class PiAiProvider implements LLMProvider, LLMAgent {
       const found = models.getModel(this.id, target);
       if (found) return found;
     }
-    // 默认模型候选
+        // default model candidates
     for (const candidate of DEFAULT_MODEL_CANDIDATES[this.id] || []) {
       const found = models.getModel(this.id, candidate);
       if (found) return found;
     }
-    // 兜底：取目录中成本最低的模型
+        // fallback: cheapest model in the catalog
     const all: any[] = models.getModels(this.id) || [];
     const sorted = [...all].sort(
       (a, b) => (a.cost?.input ?? Infinity) - (b.cost?.input ?? Infinity)
@@ -198,7 +190,7 @@ export class PiAiProvider implements LLMProvider, LLMAgent {
   }
 
   // -------------------------------------------------------------------------
-  // LLMAgent：工具调用循环（complete → toolCall → toolResult → complete）
+    // LLMAgent: tool-calling loop (complete -> toolCall -> toolResult -> complete)
   // -------------------------------------------------------------------------
 
   async agentChat(opts: {
@@ -269,7 +261,7 @@ export class PiAiProvider implements LLMProvider, LLMAgent {
         };
       }
 
-      // 执行工具并把结果回灌上下文
+            // execute the tool and feed the result back into context
       context.messages.push(response);
       for (const call of toolCalls) {
         executedTools.push(call.name);
@@ -295,7 +287,7 @@ export class PiAiProvider implements LLMProvider, LLMAgent {
   }
 }
 
-/** JSON Schema（子集）→ TypeBox TSchema（pi-ai 工具参数需要） */
+/** JSON Schema (subset) -> TypeBox TSchema (required for pi-ai tool parameters) */
 function jsonSchemaToTypeBox(Type: any, schema: import("./agent").JsonSchema): any {
   switch (schema.type) {
     case "string":

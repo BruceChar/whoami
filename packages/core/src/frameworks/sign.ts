@@ -1,7 +1,4 @@
-/**
- * delphi —— SIGN 模型（天赋信号探测，文档 4.2.2）
- * S-Success / I-Instinct / G-Growth / N-Needs
- */
+/** delphi — S-Success / I-Instinct / G-Growth / N-Needs */
 import { FlowRunner, FlowStep } from "./flow";
 
 export const SIGN_STEPS: FlowStep[] = [
@@ -46,7 +43,7 @@ export function buildSignResult(runner: FlowRunner): SignResult {
   };
 }
 
-/** 从 SIGN 结果提取天赋领域关键词（供画像/从业分析交叉验证） */
+/** Extract talent-domain keywords from SIGN results (cross-validated by persona/career) */
 export function signAreas(result: SignResult): string[] {
   const combined = Object.values(result.signals).join("\n");
   const areas: string[] = [];

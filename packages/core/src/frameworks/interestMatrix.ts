@@ -1,8 +1,4 @@
-/**
- * delphi —— 兴趣矩阵（文档 4.4.1）
- * 四象限能量评分：创造性◄►分析性 × 独立性◄►社交性
- * 产出：高能象限 + 冲突检测（高能 vs 低能相邻象限）
- */
+/** delphi — Four-quadrant energy rating: creative <-> analytical x independent <-> social. */
 import { FlowRunner, FlowStep } from "./flow";
 
 export interface InterestRating {
@@ -62,7 +58,7 @@ export interface InterestMatrixResult {
 export function buildInterestMatrix(runner: FlowRunner): InterestMatrixResult {
   const rating = buildInterestRating(runner);
 
-  // 象限能量：创造性轴与社交性轴合成
+    // quadrant energy: creative and social axes combined
   const scores = QUADRANTS.map((q) => {
     const creativeScore = q.creative === 1 ? rating.creative : rating.analytical;
     const socialScore = q.social === 1 ? rating.social : rating.independent;
@@ -72,7 +68,7 @@ export function buildInterestMatrix(runner: FlowRunner): InterestMatrixResult {
   const high = scores.filter((s) => s.score >= 3).map((s) => s.label);
   const highEnergyQuadrants = high.length >= 2 ? high : scores.slice(0, 2).map((s) => s.label);
 
-  // 冲突检测：高能量轴 vs 低能量轴
+    // conflict detection: high-energy axis vs low-energy axis
   const conflicts: string[] = [];
   if (rating.creative >= 4 && rating.analytical <= 1) conflicts.push("创造性与分析性差异大——工作可能难以两全");
   if (rating.social >= 4 && rating.independent <= 1) conflicts.push("社交需求高但独立倾向低——自由职业可能孤独");

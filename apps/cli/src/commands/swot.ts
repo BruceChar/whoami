@@ -1,6 +1,4 @@
-/**
- * delphi —— SWOT 分析（Agent 增强版）
- */
+/** delphi — SWOT analysis (agent-enhanced). */
 import {
   ProfileStore,
   createSwotFlow,

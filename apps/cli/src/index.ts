@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * delphi —— 入口
- * 一面照向内心的镜子。Be water my friend.
+  * delphi — entry point.
+  * A mirror into the mind. Be water my friend.
  */
 import { main } from "./cli";
 

@@ -1,4 +1,4 @@
-/** GET /api/sessions/[id] —— 单个会话的消息 */
+/** GET /api/sessions/[id] — messages of one session */
 import { NextRequest, NextResponse } from "next/server";
 import { getStore } from "@/lib/server";
 

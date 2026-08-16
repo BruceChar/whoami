@@ -23,6 +23,9 @@ const MODE_LABELS: Record<Mode, string> = {
   meta_guide: "引导式",
 };
 
+const SESSION_KEY = "delphi-session-id";
+const TOOL_KEY = "delphi-tool-id";
+
 export default function Chat() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -38,97 +41,113 @@ export default function Chat() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Initial load: session id, tool list, LLM config status.
   useEffect(() => {
-    setSessionId(localStorage.getItem("delphi-session-id"));
+    setSessionId(localStorage.getItem(SESSION_KEY));
     fetch("/api/tools").then((r) => r.json()).then((d) => setTools(d.tools || [])).catch(() => {});
-    const refreshConfig = () => fetch("/api/settings").then((r) => r.json()).then((s) => setConfigured(s.configured)).catch(() => setConfigured(false));
+    const refreshConfig = () =>
+      fetch("/api/settings").then((r) => r.json()).then((s) => setConfigured(s.configured)).catch(() => setConfigured(false));
     refreshConfig();
     window.addEventListener("delphi:settings-changed", refreshConfig);
     return () => window.removeEventListener("delphi:settings-changed", refreshConfig);
   }, []);
 
-  // 会话历史打开 / 新建
-  useEffect(() => {
-    const open = () => loadSession(localStorage.getItem("delphi-session-id"));
-    const reset = () => {
-      setMessages([]);
-      setActiveTool(null);
-      localStorage.removeItem("delphi-tool-id");
-    };
-    window.addEventListener("delphi:open-session", open);
-    window.addEventListener("delphi:new-chat", reset);
-    const sid = localStorage.getItem("delphi-session-id");
-    if (sid) loadSession(sid);
-    return () => {
-      window.removeEventListener("delphi:open-session", open);
-      window.removeEventListener("delphi:new-chat", reset);
-    };
-  }, []);
-
   const loadSession = useCallback((id: string | null) => {
-    if (!id) { setMessages([]); return; }
+    if (!id) {
+      setSessionId(null);
+      setMessages([]);
+      return;
+    }
     setSessionId(id);
     fetch(`/api/sessions/${id}`)
       .then((r) => r.json())
       .then((d) => {
         if (d.messages) {
-          setMessages(d.messages.map((m: { role: string; content: string }) => ({
-            role: m.role === "assistant" ? "assistant" : "user",
-            content: m.content,
-          })));
+          setMessages(
+            d.messages.map((m: { role: string; content: string }) => ({
+              role: m.role === "assistant" ? "assistant" : "user",
+              content: m.content,
+            }))
+          );
         }
       })
       .catch(() => {});
+  }, []);
+
+  // Sidebar-driven session open / new-chat events.
+  useEffect(() => {
+    const open = () => loadSession(localStorage.getItem(SESSION_KEY));
+    const reset = () => {
+      setSessionId(null); // do not append to the previous session
+      setMessages([]);
+      setActiveTool(null);
+      setError(null);
+      localStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(TOOL_KEY);
+    };
+    window.addEventListener("delphi:open-session", open);
+    window.addEventListener("delphi:new-chat", reset);
+    const sid = localStorage.getItem(SESSION_KEY);
+    if (sid) loadSession(sid);
+    return () => {
+      window.removeEventListener("delphi:open-session", open);
+      window.removeEventListener("delphi:new-chat", reset);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const send = useCallback(async (text?: string, toolId?: string) => {
-    const content = (text ?? input).trim();
-    if (!content || busy) return;
-    setInput("");
-    setError(null);
-    setToolMenuOpen(false);
-    const userMsg: Msg = { role: "user", content };
-    setMessages((m) => [...m, userMsg]);
-    setBusy(true);
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: content, mode, toolId, sessionId: sessionId || undefined }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "请求失败");
-      if (data.sessionId && data.sessionId !== sessionId) {
-        setSessionId(data.sessionId);
-        localStorage.setItem("delphi-session-id", data.sessionId);
-        window.dispatchEvent(new Event("delphi:sessions-changed"));
+  const send = useCallback(
+    async (text?: string, toolId?: string) => {
+      const content = (text ?? input).trim();
+      if (!content || busy) return;
+      setInput("");
+      setError(null);
+      setToolMenuOpen(false);
+      const userMsg: Msg = { role: "user", content };
+      setMessages((m) => [...m, userMsg]);
+      setBusy(true);
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: content, mode, toolId, sessionId: sessionId || undefined }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "请求失败");
+        if (data.sessionId && data.sessionId !== sessionId) {
+          setSessionId(data.sessionId);
+          localStorage.setItem(SESSION_KEY, data.sessionId);
+          window.dispatchEvent(new Event("delphi:sessions-changed"));
+        }
+        const metaParts: string[] = [];
+        if (data.usage) metaParts.push(`${data.llmModel || ""} · ${data.usage.totalTokens} tokens`);
+        if (data.toolCalls?.length) metaParts.push(`工具: ${data.toolCalls.join(", ")}`);
+        setMessages((m) => [...m, { role: "assistant", content: data.reply, meta: metaParts.join(" · ") || undefined }]);
+        setLlmInfo(data.llmModel || "LLM");
+      } catch (err) {
+        const msg = (err as Error).message;
+        setMessages((m) => [...m, { role: "assistant", content: `（出错）${msg}` }]);
+        setError(msg);
+      } finally {
+        setBusy(false);
       }
-      const metaParts: string[] = [];
-      if (data.usage) metaParts.push(`${data.llmModel || ""} · ${data.usage.totalTokens} tokens`);
-      if (data.toolCalls?.length) metaParts.push(`工具: ${data.toolCalls.join(", ")}`);
-      setMessages((m) => [...m, { role: "assistant", content: data.reply, meta: metaParts.join(" · ") || undefined }]);
-      setLlmInfo(data.llmModel || "LLM");
-    } catch (err) {
-      setMessages((m) => [...m, { role: "assistant", content: `（出错）${(err as Error).message}` }]);
-      setError((err as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }, [input, busy, mode, sessionId]);
+    },
+    [input, busy, mode, sessionId]
+  );
 
-  // 输入 / 弹出工具菜单
+  // Show the tool menu only while the input is exactly "/".
   const onInputChange = (v: string) => {
     setInput(v);
-    setToolMenuOpen(v === "/" || (v.startsWith("/") && v.length === 1));
+    setToolMenuOpen(v === "/");
   };
 
   const selectTool = (tool: ToolMeta) => {
     setActiveTool(tool);
-    localStorage.setItem("delphi-tool-id", tool.id);
+    localStorage.setItem(TOOL_KEY, tool.id);
     setInput("");
     setToolMenuOpen(false);
     inputRef.current?.focus();
@@ -136,12 +155,12 @@ export default function Chat() {
 
   const cancelTool = () => {
     setActiveTool(null);
-    localStorage.removeItem("delphi-tool-id");
+    localStorage.removeItem(TOOL_KEY);
   };
 
   return (
     <div className="flex h-full flex-col">
-      {/* 顶部：模式 + LLM 状态 */}
+      {/* Header: mode switcher + LLM status */}
       <header className="flex items-center justify-between border-b border-ink-200/70 px-6 py-3">
         <div className="flex items-center gap-1 rounded-lg bg-ink-100 p-0.5 text-xs">
           {(Object.keys(MODE_LABELS) as Mode[]).map((m) => (
@@ -166,7 +185,13 @@ export default function Chat() {
         </div>
       </header>
 
-      {/* 消息区 */}
+      {configured === false && (
+        <div className="border-b border-rose-200 bg-rose-50 px-6 py-2 text-sm text-rose-500">
+          离线模式已取消：请先在 <a href="/settings" className="underline">⚙️ 设置</a> 配置 LLM API Key。
+        </div>
+      )}
+
+      {/* Messages */}
       <div className="flex-1 space-y-5 overflow-y-auto px-6 py-6">
         {messages.length === 0 && (
           <div className="mx-auto mt-16 max-w-md text-center">
@@ -184,9 +209,7 @@ export default function Chat() {
             )}
             <div
               className={`max-w-[78%] rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed ${
-                m.role === "user"
-                  ? "bg-mirror-500 text-white"
-                  : "bg-surface text-ink-800 shadow-soft"
+                m.role === "user" ? "bg-mirror-500 text-white" : "bg-surface text-ink-800 shadow-soft"
               }`}
             >
               {m.role === "assistant" ? renderReply(m.content) : <span className="whitespace-pre-wrap">{m.content}</span>}
@@ -204,7 +227,7 @@ export default function Chat() {
         <div ref={bottomRef} />
       </div>
 
-      {/* 输入区 */}
+      {/* Composer */}
       <div className="relative border-t border-ink-200/70 px-6 pb-6 pt-3">
         {activeTool && (
           <div className="mb-2 flex items-center gap-2">
@@ -244,7 +267,7 @@ export default function Chat() {
                 send(undefined, activeTool?.id);
               }
             }}
-            placeholder={activeTool ? `继续 ${activeTool.label}…（回答 LLM 的提问）` : "说点什么…（/ 选择工具，Enter 发送，Shift+Enter 换行）"}
+            placeholder={activeTool ? `继续 ${activeTool.label}…（回答 LLM 的提问）` : "说点什么…（/ 选择工具，Enter 发送）"}
             className="flex-1 bg-transparent py-1 text-[15px] text-ink-800 outline-none placeholder:text-ink-300"
           />
           <button
@@ -255,9 +278,7 @@ export default function Chat() {
             发送
           </button>
         </div>
-        <p className="mt-2 text-center text-[11px] text-ink-300">
-          delphi 只反射、不评价 · Enter 发送 · / 打开工具模板
-        </p>
+        <p className="mt-2 text-center text-[11px] text-ink-300">delphi 只反射、不评价 · Enter 发送 · / 打开工具模板</p>
       </div>
     </div>
   );

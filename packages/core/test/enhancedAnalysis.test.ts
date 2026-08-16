@@ -97,7 +97,7 @@ test("llmExtractMarkers + mergeMarkers：LLM 增强规则标记", async () => {
   assert.equal(merged.attribution, "external");
   assert.equal(merged.certainty, 0.8);
   assert.equal(merged.emotionTone["焦虑"], 1);
-  // 偏差取并集
+    // biases are unioned
   assert.equal(merged.biases.length, 2);
   assert.ok(merged.biases.some((b) => b.type === "mind_reading"));
 });

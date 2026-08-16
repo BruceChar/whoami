@@ -1,14 +1,10 @@
-/**
- * delphi —— 交互输入助手
- * TTY：readline 逐行提问（带提示语）
- * 非 TTY（管道/脚本）：一次性读取 stdin 行队列，逐行弹出（便于自动化测试）
- */
+/** delphi — interactive input helpers. */
 import * as readline from "readline";
 
 let rl: readline.Interface | null = null;
 let pipedLines: string[] | null = null;
 
-/** EOF 哨兵：管道输入耗尽时 askLine 返回该值，菜单式循环应将其视为退出 */
+/** EOF sentinel: returned by askLine when piped input is exhausted; menu loops treat it as exit */
 export const EOF_INPUT = "\u0000__EOF__";
 
 function isPiped(): boolean {
@@ -24,11 +20,11 @@ async function ensurePipedLines(): Promise<void> {
       pipedLines.push(...text.split("\n"));
     }
   } catch {
-    // stdin 读取失败时静默处理
+      // ignore stdin read failures
   }
 }
 
-/** 询问一行输入（显示提示语）；管道输入耗尽后返回 EOF_INPUT */
+/** Ask for one line (with prompt); returns EOF_INPUT after piped input is exhausted */
 export async function askLine(prompt: string): Promise<string> {
   if (isPiped()) {
     await ensurePipedLines();
@@ -48,13 +44,13 @@ export async function askLine(prompt: string): Promise<string> {
   });
 }
 
-/** 询问并给出默认值 */
+/** Ask with a default value */
 export async function askLineDefault(prompt: string, def: string): Promise<string> {
   const ans = await askLine(prompt);
   return ans === "" ? def : ans;
 }
 
-/** 关闭 readline（进程退出前调用） */
+/** Close readline (call before process exit) */
 export function closeRl(): void {
   if (rl) {
     rl.close();

@@ -1,7 +1,4 @@
-/**
- * delphi —— 转折点检测（文档 7.3）
- * 里程碑 / 偏差突破 / 认知重构 / 外部验证 / 能量转移 / 原型验证 / 危机低谷
- */
+/** delphi — milestone / bias breakthrough / cognitive reconstruction / external */
 import {
   InflectionPoint,
   InflectionType,
@@ -41,7 +38,7 @@ export function addInflection(
     userMarked,
     agentDetected: true,
   };
-  // 快照：受影响维度变化
+    // snapshot: changes in affected dimensions
   for (const d of dimensionsAffected) {
     const dim = profile.growthTracking.dimensions[d];
     if (dim) {
@@ -59,8 +56,8 @@ function mean(xs: number[]): number {
 }
 
 /**
- * 偏差突破检测：某类思维漏洞频率从早期到近期显著下降（>25%）
- * 在 recomputeProfile 后调用；每个维度避免重复标记（30 天内）。
+  * Bias-breakthrough detection: a bias frequency drops >25% from early to
+  * recent sessions. Run after recomputeProfile; de-dupes per dimension (30d).
  */
 export function detectBiasBreakthroughs(profile: UserCognitiveProfile): InflectionPoint[] {
   const created: InflectionPoint[] = [];
@@ -77,7 +74,7 @@ export function detectBiasBreakthroughs(profile: UserCognitiveProfile): Inflecti
     if (earlier <= 0.05) continue;
     const drop = (earlier - recent) / earlier;
     if (drop > 0.25) {
-      // 去重：30 天内同一维度已有偏差突破则不重复
+            // de-dup: same dimension already has a breakthrough within 30 days
       const dup = profile.growthTracking.inflectionPoints.some(
         (ip) =>
           ip.type === "bias_breakthrough" &&

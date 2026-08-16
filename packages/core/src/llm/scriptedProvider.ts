@@ -1,14 +1,11 @@
-/**
- * delphi —— 脚本化 LLM Provider（单元测试用，无需真实 API）
- * 按顺序返回预设响应；JSON 模式返回预设 JSON 或回声。
- */
+/** delphi — scripted LLM provider for unit tests (no real API needed). */
 import { LLMCompleteOptions, LLMJSONOptions, LLMProvider, LLMResult } from "./types";
 import { extractJSONAs } from "./json";
 import { AgentToolDef, LLMAgent, LLMAgentResult } from "./agent";
 
 export interface ScriptedResponse {
   text: string;
-  /** 匹配包含此片段的输入时优先使用（默认按顺序） */
+    /** Used first when the input contains this fragment (default: in order) */
   when?: string;
 }
 
@@ -17,7 +14,7 @@ export class ScriptedLLMProvider implements LLMProvider, LLMAgent {
   readonly model = "scripted-1";
   private responses: ScriptedResponse[] = [];
   calls: Array<{ messages: LLMCompleteOptions["messages"]; json?: boolean }> = [];
-  /** agentChat 中执行过的工具 */
+    /** Tools executed in agentChat */
   executedTools: string[] = [];
 
   constructor(responses: ScriptedResponse[] = []) {
@@ -60,9 +57,9 @@ export class ScriptedLLMProvider implements LLMProvider, LLMAgent {
   }
 
   // -------------------------------------------------------------------------
-  // LLMAgent：脚本化工具循环
-  // 响应文本以 "TOOL:<name>" 开头时视为请求工具调用；
-  // 随后脚本中的下一条响应作为工具结果后的最终回复。
+    // LLMAgent: scripted tool loop
+    // A response starting with "TOOL:<name>" requests a tool call;
+    // the next scripted response is the final reply after the tool result.
   // -------------------------------------------------------------------------
 
   async agentChat(opts: {
@@ -83,7 +80,7 @@ export class ScriptedLLMProvider implements LLMProvider, LLMAgent {
       const name = match[1];
       executed.push(name);
       const result = await opts.executeTool(name, {});
-      // 工具结果已执行，取脚本下一条作为最终回复
+          // tool executed; take the next scripted response as the final reply
       text = this.pick(result);
     }
     this.executedTools.push(...executed);

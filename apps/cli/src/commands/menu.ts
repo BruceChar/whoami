@@ -1,6 +1,4 @@
-/**
- * delphi —— 主菜单（启动场景，文档 10.1）
- */
+/** delphi — main menu (startup scene). */
 import { ProfileStore, AnalysisMode } from "@delphi/core";
 import { askLine, EOF_INPUT } from "../ui/ask";
 import { c, box, hr } from "../ui/render";

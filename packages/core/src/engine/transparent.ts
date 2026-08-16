@@ -1,8 +1,4 @@
-/**
- * delphi —— 显式模式（Transparent Mode）
- * 实时将后台分析结果以"镜子"的方式展示给用户（只反射、不评价）。
- * 对应文档 3.2。
- */
+/** delphi — transparent mode. */
 import { AnalysisMode, MessageMarkers, ChatMessage } from "../models/types";
 import { BIAS_LABELS } from "../analyzer/biasDetector";
 import { detectAbstractionJump } from "../analyzer/cognitiveMarker";
@@ -20,18 +16,18 @@ const ATTRIBUTION_LABEL: Record<string, string> = {
 export { ATTRIBUTION_LABEL };
 
 export class TransparentAnalyzer {
-  /** 本次会话内关键词出现次数（跨消息累计） */
+    /** Keyword counts for this session (accumulated across messages) */
   private keywordCounts = new Map<string, number>();
   private userMessageCount = 0;
 
-  /** 记录一条消息，更新会话内统计（stealth 模式也调用，保持统计一致） */
+    /** Record a message and update session stats (also called in stealth mode) */
   observe(text: string, markers: MessageMarkers): void {
     this.userMessageCount++;
     for (const b of markers.biases) {
       const key = b.keyword;
       this.keywordCounts.set(key, (this.keywordCounts.get(key) || 0) + 1);
     }
-    // 情绪与归因词汇也计入快照
+        // emotions and attribution also count toward the snapshot
     for (const [category, count] of Object.entries(markers.emotionTone)) {
       this.keywordCounts.set(`情绪:${category}`, (this.keywordCounts.get(`情绪:${category}`) || 0) + count);
     }
@@ -41,12 +37,12 @@ export class TransparentAnalyzer {
     }
   }
 
-  /** 生成显式展示内容（只反射、不评价） */
+    /** Build the transparent display (reflect, never judge) */
   generate(text: string, markers: MessageMarkers): TransparentOutput {
     const narration: string[] = [];
     const snapshot: string[] = [];
 
-    // 1. 高频关键词（重复模式）
+        // 1. repeated keywords (patterns)
     for (const b of markers.biases) {
       const count = this.keywordCounts.get(b.keyword) || 1;
       if (count >= 2) {
@@ -58,7 +54,7 @@ export class TransparentAnalyzer {
       }
     }
 
-    // 2. 情绪推理：事实 → 感受跳跃
+        // 2. emotional reasoning: fact -> feeling jumps
     const emotionKeys = Object.keys(markers.emotionTone);
     if (emotionKeys.length > 0 && markers.biases.some((b) => b.type === "emotional_reasoning")) {
       narration.push(
@@ -67,26 +63,26 @@ export class TransparentAnalyzer {
       snapshot.push(`事实→感受跳跃 → 情绪推理检测`);
     }
 
-    // 3. 抽象跳跃
+        // 3. abstraction jumps
     if (detectAbstractionJump(text)) {
       narration.push("我注意到你从具体的事情跳到了更抽象的层面，中间那一步发生了什么？");
       snapshot.push(`抽象层级跳跃 → 具体↔意义`);
     }
 
-    // 4. 归因方向
+        // 4. attribution direction
     if (markers.attribution) {
       const label = ATTRIBUTION_LABEL[markers.attribution];
       snapshot.push(`归因方向: ${label}${markers.attribution === "external" ? "主导" : ""}`);
     }
 
-    // 5. 确定性用语
+        // 5. certainty wording
     if (markers.certainty >= 0.7) {
       narration.push("我听到几个很确定的词——听起来你对这件事已经有结论了？");
     } else if (markers.certainty <= 0.3 && markers.certainty > 0) {
       narration.push("你的用词里有不少不确定——这部分是你不确定，还是不想下结论？");
     }
 
-    // 6. 自我反思信号
+        // 6. self-reflection signals
     if (markers.selfReflection) {
       narration.push("我注意到你正在回看自己——这对看见自己如何思考很有帮助。");
       snapshot.push(`自我反思信号 ✓`);
@@ -95,9 +91,7 @@ export class TransparentAnalyzer {
     return { narration, snapshot };
   }
 
-  /**
-   * 组装完整展示块（metacog 叙述 + 思维快照）
-   */
+  /** Assemble the full display block (metacog narration + snapshot) */
   render(text: string, markers: MessageMarkers, messages: ChatMessage[]): string {
     this.observe(text, markers);
     const out = this.generate(text, markers);
@@ -118,7 +112,7 @@ export class TransparentAnalyzer {
     return lines.join("\n");
   }
 
-  /** 会话级摘要（对话结束时输出） */
+  /** Session-level summary (printed at conversation end) */
   sessionSummary(): string[] {
     const lines: string[] = [];
     const entries = [...this.keywordCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
@@ -132,7 +126,6 @@ export class TransparentAnalyzer {
   }
 }
 
-/** 引导式模式策略（对应文档 3.3） */
 export interface GuideStrategy {
   strategy: string;
   question: string;

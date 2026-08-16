@@ -1,7 +1,4 @@
-/**
- * delphi —— 思维漏洞检测（7 种基础偏差）
- * 检测逻辑只记录、不评价（镜子原则），具体是否提示由模式层决定。
- */
+/** delphi — cognitive bias detection (7 basic biases). */
 import { BiasType } from "../models/types";
 import { BIAS_PATTERNS, findHits, KeywordHit } from "./lexicons";
 
@@ -32,7 +29,7 @@ export const BIAS_TYPES: BiasType[] = [
 ];
 
 export interface BiasSensitivityConfig {
-  /** 每个偏差在单条消息中的触发阈值（次数），超过才计为一次命中 */
+    /** Per-bias trigger threshold per message (count); a hit only counts above it */
   threshold: number;
 }
 
@@ -43,9 +40,11 @@ const SENSITIVITY: Record<"low" | "medium" | "high", BiasSensitivityConfig> = {
 };
 
 /**
- * 检测一条消息中的思维偏差。
- * @param text 用户输入
- * @param sensitivity 敏感度：low 需要同一关键词多次出现才标记
+  * Detect cognitive biases in a message.
+  * @param text user input
+  * @param sensitivity low requires repeated keywords before marking
+  * @param text user input
+  * @param sensitivity low requires repeated keywords before marking
  */
 export function detectBiases(text: string, sensitivity: "low" | "medium" | "high" = "medium"): BiasHit[] {
   const { threshold } = SENSITIVITY[sensitivity];
@@ -56,10 +55,10 @@ export function detectBiases(text: string, sensitivity: "low" | "medium" | "high
     const found: KeywordHit[] = findHits(text, patterns);
     if (found.length === 0) continue;
 
-    // 同一关键词在同一消息中重复出现 → 按阈值决定是否标记
+        // same keyword repeated in one message -> decide by threshold
     if (found.length < threshold) continue;
 
-    // 去重：同一关键词只保留第一条（避免"总是……总是……"刷屏）
+        // de-dup: keep the first occurrence per keyword
     const seen = new Set<string>();
     const unique: KeywordHit[] = [];
     for (const hit of found) {
