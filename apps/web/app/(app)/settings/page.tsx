@@ -464,6 +464,8 @@ function ShareSection() {
   const [days, setDays] = useState("30");
   const [max, setMax] = useState("");
   const [link, setLink] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [maxEntries, setMaxEntries] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -471,6 +473,8 @@ function ShareSection() {
     setBusy(true);
     setError(null);
     setLink(null);
+    setExpiresAt(null);
+    setMaxEntries(null);
     try {
       const res = await fetch("/api/feedback/link", {
         method: "POST",
@@ -480,6 +484,8 @@ function ShareSection() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to generate");
       setLink(`${typeof window !== "undefined" ? window.location.origin : ""}${data.url}`);
+      setExpiresAt(data.expiresAt || null);
+      setMaxEntries(data.maxEntries ?? null);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -493,9 +499,33 @@ function ShareSection() {
       <p className="text-sm text-ink-400">
         Generate a link and invite friends to give you feedback — it calibrates your self-perception.
       </p>
-      <div className="flex gap-3">
-        <input value={days} onChange={(e) => setDays(e.target.value)} placeholder="Expires in days (default 30)" className={`${inputCls} w-44`} />
-        <input value={max} onChange={(e) => setMax(e.target.value)} placeholder="Response limit (optional)" className={`${inputCls} w-44`} />
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-ink-600">Link expires after (days)</label>
+          <input
+            type="number"
+            min={1}
+            value={days}
+            onChange={(e) => setDays(e.target.value)}
+            placeholder="30"
+            className={inputCls}
+          />
+          <p className="mt-1 text-[11px] text-ink-400">
+            After this many days the link stops accepting feedback (default 30).
+          </p>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-ink-600">Max responses (optional)</label>
+          <input
+            type="number"
+            min={1}
+            value={max}
+            onChange={(e) => setMax(e.target.value)}
+            placeholder="e.g. 10"
+            className={inputCls}
+          />
+          <p className="mt-1 text-[11px] text-ink-400">Cap on how many people can respond. Leave empty for unlimited.</p>
+        </div>
       </div>
       <button onClick={generate} disabled={busy} className="rounded-xl bg-mirror-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-mirror-600 disabled:opacity-40">
         Generate link
@@ -504,7 +534,11 @@ function ShareSection() {
         <div className="rounded-xl bg-ink-50 p-3 text-sm">
           <p className="text-ink-500">Share link:</p>
           <input readOnly value={link} onFocus={(e) => e.currentTarget.select()} className="mt-1 w-full rounded-lg border border-ink-200 bg-surface px-3 py-2 font-mono text-xs text-mirror-700" />
-          <p className="mt-1 text-xs text-ink-400">Feedback appears in the insights panel.</p>
+          <p className="mt-2 text-xs text-ink-500">
+            Expires: <span className="font-medium text-ink-700">{expiresAt ? new Date(expiresAt).toLocaleDateString() : "—"}</span>
+            {" · "}Responses: <span className="font-medium text-ink-700">{maxEntries ? `up to ${maxEntries}` : "unlimited"}</span>
+          </p>
+          <p className="mt-1 text-[11px] text-ink-400">Feedback appears in the insights panel.</p>
         </div>
       )}
       {error && <p className="text-sm text-rose-500">{error}</p>}
