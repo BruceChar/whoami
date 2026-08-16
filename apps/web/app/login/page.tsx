@@ -5,12 +5,7 @@ export const dynamic = "force-dynamic";
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams?: { invitedBy?: string; nickname?: string };
+  searchParams?: { invitedBy?: string };
 }) {
-  return (
-    <LoginForm
-      initialNickname={searchParams?.nickname || ""}
-      invitedBy={searchParams?.invitedBy || ""}
-    />
-  );
+  return <LoginForm invitedBy={searchParams?.invitedBy || ""} />;
 }

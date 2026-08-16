@@ -94,9 +94,14 @@ export function createLocalUser(input: { username: string; password: string; nic
     createdAt: new Date().toISOString(),
   };
   const users = loadUsers();
+  const isFirstUser = users.length === 0;
   users.push(user);
   saveUsers(users);
-  migrateLegacyProfile(user.userId);
+  // Import the legacy single-user profile ONLY for the very first account, so
+  // later accounts start from an empty workspace (no shared session lists).
+  if (isFirstUser) {
+    migrateLegacyProfile(user.userId);
+  }
   return { ok: true, user };
 }
 

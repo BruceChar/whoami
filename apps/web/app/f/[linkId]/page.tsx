@@ -15,7 +15,7 @@ export default async function FeedbackPage({ params }: { params: { linkId: strin
 
   const invalid = !link || status === "expired" || status === "closed";
   const displayName = owner?.user.nickname || owner?.user.username || "someone";
-  const loginHref = `/login?invitedBy=${encodeURIComponent(owner?.user.username || "")}&nickname=${encodeURIComponent(displayName)}`;
+  const loginHref = `/login?invitedBy=${encodeURIComponent(owner?.user.username || "")}`;
 
   return (
     <div className="h-full w-full overflow-y-auto">

@@ -6,18 +6,12 @@ import Logo from "@/components/Logo";
 
 type Tab = "login" | "register";
 
-export default function LoginForm({
-  initialNickname = "",
-  invitedBy = "",
-}: {
-  initialNickname?: string;
-  invitedBy?: string;
-}) {
+export default function LoginForm({ invitedBy = "" }: { invitedBy?: string }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("register");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [nickname, setNickname] = useState(initialNickname);
+  const [nickname, setNickname] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
