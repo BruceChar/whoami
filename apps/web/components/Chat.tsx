@@ -321,7 +321,7 @@ export default function Chat() {
                 <div
                   className={`break-words rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed ${
                     m.role === "user"
-                      ? "max-w-[78%] bg-mirror-500 text-white"
+                      ? "w-full max-w-[78%] bg-mirror-500 text-white"
                       : "w-fit max-w-[78%] bg-surface text-ink-800 shadow-soft"
                   }`}
                 >
