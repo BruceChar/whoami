@@ -12,20 +12,33 @@ import {
   resetLLMProvider,
   resolveDataDir,
   REASONING_LEVELS,
+  getModelInfo,
+  DEFAULT_MODEL_CANDIDATES,
+  PROVIDER_DEFAULT_CONTEXT,
 } from "@delphi/core";
 import type { SupportedProvider, ReasoningLevel } from "@delphi/core";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export function GET() {
+export async function GET() {
   const dataDir = resolveDataDir();
   const status = getConfigStatus(dataDir);
   const file = loadLLMConfigFile(dataDir);
+  // context window of the currently configured model (for the usage ring)
+  let contextWindow: number | undefined;
+  if (status.provider) {
+    const model = file?.model || DEFAULT_MODEL_CANDIDATES[status.provider]?.[0];
+    if (model) {
+      const info = await getModelInfo(status.provider, model);
+      contextWindow = info?.contextWindow || PROVIDER_DEFAULT_CONTEXT[status.provider];
+    }
+  }
   return NextResponse.json({
     ...status,
     supportedProviders: SUPPORTED_PROVIDERS,
     modelPlaceholder: file?.model || "deepseek-v4-flash（留空用默认）",
+    contextWindow,
   });
 }
 

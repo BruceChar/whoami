@@ -20,9 +20,6 @@ interface ToolMeta {
   description: string;
 }
 
-/** Approximate context window used for the usage ring. */
-const CONTEXT_WINDOW = 64000;
-
 const SESSION_KEY = "delphi-session-id";
 const TOOL_KEY = "delphi-tool-id";
 
@@ -40,6 +37,7 @@ export default function Chat() {
   const [busy, setBusy] = useState(false);
   const [llmModel, setLlmModel] = useState<string | null>(null);
   const [contextTokens, setContextTokens] = useState(0);
+  const [contextWindow, setContextWindow] = useState<number | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [tools, setTools] = useState<ToolMeta[]>([]);
   const [toolMenuOpen, setToolMenuOpen] = useState(false);
@@ -63,6 +61,7 @@ export default function Chat() {
         .then((s) => {
           setConfigured(s.configured);
           setLlmModel((prev) => prev || s.model || s.provider || null);
+          if (typeof s.contextWindow === "number") setContextWindow(s.contextWindow);
         })
         .catch(() => setConfigured(false));
     const refreshProfile = () =>
@@ -198,6 +197,7 @@ export default function Chat() {
           metaParts.push(`${data.llmModel || ""} · ${data.usage.totalTokens} tokens`);
           setContextTokens((t) => t + (data.usage.totalTokens || 0));
         }
+        if (typeof data.contextWindow === "number") setContextWindow(data.contextWindow);
         if (data.toolCalls?.length) metaParts.push(`工具: ${data.toolCalls.join(", ")}`);
         setMessages((m) => [...m, { role: "assistant", content: data.reply, meta: metaParts.join(" · ") || undefined }]);
         if (data.llmModel) setLlmModel(data.llmModel);
@@ -232,7 +232,10 @@ export default function Chat() {
   };
 
   const userLabel = profile?.nickname || "你";
-  const contextPct = Math.min(100, Math.round((contextTokens / CONTEXT_WINDOW) * 100));
+  const contextPct = contextWindow ? Math.min(100, Math.round((contextTokens / contextWindow) * 100)) : 0;
+  const contextHint = contextWindow
+    ? `上下文 ${contextPct}% · ${contextTokens.toLocaleString()} / ${contextWindow.toLocaleString()} tokens`
+    : `${contextTokens.toLocaleString()} tokens（窗口未知）`;
 
   return (
     <div className="flex h-full">
@@ -391,7 +394,7 @@ export default function Chat() {
                 <span className="group relative flex items-center gap-1">
                   <ContextRing pct={contextPct} />
                   <span className="pointer-events-none absolute bottom-full right-0 z-30 mb-1.5 hidden whitespace-nowrap rounded-lg border border-ink-200 bg-surface px-2 py-1 text-[10px] text-ink-500 shadow-soft group-hover:block">
-                    上下文 {contextPct}% · {contextTokens.toLocaleString()} / {CONTEXT_WINDOW.toLocaleString()} tokens
+                    {contextHint}
                   </span>
                 </span>
                 <button

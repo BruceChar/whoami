@@ -12,6 +12,8 @@ import {
   AnalysisMode,
   getToolTemplate,
   SessionRecord,
+  getModelInfo,
+  PROVIDER_DEFAULT_CONTEXT,
 } from "@delphi/core";
 import { getStore, getAgent } from "@/lib/server";
 
@@ -87,6 +89,10 @@ export async function POST(req: NextRequest) {
     afterProfileUpdate(profile);
     store.save();
 
+    // resolve the real model's max input context from the catalog (for the usage ring)
+    const modelInfo = await getModelInfo(llm.id, result.llmModel || "");
+    const contextWindow = modelInfo?.contextWindow || PROVIDER_DEFAULT_CONTEXT[llm.id];
+
     return NextResponse.json({
       sessionId: session.id,
       title: session.title || message.slice(0, 24),
@@ -95,6 +101,7 @@ export async function POST(req: NextRequest) {
       tool: tool ? { id: tool.id, label: tool.label } : undefined,
       llmGenerated: result.llmGenerated,
       llmModel: result.llmModel,
+      contextWindow,
       usage: result.usage,
       toolCalls: result.llmGenerated ? engine.getLastToolCalls() : [],
       markers: {

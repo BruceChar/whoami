@@ -24,30 +24,82 @@ export const PROVIDER_ENV_KEYS: Record<string, string> = {
   google: "GOOGLE_API_KEY",
 };
 
+/** Provider-level fallback context window when a model is not in the catalog. */
+export const PROVIDER_DEFAULT_CONTEXT: Record<string, number> = {
+  deepseek: 1000000,
+  openai: 128000,
+  anthropic: 200000,
+  openrouter: 128000,
+  google: 1000000,
+};
+
+/** Last-resort context window (unknown model / provider). */
+export const DEFAULT_CONTEXT_WINDOW = 64000;
+
+// ---------------------------------------------------------------------------
+// model catalog access (loaded once per provider; catalog is static)
+// ---------------------------------------------------------------------------
+
+const catalogCache = new Map<string, Promise<Record<string, any> | null>>();
+
+function loadModelCatalog(providerId: string): Promise<Record<string, any> | null> {
+  if (!catalogCache.has(providerId)) {
+    catalogCache.set(
+      providerId,
+      (async () => {
+        try {
+          const { createModels } = await dynamicImport("@earendil-works/pi-ai");
+          const models = createModels();
+          const modulePath = PROVIDER_MODULES[providerId];
+          if (!modulePath) return null;
+          const mod: Record<string, () => unknown> = await dynamicImport(modulePath);
+          const factory = mod[`${providerId}Provider`];
+          if (typeof factory !== "function") return null;
+          models.setProvider(factory() as never);
+          const all: any[] = models.getModels(providerId) || [];
+          if (!Array.isArray(all)) return null;
+          const map: Record<string, any> = {};
+          for (const m of all) {
+            if (m?.id) map[String(m.id)] = m;
+          }
+          return map;
+        } catch {
+          return null;
+        }
+      })()
+    );
+  }
+  return catalogCache.get(providerId)!;
+}
+
 /** List the available models for a provider (from the pi-ai catalog; no API key needed). */
 export async function listProviderModels(
   providerId: string
-): Promise<Array<{ id: string; inputCost?: number }>> {
-  const fallback = () =>
-    (DEFAULT_MODEL_CANDIDATES[providerId] || []).map((id) => ({ id }));
-  try {
-    const { createModels } = await dynamicImport("@earendil-works/pi-ai");
-    const models = createModels();
-    const modulePath = PROVIDER_MODULES[providerId];
-    if (!modulePath) return fallback();
-    const mod: Record<string, () => unknown> = await dynamicImport(modulePath);
-    const factory = mod[`${providerId}Provider`];
-    if (typeof factory !== "function") return fallback();
-    models.setProvider(factory() as never);
-    const all: any[] = models.getModels(providerId) || [];
-    if (!Array.isArray(all) || all.length === 0) return fallback();
-    return all
-      .map((m) => ({ id: String(m.id || ""), inputCost: m.cost?.input }))
-      .filter((m) => m.id)
-      .sort((a, b) => (a.inputCost ?? Infinity) - (b.inputCost ?? Infinity));
-  } catch {
-    return fallback();
+): Promise<Array<{ id: string; inputCost?: number; contextWindow?: number }>> {
+  const catalog = await loadModelCatalog(providerId);
+  if (!catalog) {
+    return (DEFAULT_MODEL_CANDIDATES[providerId] || []).map((id) => ({ id }));
   }
+  return Object.values(catalog)
+    .map((m) => ({
+      id: String(m.id || ""),
+      inputCost: m.cost?.input,
+      contextWindow: m.contextWindow,
+    }))
+    .filter((m) => m.id)
+    .sort((a, b) => (a.inputCost ?? Infinity) - (b.inputCost ?? Infinity));
+}
+
+/** Look up a single model's info (cost / context window) from the catalog. */
+export async function getModelInfo(
+  providerId: string,
+  modelId: string
+): Promise<{ inputCost?: number; contextWindow?: number } | null> {
+  if (!modelId) return null;
+  const catalog = await loadModelCatalog(providerId);
+  const m = catalog?.[modelId];
+  if (!m) return null;
+  return { inputCost: m.cost?.input, contextWindow: m.contextWindow };
 }
 
 /** Default model candidates per provider (cost-effective first) */

@@ -24,6 +24,14 @@ interface SettingsStatus {
 interface ModelOption {
   id: string;
   inputCost?: number;
+  contextWindow?: number;
+}
+
+function fmtTokens(n?: number): string {
+  if (!n) return "";
+  if (n >= 1000000) return `${(n / 1000000).toFixed(n % 1000000 === 0 ? 0 : 1)}M`;
+  if (n >= 1000) return `${Math.round(n / 1000)}k`;
+  return String(n);
 }
 
 export default function SettingsPage() {
@@ -217,7 +225,11 @@ export default function SettingsPage() {
             >
               <option value="">默认模型（留空）</option>
               {models.map((m) => (
-                <option key={m.id} value={m.id}>{m.id}{m.inputCost != null ? ` · $${Number(m.inputCost).toFixed(4)}/1M in` : ""}</option>
+                <option key={m.id} value={m.id}>
+                  {m.id}
+                  {m.contextWindow ? ` · ${fmtTokens(m.contextWindow)} ctx` : ""}
+                  {m.inputCost != null ? ` · $${Number(m.inputCost).toFixed(4)}/1M in` : ""}
+                </option>
               ))}
             </select>
           ) : (
