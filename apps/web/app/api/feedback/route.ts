@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { submitFeedback, feedbackSummary } from "@delphi/core";
 import { findProfileForShareLink } from "@/lib/links";
-import { getStore, currentUserId } from "@/lib/server";
+import { getStore, authRequired } from "@/lib/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
 /** GET — the signed-in user's own feedback summary. */
 export function GET() {
-  if (!currentUserId()) {
+  if (authRequired()) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   }
   const profile = getStore().get();

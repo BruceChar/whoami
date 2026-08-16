@@ -1,12 +1,12 @@
 /** GET /api/insights — lightweight insights payload for the right sidebar. */
 import { NextResponse } from "next/server";
-import { getProfile, currentUserId } from "@/lib/server";
+import { getProfile, authRequired } from "@/lib/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export function GET() {
-  if (!currentUserId()) {
+  if (authRequired()) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   }
   const profile = getProfile();

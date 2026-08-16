@@ -1,12 +1,12 @@
 /** GET/POST /api/profile — profile summary + basic user info. */
 import { NextRequest, NextResponse } from "next/server";
-import { getProfile, getStore, currentUserId } from "@/lib/server";
+import { getProfile, getStore, authRequired } from "@/lib/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export function GET() {
-  if (!currentUserId()) {
+  if (authRequired()) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   }
   const profile = getProfile();
@@ -35,7 +35,7 @@ interface UserInfoInput {
 
 /** Update basic user info (nickname, occupation, age, gender, interests). */
 export async function POST(req: NextRequest) {
-  if (!currentUserId()) {
+  if (authRequired()) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   }
   const store = getStore();

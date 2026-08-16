@@ -398,16 +398,20 @@ function ModelSection() {
 function AccountSection() {
   const router = useRouter();
   const [user, setUser] = useState<{ username: string; nickname: string } | null>(null);
+  const [mode, setMode] = useState<"local" | "hosted">("local");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
-      .then((d) => setUser(d.user || null))
+      .then((d) => {
+        setUser(d.user || null);
+        if (d.mode === "hosted") setMode("hosted");
+      })
       .catch(() => setUser(null));
   }, []);
 
-  const signOut = async (toLogin: boolean) => {
+  const signOut = async () => {
     setBusy(true);
     try {
       await fetch("/api/auth/logout", { method: "POST" });
@@ -417,6 +421,20 @@ function AccountSection() {
     router.push("/login");
     router.refresh();
   };
+
+  if (mode === "local") {
+    return (
+      <div className="max-w-md space-y-5">
+        <SectionTitle>Account</SectionTitle>
+        <div className="rounded-xl bg-ink-50 p-4">
+          <p className="text-sm text-ink-600">Local mode</p>
+          <p className="mt-1 text-sm leading-relaxed text-ink-400">
+            This instance runs without accounts — your data is stored locally on this device. No sign-in needed.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md space-y-5">
@@ -428,18 +446,11 @@ function AccountSection() {
       </div>
       <div className="space-y-2">
         <button
-          onClick={() => signOut(true)}
-          disabled={busy}
-          className="w-full rounded-xl border border-ink-200 px-4 py-2.5 text-sm text-ink-600 transition hover:border-mirror-300 hover:text-mirror-700 disabled:opacity-40"
-        >
-          Switch account
-        </button>
-        <button
-          onClick={() => signOut(false)}
+          onClick={signOut}
           disabled={busy}
           className="w-full rounded-xl border border-rose-200 px-4 py-2.5 text-sm text-rose-500 transition hover:bg-rose-50 disabled:opacity-40"
         >
-          Log out
+          Log out / switch account
         </button>
       </div>
       <p className="text-xs text-ink-400">Data is stored per account; each workspace is isolated.</p>
