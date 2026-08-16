@@ -8,25 +8,33 @@ import { findProfileForShareLink } from "@/lib/links";
 export const dynamic = "force-dynamic";
 
 export default async function FeedbackPage({ params }: { params: { linkId: string } }) {
-  const store = findProfileForShareLink(params.linkId);
-  const profile = store?.get();
+  const owner = findProfileForShareLink(params.linkId);
+  const profile = owner?.store.get();
   const link = profile?.frameworkData.feedback.shareLinks.find((l) => l.id === params.linkId) || null;
   const status = link && profile ? linkStatus(profile, link) : null;
 
   const invalid = !link || status === "expired" || status === "closed";
+  const displayName = owner?.user.nickname || owner?.user.username || "someone";
+  const loginHref = `/login?invitedBy=${encodeURIComponent(owner?.user.username || "")}&nickname=${encodeURIComponent(displayName)}`;
 
   return (
     <div className="h-full w-full overflow-y-auto">
       <div className="mx-auto flex min-h-full max-w-xl flex-col justify-center px-6 py-10">
-        <div className="mb-6 text-center">
-          <div className="flex justify-center"><Logo size={44} /></div>
-          <h1 className="mt-2 text-xl font-semibold text-ink-900">
-            {invalid ? "This feedback link is no longer available" : "Write a piece of feedback"}
-          </h1>
-          {!invalid && (
-            <p className="mt-1 text-sm text-ink-400">
-              Someone you know invited you to help them see themselves more clearly. Your feedback is taken seriously.
-            </p>
+        {/* header: logo + app name + invitation */}
+        <div className="mb-8 text-center">
+          <div className="flex justify-center"><Logo size={52} /></div>
+          <p className="mt-2 text-sm font-semibold tracking-wide text-ink-700">delphi</p>
+          {!invalid && owner ? (
+            <div className="mt-5 space-y-1.5">
+              <h1 className="text-xl font-semibold text-ink-900">
+                {displayName} invites you to write a piece of feedback about {owner.user.nickname ? "him" : "them"}.
+              </h1>
+              <p className="text-sm leading-relaxed text-ink-400">
+                Your honest words matter — they are taken seriously, and they help {displayName} see himself more clearly.
+              </p>
+            </div>
+          ) : (
+            <h1 className="mt-5 text-xl font-semibold text-ink-900">This feedback link is no longer available</h1>
           )}
         </div>
 
@@ -42,14 +50,14 @@ export default async function FeedbackPage({ params }: { params: { linkId: strin
           </div>
         ) : (
           <div className="mirror-card">
-            <FeedbackForm linkId={params.linkId} />
+            <FeedbackForm linkId={params.linkId} ownerName={displayName} />
           </div>
         )}
 
         {/* prominent CTA to the main app */}
         <div className="mt-8 text-center">
           <Link
-            href="/login"
+            href={loginHref}
             className="inline-flex items-center justify-center rounded-2xl bg-mirror-500 px-6 py-3 text-sm font-medium text-white shadow-soft transition hover:bg-mirror-600"
           >
             Start your own discovery journey →

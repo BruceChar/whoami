@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 
-export default function FeedbackForm({ linkId }: { linkId: string }) {
+export default function FeedbackForm({ linkId, ownerName }: { linkId: string; ownerName?: string }) {
   const [author, setAuthor] = useState("");
   const [relationship, setRelationship] = useState("Friend");
-  const [knownFor, setKnownFor] = useState("");
+  const [knownValue, setKnownValue] = useState("");
+  const [knownUnit, setKnownUnit] = useState("years");
   const [impression, setImpression] = useState("");
   const [evidence, setEvidence] = useState("");
   const [busy, setBusy] = useState(false);
@@ -16,6 +17,7 @@ export default function FeedbackForm({ linkId }: { linkId: string }) {
     setBusy(true);
     setError(null);
     try {
+      const knownFor = knownValue.trim() ? `${knownValue.trim()} ${knownUnit}` : "";
       const res = await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -34,14 +36,15 @@ export default function FeedbackForm({ linkId }: { linkId: string }) {
   if (done) {
     return (
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center text-emerald-700">
-        Thank you — your feedback has been received.
+        Thank you — your feedback has been received and taken seriously.
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {/* row 1: name + relationship */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Your name">
           <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="e.g. Lin" className={inputCls} />
         </Field>
@@ -52,10 +55,28 @@ export default function FeedbackForm({ linkId }: { linkId: string }) {
             ))}
           </select>
         </Field>
-        <Field label="How long have you known them">
-          <input value={knownFor} onChange={(e) => setKnownFor(e.target.value)} placeholder="e.g. 3 years / grew up together" className={inputCls} />
+      </div>
+
+      {/* row 2: how long you've known them, with a selectable time unit */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field label={`How long have you known ${ownerName || "them"}`}>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              min={0}
+              value={knownValue}
+              onChange={(e) => setKnownValue(e.target.value)}
+              placeholder="e.g. 3"
+              className={`${inputCls} w-24`}
+            />
+            <select value={knownUnit} onChange={(e) => setKnownUnit(e.target.value)} className={inputCls}>
+              <option value="years">years</option>
+              <option value="months">months</option>
+            </select>
+          </div>
         </Field>
       </div>
+
       <Field label="Your overall impression">
         <textarea value={impression} onChange={(e) => setImpression(e.target.value)} rows={3} placeholder="e.g. You're very opinionated, but sometimes you hold onto your views too tightly" className={inputCls} />
       </Field>

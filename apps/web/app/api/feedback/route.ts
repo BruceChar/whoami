@@ -24,10 +24,11 @@ export async function POST(req: NextRequest) {
   if (!body.linkId || !body.impression) {
     return NextResponse.json({ error: "Missing link or feedback content" }, { status: 400 });
   }
-  const store = findProfileForShareLink(body.linkId);
-  if (!store) {
+  const owner = findProfileForShareLink(body.linkId);
+  if (!owner) {
     return NextResponse.json({ error: "Feedback link does not exist or has expired" }, { status: 400 });
   }
+  const store = owner.store;
   const profile = store.get();
   const result = submitFeedback(profile, body.linkId, {
     author: body.author || "",
