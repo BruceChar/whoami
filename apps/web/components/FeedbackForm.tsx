@@ -4,7 +4,7 @@ import { useState } from "react";
 
 export default function FeedbackForm({ linkId }: { linkId: string }) {
   const [author, setAuthor] = useState("");
-  const [relationship, setRelationship] = useState("朋友");
+  const [relationship, setRelationship] = useState("Friend");
   const [knownFor, setKnownFor] = useState("");
   const [impression, setImpression] = useState("");
   const [evidence, setEvidence] = useState("");
@@ -22,7 +22,7 @@ export default function FeedbackForm({ linkId }: { linkId: string }) {
         body: JSON.stringify({ linkId, author, relationship, knownFor, impression, evidence }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "提交失败");
+      if (!res.ok) throw new Error(data.error || "Submit failed");
       setDone(true);
     } catch (err) {
       setError((err as Error).message);
@@ -34,7 +34,7 @@ export default function FeedbackForm({ linkId }: { linkId: string }) {
   if (done) {
     return (
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center text-emerald-700">
-        已收到你的反馈，感谢你的真诚分享。
+        Thank you — your feedback has been received.
       </div>
     );
   }
@@ -42,25 +42,25 @@ export default function FeedbackForm({ linkId }: { linkId: string }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Field label="你的称呼">
-          <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="如 张三 / 匿名" className={inputCls} />
+        <Field label="Your name">
+          <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="e.g. Lin" className={inputCls} />
         </Field>
-        <Field label="与 ta 的关系">
+        <Field label="Relationship">
           <select value={relationship} onChange={(e) => setRelationship(e.target.value)} className={inputCls}>
-            {["朋友", "同事", "家人", "前领导", "同学", "其他"].map((r) => (
+            {["Friend", "Colleague", "Family", "Former manager", "Classmate", "Other"].map((r) => (
               <option key={r} value={r}>{r}</option>
             ))}
           </select>
         </Field>
-        <Field label="认识多久了">
-          <input value={knownFor} onChange={(e) => setKnownFor(e.target.value)} placeholder="如 3年 / 从小一起长大" className={inputCls} />
+        <Field label="How long have you known them">
+          <input value={knownFor} onChange={(e) => setKnownFor(e.target.value)} placeholder="e.g. 3 years / grew up together" className={inputCls} />
         </Field>
       </div>
-      <Field label="你对 ta 的整体印象">
-        <textarea value={impression} onChange={(e) => setImpression(e.target.value)} rows={3} placeholder="如：我觉得你是一个很有主见的人，但有时过于坚持自己的想法" className={inputCls} />
+      <Field label="Your overall impression">
+        <textarea value={impression} onChange={(e) => setImpression(e.target.value)} rows={3} placeholder="e.g. You're very opinionated, but sometimes you hold onto your views too tightly" className={inputCls} />
       </Field>
-      <Field label="能举一个具体场景吗？（可选）">
-        <textarea value={evidence} onChange={(e) => setEvidence(e.target.value)} rows={2} placeholder="如：上次一起做项目时…" className={inputCls} />
+      <Field label="Can you recall a specific moment? (optional)">
+        <textarea value={evidence} onChange={(e) => setEvidence(e.target.value)} rows={2} placeholder="e.g. During our last project discussion…" className={inputCls} />
       </Field>
       {error && <p className="text-sm text-rose-500">{error}</p>}
       <button
@@ -68,9 +68,9 @@ export default function FeedbackForm({ linkId }: { linkId: string }) {
         disabled={busy || !impression.trim()}
         className="rounded-xl bg-mirror-500 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-mirror-600 disabled:opacity-40"
       >
-        {busy ? "提交中…" : "提交反馈"}
+        {busy ? "Submitting…" : "Submit feedback"}
       </button>
-      <p className="text-xs text-ink-400">你的反馈仅用于帮助 ta 更真实地认识自己，请真诚、具体。</p>
+      <p className="text-xs text-ink-400">Your feedback only helps them see themselves more honestly — please be sincere and specific.</p>
     </div>
   );
 }

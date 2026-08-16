@@ -15,7 +15,7 @@ export function GET() {
     .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
     .map((s) => ({
       id: s.id,
-      title: s.title || s.messages.find((m) => m.role === "user")?.text.slice(0, 24) || "未命名会话",
+      title: s.title || s.messages.find((m) => m.role === "user")?.text.slice(0, 24) || "Untitled session",
       startedAt: s.startedAt,
       mode: s.mode,
       messageCount: s.messages.filter((m) => m.role === "user").length,

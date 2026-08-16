@@ -34,17 +34,17 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "无效请求体" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
   const message = (body.message || "").trim();
-  if (!message) return NextResponse.json({ error: "消息不能为空" }, { status: 400 });
+  if (!message) return NextResponse.json({ error: "Message cannot be empty" }, { status: 400 });
 
   const store = getStore();
   const profile = store.get();
   const llm = getAgent();
   if (!llm) {
     return NextResponse.json(
-      { error: "未配置 LLM API Key。请前往 /settings 配置或设置环境变量。", helpUrl: "/settings" },
+      { error: "No LLM API key configured. Configure it in /settings or set an environment variable.", helpUrl: "/settings" },
       { status: 400 }
     );
   }

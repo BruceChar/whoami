@@ -155,13 +155,13 @@ export class PiAiProvider implements LLMProvider, LLMAgent {
     }
     const modulePath = PROVIDER_MODULES[this.id];
     if (!modulePath) {
-      throw new LLMError(`不支持的 LLM 提供商: ${this.id}（支持: ${Object.keys(PROVIDER_MODULES).join(", ")}）`);
+      throw new LLMError(`Unsupported LLM provider: ${this.id} (supported: ${Object.keys(PROVIDER_MODULES).join(", ")})`);
     }
     const mod: Record<string, () => unknown> = await dynamicImport(modulePath);
     const factoryName = `${this.id}Provider`;
     const factory = mod[factoryName] as (() => unknown) | undefined;
     if (!factory) {
-      throw new LLMError(`提供商模块缺少工厂函数: ${factoryName}`);
+      throw new LLMError(`Provider module is missing factory function: ${factoryName}`);
     }
     models.setProvider(factory() as never);
     return models;
@@ -197,7 +197,7 @@ export class PiAiProvider implements LLMProvider, LLMAgent {
     );
     const cheapest = sorted[0];
     if (cheapest) return cheapest;
-    throw new LLMError(`提供商 ${this.id} 未找到可用模型（检查 ${PROVIDER_ENV_KEYS[this.id]} 与网络）`);
+    throw new LLMError(`No usable model found for provider ${this.id} (check ${PROVIDER_ENV_KEYS[this.id]} and network)`);
   }
 
   async complete(opts: LLMCompleteOptions): Promise<LLMResult> {
@@ -221,10 +221,10 @@ export class PiAiProvider implements LLMProvider, LLMAgent {
     try {
       response = await models.complete(model, context);
     } catch (err) {
-      throw new LLMError(`LLM 调用失败: ${(err as Error).message}`, err);
+      throw new LLMError(`LLM call failed: ${(err as Error).message}`, err);
     }
     if (response.errorMessage) {
-      throw new LLMError(`LLM 返回错误: ${response.errorMessage}`);
+      throw new LLMError(`LLM returned an error: ${response.errorMessage}`);
     }
     const text = (response.content || [])
       .filter((b: any) => b.type === "text")
@@ -232,7 +232,7 @@ export class PiAiProvider implements LLMProvider, LLMAgent {
       .join("")
       .trim();
     if (!text) {
-      throw new LLMError("LLM 未返回文本内容");
+      throw new LLMError("LLM returned no text content");
     }
     return {
       text,
@@ -305,10 +305,10 @@ export class PiAiProvider implements LLMProvider, LLMAgent {
       try {
         response = await models.complete(model, context);
       } catch (err) {
-        throw new LLMError(`LLM Agent 调用失败: ${(err as Error).message}`, err);
+        throw new LLMError(`LLM agent call failed: ${(err as Error).message}`, err);
       }
       if (response.errorMessage) {
-        throw new LLMError(`LLM Agent 返回错误: ${response.errorMessage}`);
+        throw new LLMError(`LLM agent returned an error: ${response.errorMessage}`);
       }
 
       const text = (response.content || [])
@@ -329,10 +329,10 @@ export class PiAiProvider implements LLMProvider, LLMAgent {
             }
           : undefined;
         if (!lastText && toolCalls.length > 0) {
-          throw new LLMError("LLM Agent 工具调用后未返回文本");
+          throw new LLMError("LLM agent did not return text after tool calls");
         }
         return {
-          text: lastText || "（模型未返回内容）",
+          text: lastText || "(model returned no content)",
           usage,
           model: response.model || this.model,
           toolCalls: executedTools,
@@ -347,7 +347,7 @@ export class PiAiProvider implements LLMProvider, LLMAgent {
         try {
           resultText = opts.executeTool
             ? await opts.executeTool(call.name, call.arguments || {})
-            : JSON.stringify({ error: "无工具执行器" });
+            : JSON.stringify({ error: "no tool executor" });
         } catch (err) {
           resultText = JSON.stringify({ error: (err as Error).message });
         }
@@ -361,7 +361,7 @@ export class PiAiProvider implements LLMProvider, LLMAgent {
         });
       }
     }
-    throw new LLMError("LLM Agent 工具循环超过上限");
+    throw new LLMError("LLM agent tool loop exceeded the limit");
   }
 }
 

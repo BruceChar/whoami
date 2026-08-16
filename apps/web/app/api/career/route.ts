@@ -12,7 +12,7 @@ export function GET() {
   }
   const profile = getProfile();
   if (!canAnalyzeCareer(profile)) {
-    return NextResponse.json({ available: false, message: "数据不足" });
+    return NextResponse.json({ available: false, message: "Not enough data" });
   }
   const report = buildCareerAnalysis(profile);
   return NextResponse.json({

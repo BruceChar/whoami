@@ -12,11 +12,11 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const profile = getStore().get();
   const session = profile.sessions.find((s) => s.id === params.id);
   if (!session) {
-    return NextResponse.json({ error: "会话不存在" }, { status: 404 });
+    return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
   return NextResponse.json({
     id: session.id,
-    title: session.title || session.messages.find((m) => m.role === "user")?.text.slice(0, 24) || "未命名会话",
+    title: session.title || session.messages.find((m) => m.role === "user")?.text.slice(0, 24) || "Untitled session",
     mode: session.mode,
     messages: session.messages.map((m) => ({
       role: m.role === "agent" ? "assistant" : m.role,
@@ -35,17 +35,17 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "无效请求体" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
   const title = (body.title || "").trim().slice(0, 60);
   if (!title) {
-    return NextResponse.json({ error: "标题不能为空" }, { status: 400 });
+    return NextResponse.json({ error: "Title cannot be empty" }, { status: 400 });
   }
   const store = getStore();
   const profile = store.get();
   const session = profile.sessions.find((s) => s.id === params.id);
   if (!session) {
-    return NextResponse.json({ error: "会话不存在" }, { status: 404 });
+    return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
   session.title = title;
   store.save();
@@ -64,7 +64,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   const profile = store.get();
   const session = profile.sessions.find((s) => s.id === params.id);
   if (!session) {
-    return NextResponse.json({ error: "会话不存在" }, { status: 404 });
+    return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
   session.hidden = true;
   store.save();

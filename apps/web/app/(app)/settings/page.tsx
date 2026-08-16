@@ -15,7 +15,6 @@ interface SettingsStatus {
   model?: string;
   apiKeyMasked?: string;
   source?: "env" | "file" | "none";
-  reasoning?: "low" | "medium" | "high";
   providers?: Record<string, ProviderStatus>;
   supportedProviders?: string[];
   modelPlaceholder?: string;
@@ -34,12 +33,13 @@ function fmtTokens(n?: number): string {
   return String(n);
 }
 
+const SOURCE_LABELS: Record<string, string> = { env: "env", file: "config file", none: "—" };
+
 export default function SettingsPage() {
   const [status, setStatus] = useState<SettingsStatus | null>(null);
   const [provider, setProvider] = useState("");
   const [model, setModel] = useState("");
   const [apiKey, setApiKey] = useState("");
-  const [reasoning, setReasoning] = useState<"low" | "medium" | "high">("medium");
   const [models, setModels] = useState<ModelOption[]>([]);
   const [modelsLoading, setModelsLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -59,9 +59,8 @@ export default function SettingsPage() {
         setStatus(s);
         setProvider(s.provider || "deepseek");
         setModel(s.model || "");
-        setReasoning(s.reasoning || "medium");
       })
-      .catch(() => setError("无法读取配置状态"));
+      .catch(() => setError("Unable to read configuration"));
     fetch("/api/profile")
       .then((r) => r.json())
       .then((d) => setNickname(d.nickname || ""))
@@ -91,34 +90,34 @@ export default function SettingsPage() {
       const res = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider, model, apiKey, reasoning }),
+        body: JSON.stringify({ provider, model, apiKey }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "保存失败");
+      if (!res.ok) throw new Error(data.error || "Save failed");
       setStatus(data);
       setApiKey("");
-      setMessage("✓ 配置已保存，立即生效");
+      setMessage("✓ Saved and applied");
       window.dispatchEvent(new Event("delphi:settings-changed"));
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setSaving(false);
     }
-  }, [provider, model, apiKey, reasoning]);
+  }, [provider, model, apiKey]);
 
   const clear = useCallback(async () => {
     await fetch("/api/settings", { method: "DELETE" });
     setStatus({ configured: false, source: "none" });
     setProvider("deepseek");
     setModel("");
-    setMessage("已清除全部配置");
+    setMessage("Cleared all configuration");
     window.dispatchEvent(new Event("delphi:settings-changed"));
   }, []);
 
   const saveNickname = useCallback(async () => {
     const nick = nickname.trim();
     if (!nick) {
-      setNickError("称呼不能为空");
+      setNickError("Nickname is required");
       return;
     }
     setSavingNick(true);
@@ -131,8 +130,8 @@ export default function SettingsPage() {
         body: JSON.stringify({ nickname: nick }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "保存失败");
-      setNickMessage(`✓ 已记住：${data.nickname}`);
+      if (!res.ok) throw new Error(data.error || "Save failed");
+      setNickMessage(`✓ Saved: ${data.nickname}`);
       window.dispatchEvent(new Event("delphi:profile-changed"));
     } catch (err) {
       setNickError((err as Error).message);
@@ -148,7 +147,7 @@ export default function SettingsPage() {
       <div className="flex items-center justify-between">
         <h1 className="flex items-center gap-2 text-2xl font-bold text-ink-900">
           <SettingsIcon size={22} className="text-mirror-600" />
-          设置
+          Settings
         </h1>
         <span
           className={`rounded-full border px-3 py-1 text-xs ${
@@ -157,20 +156,20 @@ export default function SettingsPage() {
               : "border-rose-300 bg-rose-50 text-rose-500"
           }`}
         >
-          {status?.configured ? `已配置（${status.apiKeyMasked}）` : "未配置 API Key"}
+          {status?.configured ? `Configured (${status.apiKeyMasked})` : "Not configured"}
         </span>
       </div>
 
-      {/* ===== 个人基础信息 ===== */}
+      {/* ===== Personal info ===== */}
       <div className="mirror-card space-y-3">
-        <h2 className="mirror-title">🪪 个人基础信息</h2>
+        <h2 className="mirror-title">🪪 Personal info</h2>
         <div>
-          <label className="mb-1 block text-sm text-ink-500">怎么称呼你</label>
+          <label className="mb-1 block text-sm text-ink-500">What should we call you</label>
           <div className="flex gap-2">
             <input
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
-              placeholder="你的称呼（如：小舟）"
+              placeholder="Your nickname (e.g. Xiao Zhou)"
               className="w-full rounded-xl border border-ink-200 bg-surface px-3 py-2 text-ink-800 placeholder:text-ink-300 focus:outline-none focus:ring-1 focus:ring-mirror-400"
             />
             <button
@@ -178,21 +177,21 @@ export default function SettingsPage() {
               disabled={savingNick || !nickname.trim()}
               className="shrink-0 rounded-xl bg-mirror-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-mirror-600 disabled:opacity-40"
             >
-              {savingNick ? "保存中…" : "保存"}
+              {savingNick ? "Saving…" : "Save"}
             </button>
           </div>
-          <p className="mt-1 text-xs text-ink-400">对话中 delphi 会用这个名字称呼你。</p>
+          <p className="mt-1 text-xs text-ink-400">delphi will address you by this name in conversations.</p>
         </div>
         {nickMessage && <p className="text-sm text-emerald-600">{nickMessage}</p>}
         {nickError && <p className="text-sm text-rose-500">{nickError}</p>}
       </div>
 
-      {/* ===== LLM 配置 ===== */}
+      {/* ===== LLM configuration ===== */}
       <div className="mirror-card space-y-4">
-        <h2 className="mirror-title">🤖 LLM 配置</h2>
+        <h2 className="mirror-title">🤖 LLM configuration</h2>
 
         <div>
-          <label className="mb-1 block text-sm text-ink-500">LLM 提供商</label>
+          <label className="mb-1 block text-sm text-ink-500">Provider</label>
           <select
             value={provider}
             onChange={(e) => {
@@ -208,22 +207,22 @@ export default function SettingsPage() {
           </select>
           {status?.providers?.[provider]?.configured && (
             <p className="mt-1 text-xs text-emerald-600">
-              ✓ 该提供商已配置（{status.providers[provider].apiKeyMasked}，来源：{status.providers[provider].source === "env" ? "环境变量" : "配置文件"}），切换无需重新输入
+              ✓ Already configured ({status.providers[provider].apiKeyMasked}, source: {SOURCE_LABELS[status.providers[provider].source || "none"]}) — switch without re-entering
             </p>
           )}
         </div>
 
         <div>
-          <label className="mb-1 block text-sm text-ink-500">模型</label>
+          <label className="mb-1 block text-sm text-ink-500">Model</label>
           {modelsLoading ? (
-            <p className="rounded-xl border border-ink-200 bg-surface px-3 py-2 text-sm text-ink-400">加载模型列表…</p>
+            <p className="rounded-xl border border-ink-200 bg-surface px-3 py-2 text-sm text-ink-400">Loading models…</p>
           ) : models.length > 0 ? (
             <select
               value={model}
               onChange={(e) => setModel(e.target.value)}
               className="w-full rounded-xl border border-ink-200 bg-surface px-3 py-2 text-ink-800 focus:outline-none focus:ring-1 focus:ring-mirror-400"
             >
-              <option value="">默认模型（留空）</option>
+              <option value="">Default model (leave empty)</option>
               {models.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.id}
@@ -240,26 +239,12 @@ export default function SettingsPage() {
               className="w-full rounded-xl border border-ink-200 bg-surface px-3 py-2 text-ink-800 placeholder:text-ink-300 focus:outline-none focus:ring-1 focus:ring-mirror-400"
             />
           )}
-          <p className="mt-1 text-xs text-ink-400">留空使用该提供商的默认模型</p>
-        </div>
-
-        <div>
-          <label className="mb-1 block text-sm text-ink-500">推理深度</label>
-          <select
-            value={reasoning}
-            onChange={(e) => setReasoning(e.target.value as "low" | "medium" | "high")}
-            className="w-full rounded-xl border border-ink-200 bg-surface px-3 py-2 text-ink-800 focus:outline-none focus:ring-1 focus:ring-mirror-400"
-          >
-            <option value="low">低（更快，成本更低）</option>
-            <option value="medium">中（平衡）</option>
-            <option value="high">高（更深思考）</option>
-          </select>
-          <p className="mt-1 text-xs text-ink-400">显示在对话输入栏；后续可映射到模型的推理参数。</p>
+          <p className="mt-1 text-xs text-ink-400">Leave empty to use the provider default.</p>
         </div>
 
         <div>
           <label className="mb-1 block text-sm text-ink-500">
-            API Key{selectedProviderConfigured ? "（已配置，可留空保持不变）" : ""}
+            API Key{selectedProviderConfigured ? " (already set — leave empty to keep it)" : ""}
           </label>
           <input
             type="password"
@@ -269,7 +254,9 @@ export default function SettingsPage() {
             className="w-full rounded-xl border border-ink-200 bg-surface px-3 py-2 text-ink-800 placeholder:text-ink-300 focus:outline-none focus:ring-1 focus:ring-mirror-400"
           />
           <p className="mt-1 text-xs text-ink-400">
-            {status?.source === "env" ? "当前由环境变量配置，保存后优先使用文件配置" : "保存到本地配置文件；多个提供商的 Key 都会记住"}
+            {status?.source === "env"
+              ? "Currently from an environment variable; saving will prefer the config file"
+              : "Saved to the local config file; keys for multiple providers are remembered"}
           </p>
         </div>
 
@@ -282,11 +269,11 @@ export default function SettingsPage() {
             disabled={saving || !provider || (!apiKey && !selectedProviderConfigured)}
             className="rounded-xl bg-mirror-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-mirror-600 disabled:opacity-40"
           >
-            {saving ? "保存中…" : "保存配置"}
+            {saving ? "Saving…" : "Save configuration"}
           </button>
           {status?.configured && (
             <button onClick={clear} className="rounded-xl border border-ink-200 px-5 py-2 text-sm text-ink-500 hover:border-rose-300 hover:text-rose-500">
-              清除全部配置
+              Clear all
             </button>
           )}
         </div>
@@ -294,7 +281,7 @@ export default function SettingsPage() {
         {/* already-configured providers */}
         {status?.providers && (
           <div className="rounded-xl bg-ink-50 p-3">
-            <p className="mb-2 text-xs font-medium text-ink-500">已记录的提供商 Key</p>
+            <p className="mb-2 text-xs font-medium text-ink-500">Remembered provider keys</p>
             <div className="flex flex-wrap gap-2">
               {providers.map((p) => {
                 const ps = status.providers?.[p];
@@ -305,7 +292,7 @@ export default function SettingsPage() {
                       ps?.configured ? "bg-emerald-50 text-emerald-600" : "bg-ink-100 text-ink-400"
                     }`}
                   >
-                    {p}{ps?.configured ? ` ✓ ${ps.apiKeyMasked}` : "（未配置）"}
+                    {p}{ps?.configured ? ` ✓ ${ps.apiKeyMasked}` : " (not configured)"}
                   </span>
                 );
               })}
@@ -337,7 +324,7 @@ function ShareLinkCard() {
         body: JSON.stringify({ expiresDays: parseInt(days, 10) || 30, maxEntries: parseInt(max, 10) || undefined }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "生成失败");
+      if (!res.ok) throw new Error(data.error || "Failed to generate");
       setLink(`${typeof window !== "undefined" ? window.location.origin : ""}${data.url}`);
     } catch (err) {
       setError((err as Error).message);
@@ -348,20 +335,24 @@ function ShareLinkCard() {
 
   return (
     <div className="mirror-card space-y-3">
-      <h2 className="mirror-title">🧑‍🤝‍🧑 反馈收集（360°）</h2>
-      <p className="text-sm text-ink-400">生成分享链接发给亲友，邀请他们填写对你的反馈，校准自我认知。</p>
+      <h2 className="mirror-title">🧑‍🤝‍🧑 360° feedback collection</h2>
+      <p className="text-sm text-ink-400">
+        Generate a share link and invite friends to give you feedback — it calibrates your self-perception.
+      </p>
       <div className="flex gap-3">
-        <input value={days} onChange={(e) => setDays(e.target.value)} placeholder="有效期（天，默认30）" className="w-40 rounded-xl border border-ink-200 bg-surface px-3 py-2 text-sm text-ink-800 placeholder:text-ink-300 focus:outline-none focus:ring-1 focus:ring-mirror-400" />
-        <input value={max} onChange={(e) => setMax(e.target.value)} placeholder="人数上限（可选）" className="w-40 rounded-xl border border-ink-200 bg-surface px-3 py-2 text-sm text-ink-800 placeholder:text-ink-300 focus:outline-none focus:ring-1 focus:ring-mirror-400" />
+        <input value={days} onChange={(e) => setDays(e.target.value)} placeholder="Expires in days (default 30)" className="w-44 rounded-xl border border-ink-200 bg-surface px-3 py-2 text-sm text-ink-800 placeholder:text-ink-300 focus:outline-none focus:ring-1 focus:ring-mirror-400" />
+        <input value={max} onChange={(e) => setMax(e.target.value)} placeholder="Response limit (optional)" className="w-44 rounded-xl border border-ink-200 bg-surface px-3 py-2 text-sm text-ink-800 placeholder:text-ink-300 focus:outline-none focus:ring-1 focus:ring-mirror-400" />
         <button onClick={generate} disabled={busy} className="rounded-xl bg-mirror-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-mirror-600 disabled:opacity-40">
-          生成链接
+          Generate link
         </button>
       </div>
       {link && (
         <div className="rounded-xl bg-ink-50 p-3 text-sm">
-          <p className="text-ink-500">分享链接：</p>
+          <p className="text-ink-500">Share link:</p>
           <input readOnly value={link} onFocus={(e) => e.currentTarget.select()} className="mt-1 w-full rounded-lg border border-ink-200 bg-surface px-3 py-2 font-mono text-xs text-mirror-700" />
-          <p className="mt-1 text-xs text-ink-400">在 <a href="/insights" className="text-mirror-600 underline">洞察面板</a> 查看收到的反馈。</p>
+          <p className="mt-1 text-xs text-ink-400">
+            Feedback appears in the <a href="/insights" className="text-mirror-600 underline">insights panel</a>.
+          </p>
         </div>
       )}
       {error && <p className="text-sm text-rose-500">{error}</p>}

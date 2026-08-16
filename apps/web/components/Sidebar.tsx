@@ -22,10 +22,10 @@ function groupByDate(sessions: SessionItem[]): Array<{ label: string; items: Ses
     const d = new Date(s.startedAt);
     const key =
       d.toDateString() === today
-        ? "今天"
+        ? "Today"
         : d.toDateString() === yesterday
-          ? "昨天"
-          : d.toLocaleDateString("zh-CN", { month: "long", day: "numeric" });
+          ? "Yesterday"
+          : d.toLocaleDateString("en-US", { month: "long", day: "numeric" });
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(s);
   }
@@ -111,13 +111,13 @@ export default function Sidebar() {
           onClick={newChat}
           className="mt-4 w-full rounded-xl border border-ink-200 bg-surface px-4 py-2 text-sm font-medium text-ink-700 shadow-soft transition hover:border-mirror-300 hover:text-mirror-700"
         >
-          + 新对话
+          + New chat
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-2.5 pb-3">
         {groups.length === 0 ? (
-          <p className="px-2 py-2 text-xs text-ink-400">暂无会话历史</p>
+          <p className="px-2 py-2 text-xs text-ink-400">No conversations yet</p>
         ) : (
           groups.map((g) => (
             <div key={g.label} className="mb-2">
@@ -155,14 +155,14 @@ export default function Sidebar() {
                         <button
                           onClick={() => setEditing({ id: s.id, value: s.title })}
                           className="hidden rounded p-1 text-ink-300 transition hover:text-mirror-600 group-hover:block"
-                          title="重命名"
+                          title="Rename"
                         >
                           <PencilIcon size={13} />
                         </button>
                         <button
                           onClick={() => archiveSession(s.id)}
                           className="mr-1 hidden rounded p-1 text-ink-300 transition hover:text-rose-500 group-hover:block"
-                          title="归档（从列表移除，不影响分析）"
+                          title="Archive (hide from list, keep data)"
                         >
                           <ArchiveIcon size={13} />
                         </button>
@@ -174,7 +174,7 @@ export default function Sidebar() {
             </div>
           ))
         )}
-        <p className="px-2 pb-1 pt-2 text-[10px] text-ink-300">悬停可重命名 / 归档；归档仅从列表移除，不影响已分析的数据。</p>
+        <p className="px-2 pb-1 pt-2 text-[10px] text-ink-300">Hover to rename / archive. Archiving only hides a conversation from the list; analysis data is kept.</p>
       </div>
 
       <div className="border-t border-ink-200/70 px-3 py-3">
@@ -185,7 +185,7 @@ export default function Sidebar() {
           }`}
         >
           <SettingsIcon size={15} />
-          设置
+          Settings
         </Link>
       </div>
     </aside>

@@ -77,13 +77,13 @@ export function submitFeedback(
   input: SubmitFeedbackInput
 ): SubmitFeedbackResult {
   const link = findShareLink(profile, linkId);
-  if (!link) return { ok: false, reason: "分享链接不存在或已失效" };
+  if (!link) return { ok: false, reason: "Feedback link does not exist or has expired" };
   const status = linkStatus(profile, link);
   if (status !== "active") {
-    return { ok: false, reason: status === "expired" ? "分享链接已过期" : "分享链接已关闭" };
+    return { ok: false, reason: status === "expired" ? "Feedback link has expired" : "Feedback link has been closed" };
   }
   if (!input.impression.trim()) {
-    return { ok: false, reason: "评价内容不能为空" };
+    return { ok: false, reason: "Feedback content cannot be empty" };
   }
   const record: FeedbackRecord = {
     id: newFeedbackId(),

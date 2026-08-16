@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   }
   const nickname = (body.nickname || "").trim().slice(0, 40);
   if (!nickname) {
-    return NextResponse.json({ error: "称呼不能为空" }, { status: 400 });
+    return NextResponse.json({ error: "Nickname is required" }, { status: 400 });
   }
   profile.userInfo = { nickname };
   store.save();

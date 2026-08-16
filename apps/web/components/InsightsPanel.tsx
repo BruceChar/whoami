@@ -32,10 +32,10 @@ export interface InsightsData {
 }
 
 const STAGE_LABELS: Record<string, string> = {
-  exploration: "探索期",
-  consolidation: "巩固期",
-  breakthrough: "突破期",
-  integration: "整合期",
+  exploration: "Exploration",
+  consolidation: "Consolidation",
+  breakthrough: "Breakthrough",
+  integration: "Integration",
 };
 
 const INFLECTION_ICONS: Record<string, string> = {
@@ -58,20 +58,20 @@ export default function InsightsPanel({ onClose }: { onClose?: () => void }) {
       <div className="flex items-center justify-between border-b border-ink-200/70 px-4 py-3">
         <span className="flex items-center gap-1.5 text-sm font-semibold text-ink-800">
           <InsightsIcon size={16} className="text-mirror-600" />
-          洞察
+          Insights
         </span>
         <div className="flex items-center gap-1.5">
           <Link
             href="/insights"
             className="rounded-lg border border-ink-200 px-2.5 py-1 text-xs text-ink-500 transition hover:border-mirror-300 hover:text-mirror-700"
           >
-            展开 ↗
+            Expand ↗
           </Link>
           {onClose && (
             <button
               onClick={onClose}
               className="rounded-lg border border-ink-200 px-2 py-1 text-xs text-ink-400 transition hover:border-rose-300 hover:text-rose-500"
-              title="收起"
+              title="Collapse"
             >
               ✕
             </button>
@@ -81,21 +81,21 @@ export default function InsightsPanel({ onClose }: { onClose?: () => void }) {
 
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm">
         {!data ? (
-          <p className="text-xs text-ink-400">加载中…</p>
+          <p className="text-xs text-ink-400">Loading…</p>
         ) : (
           <>
             {/* overview */}
             <div className="flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full bg-ink-100 px-2.5 py-1 text-ink-600">阶段 {STAGE_LABELS[data.growthStage] || data.growthStage}</span>
-              <span className="rounded-full bg-ink-100 px-2.5 py-1 text-ink-600">会话 {data.sessions}</span>
-              <span className="rounded-full bg-ink-100 px-2.5 py-1 text-ink-600">画像 {data.personaVersion || "未生成"}</span>
-              <span className="rounded-full bg-ink-100 px-2.5 py-1 text-ink-600">反馈 {data.feedbackCount}</span>
+              <span className="rounded-full bg-ink-100 px-2.5 py-1 text-ink-600">Stage {STAGE_LABELS[data.growthStage] || data.growthStage}</span>
+              <span className="rounded-full bg-ink-100 px-2.5 py-1 text-ink-600">Sessions {data.sessions}</span>
+              <span className="rounded-full bg-ink-100 px-2.5 py-1 text-ink-600">Persona {data.personaVersion || "—"}</span>
+              <span className="rounded-full bg-ink-100 px-2.5 py-1 text-ink-600">Feedback {data.feedbackCount}</span>
             </div>
 
             {/* LLM narratives */}
             {data.narratives && (
               <div className="space-y-2 rounded-xl bg-mirror-50 p-3">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-mirror-600">画像叙事</p>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-mirror-600">Persona narrative</p>
                 {data.narratives.fingerprint && <p className="leading-relaxed text-ink-700">🧠 {data.narratives.fingerprint}</p>}
                 {data.narratives.energyMap && <p className="leading-relaxed text-ink-700">⚡ {data.narratives.energyMap}</p>}
               </div>
@@ -103,9 +103,9 @@ export default function InsightsPanel({ onClose }: { onClose?: () => void }) {
 
             {/* recent insights */}
             <div>
-              <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-ink-400">最近洞察</p>
+              <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-ink-400">Recent insights</p>
               {data.insights.length === 0 ? (
-                <p className="text-xs text-ink-400">暂无洞察，继续对话后自动生成。</p>
+                <p className="text-xs text-ink-400">No insights yet — they are generated as you chat.</p>
               ) : (
                 <ul className="space-y-2">
                   {data.insights.slice(0, 5).map((i) => (
@@ -121,7 +121,7 @@ export default function InsightsPanel({ onClose }: { onClose?: () => void }) {
             {/* inflection points */}
             {data.inflectionPoints.length > 0 && (
               <div>
-                <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-ink-400">转折点</p>
+                <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-ink-400">Inflections</p>
                 <ul className="space-y-1.5 text-xs text-ink-600">
                   {data.inflectionPoints.map((ip, i) => (
                     <li key={i} className="flex gap-2">
@@ -138,13 +138,13 @@ export default function InsightsPanel({ onClose }: { onClose?: () => void }) {
             {/* feedback consensus */}
             {data.feedbackConsensus && (
               <div className="rounded-xl bg-mirror-50 p-3">
-                <p className="mb-1 text-[11px] font-medium uppercase tracking-wider text-mirror-600">外部认知共识</p>
+                <p className="mb-1 text-[11px] font-medium uppercase tracking-wider text-mirror-600">External consensus</p>
                 <p className="leading-relaxed text-ink-700">{data.feedbackConsensus}</p>
               </div>
             )}
 
             <Link href="/insights" className="block rounded-xl border border-ink-200 px-3 py-2 text-center text-xs text-ink-500 transition hover:border-mirror-300 hover:text-mirror-700">
-              在分析面板中查看全部 →
+              View all in the analysis panel →
             </Link>
           </>
         )}

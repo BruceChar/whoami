@@ -7,7 +7,7 @@ interface Props {
 /** Minimal SVG sparkline for growth curves */
 export default function Sparkline({ values, width = 300, height = 40 }: Props) {
   if (values.length < 2) {
-    return <div className="h-10 text-xs leading-10 text-slate-600">（数据不足）</div>;
+    return <div className="h-10 text-xs leading-10 text-slate-600">(insufficient data)</div>;
   }
   const min = Math.min(...values);
   const max = Math.max(...values);

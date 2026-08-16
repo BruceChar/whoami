@@ -99,7 +99,7 @@ export default function Chat() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nickname: nick }),
       });
-      if (!res.ok) throw new Error("保存失败");
+      if (!res.ok) throw new Error("Save failed");
       setProfile((p) => ({ ...(p || { sessions: 0, insights: 0, personaVersion: null }), nickname: nick }));
       setNicknameInput("");
       window.dispatchEvent(new Event("delphi:profile-changed"));
@@ -186,7 +186,7 @@ export default function Chat() {
           body: JSON.stringify({ message: content, mode: "stealth", toolId, sessionId: sessionId || undefined }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "请求失败");
+        if (!res.ok) throw new Error(data.error || "Request failed");
         if (data.sessionId && data.sessionId !== sessionId) {
           setSessionId(data.sessionId);
           localStorage.setItem(SESSION_KEY, data.sessionId);
@@ -198,12 +198,12 @@ export default function Chat() {
           setContextTokens((t) => t + (data.usage.totalTokens || 0));
         }
         if (typeof data.contextWindow === "number") setContextWindow(data.contextWindow);
-        if (data.toolCalls?.length) metaParts.push(`工具: ${data.toolCalls.join(", ")}`);
+        if (data.toolCalls?.length) metaParts.push(`tools: ${data.toolCalls.join(", ")}`);
         setMessages((m) => [...m, { role: "assistant", content: data.reply, meta: metaParts.join(" · ") || undefined }]);
         if (data.llmModel) setLlmModel(data.llmModel);
       } catch (err) {
         const msg = (err as Error).message;
-        setMessages((m) => [...m, { role: "assistant", content: `（出错）${msg}` }]);
+        setMessages((m) => [...m, { role: "assistant", content: `(error) ${msg}` }]);
         setError(msg);
       } finally {
         setBusy(false);
@@ -231,11 +231,11 @@ export default function Chat() {
     localStorage.removeItem(TOOL_KEY);
   };
 
-  const userLabel = profile?.nickname || "你";
+  const userLabel = profile?.nickname || "you";
   const contextPct = contextWindow ? Math.min(100, Math.round((contextTokens / contextWindow) * 100)) : 0;
   const contextHint = contextWindow
-    ? `上下文 ${contextPct}% · ${contextTokens.toLocaleString()} / ${contextWindow.toLocaleString()} tokens`
-    : `${contextTokens.toLocaleString()} tokens（窗口未知）`;
+    ? `Context ${contextPct}% · ${contextTokens.toLocaleString()} / ${contextWindow.toLocaleString()} tokens`
+    : `${contextTokens.toLocaleString()} tokens (unknown window)`;
 
   return (
     <div className="flex h-full">
@@ -249,7 +249,7 @@ export default function Chat() {
               href="/settings"
               className="absolute right-6 rounded-full border border-rose-300 bg-rose-50 px-3 py-1 text-xs text-rose-500 hover:bg-rose-100"
             >
-              ⚠ 未配置 API Key
+              ⚠ No API key configured
             </Link>
           )}
         </header>
@@ -260,8 +260,8 @@ export default function Chat() {
           {profile && !profile.nickname && messages.length === 0 && (
             <div className="mx-auto mt-10 w-full max-w-md rounded-2xl border border-ink-200/70 bg-surface p-6 text-center shadow-soft">
               <div className="flex justify-center"><Logo size={44} /></div>
-              <h2 className="mt-3 text-lg font-semibold text-ink-900">你好，我是 delphi。</h2>
-              <p className="mt-1 text-sm text-ink-400">你希望我怎么称呼你？之后我会用这个名字和你对话。</p>
+              <h2 className="mt-3 text-lg font-semibold text-ink-900">Hi, I'm delphi.</h2>
+              <p className="mt-1 text-sm text-ink-400">What should I call you? I'll use this name in our conversations.</p>
               <div className="mt-4 flex gap-2">
                 <input
                   value={nicknameInput}
@@ -269,7 +269,7 @@ export default function Chat() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter") saveNickname();
                   }}
-                  placeholder="你的称呼（如：小舟）"
+                  placeholder="Your nickname (e.g. Xiao Zhou)"
                   className="flex-1 rounded-xl border border-ink-200 bg-surface px-3 py-2 text-sm text-ink-800 placeholder:text-ink-300 outline-none focus:border-mirror-300"
                 />
                 <button
@@ -277,19 +277,19 @@ export default function Chat() {
                   disabled={savingNick || !nicknameInput.trim()}
                   className="rounded-xl bg-mirror-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-mirror-600 disabled:opacity-40"
                 >
-                  {savingNick ? "保存中…" : "开始"}
+                  {savingNick ? "Saving…" : "Start"}
                 </button>
               </div>
-              <p className="mt-3 text-[11px] text-ink-400">也可以稍后在「设置 → 个人基础信息」里修改。</p>
+              <p className="mt-3 text-[11px] text-ink-400">You can also update it later in Settings → Personal info.</p>
             </div>
           )}
 
           {messages.length === 0 && profile?.nickname && (
             <div className="mx-auto mt-16 max-w-md text-center">
               <div className="flex justify-center"><Logo size={40} /></div>
-              <p className="mt-3 text-lg font-medium text-ink-800">你好，{profile.nickname}。Be water my friend.</p>
+              <p className="mt-3 text-lg font-medium text-ink-800">Hi {profile.nickname}. Be water my friend.</p>
               <p className="mt-2 text-sm text-ink-400">
-                随便聊聊，我会在后台悄悄观察你的思维模式。输入 <span className="rounded bg-ink-100 px-1.5 py-0.5 font-mono text-xs">/</span> 选择工具模板。
+                Chat freely — I quietly observe your thinking patterns in the background. Type <span className="rounded bg-ink-100 px-1.5 py-0.5 font-mono text-xs">/</span> to pick a tool template.
               </p>
             </div>
           )}
@@ -323,7 +323,7 @@ export default function Chat() {
               <span className="px-1 text-[11px] text-ink-400">delphi</span>
               <div className="flex gap-3">
                 <Logo size={28} />
-                <div className="rounded-2xl bg-surface px-4 py-2.5 text-sm text-ink-400 shadow-soft">delphi 正在思考…</div>
+                <div className="rounded-2xl bg-surface px-4 py-2.5 text-sm text-ink-400 shadow-soft">delphi is thinking…</div>
               </div>
             </div>
           )}
@@ -336,9 +336,9 @@ export default function Chat() {
           {activeTool && (
             <div className="mb-2 flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-mirror-50 px-3 py-1 text-xs text-mirror-700">
-                {activeTool.emoji} {activeTool.label} · 进行中
+                {activeTool.emoji} {activeTool.label} · in progress
               </span>
-              <button onClick={cancelTool} className="text-xs text-ink-400 hover:text-ink-600">✕ 取消</button>
+              <button onClick={cancelTool} className="text-xs text-ink-400 hover:text-ink-600">✕ Cancel</button>
             </div>
           )}
 
@@ -375,21 +375,21 @@ export default function Chat() {
                   send(undefined, activeTool?.id);
                 }
               }}
-              placeholder={activeTool ? `继续 ${activeTool.label}…（回答 LLM 的提问）` : "说点什么…（/ 选择工具，Enter 发送，Shift+Enter 换行）"}
+              placeholder={activeTool ? `Continue ${activeTool.label}… (answer the LLM's question)` : "Type a message… (/ for tools, Enter to send, Shift+Enter for newline)"}
               className="max-h-[180px] w-full resize-none bg-transparent px-4 pt-3 text-[15px] text-ink-800 outline-none placeholder:text-ink-300"
             />
             <div className="flex items-center justify-between gap-3 px-3 pb-2 pt-1">
               {/* left: currently only stealth mode is open */}
               <div className="flex items-center gap-0.5 rounded-lg bg-ink-100 p-0.5 text-xs">
-                <span className="rounded-md bg-surface px-2.5 py-1 text-ink-900 shadow-soft" title="当前仅开放隐式模式">
-                  隐式
+                <span className="rounded-md bg-surface px-2.5 py-1 text-ink-900 shadow-soft" title="Only stealth mode is open for now">
+                  Stealth
                 </span>
               </div>
 
               {/* right: model · context ring · send */}
               <div className="flex items-center gap-3 text-[11px] text-ink-400">
                 <span className="hidden max-w-44 truncate sm:inline" title={llmModel || undefined}>
-                  {llmModel || "未连接模型"}
+                  {llmModel || "No model connected"}
                 </span>
                 <span className="group relative flex items-center gap-1">
                   <ContextRing pct={contextPct} />
@@ -401,7 +401,7 @@ export default function Chat() {
                   onClick={() => send(undefined, activeTool?.id)}
                   disabled={busy || !input.trim()}
                   className="flex h-8 w-8 items-center justify-center rounded-full bg-mirror-500 text-white transition hover:bg-mirror-600 disabled:opacity-40"
-                  title="发送"
+                  title="Send"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 19V5" />
@@ -414,16 +414,16 @@ export default function Chat() {
 
           {/* global stats below the input */}
           <div className="mt-3 flex items-center justify-center gap-3 text-xs text-ink-500">
-            <button onClick={() => router.push("/insights")} className="transition hover:text-mirror-700" title="查看分析面板">
-              会话 {profile?.sessions ?? 0}
+            <button onClick={() => router.push("/insights")} className="transition hover:text-mirror-700" title="View analysis panel">
+              Sessions {profile?.sessions ?? 0}
             </button>
             <span className="text-ink-200">·</span>
             <button onClick={() => router.push("/insights")} className="transition hover:text-mirror-700" title="查看分析面板">
-              洞察 {profile?.insights ?? 0}
+              Insights {profile?.insights ?? 0}
             </button>
             <span className="text-ink-200">·</span>
             <button onClick={() => router.push("/insights")} className="transition hover:text-mirror-700" title="查看分析面板">
-              {profile?.personaVersion ? `画像 ${profile.personaVersion}` : "画像 未生成"}
+              {profile?.personaVersion ? `Persona ${profile.personaVersion}` : "Persona —"}
             </button>
           </div>
         </div>
@@ -431,7 +431,7 @@ export default function Chat() {
         {/* insights edge tab (middle of the right border) */}
         <button
           onClick={() => setPanelOpen((v) => !v)}
-          title={panelOpen ? "收起洞察" : "展开洞察"}
+          title={panelOpen ? "Close insights" : "Open insights"}
           className="absolute right-0 top-1/2 z-30 flex h-24 w-6 -translate-y-1/2 items-center justify-center rounded-l-lg border border-r-0 border-ink-200 bg-surface text-ink-400 shadow-soft transition hover:border-mirror-300 hover:text-mirror-600"
         >
           {panelOpen ? "›" : <InsightsIcon size={14} />}
