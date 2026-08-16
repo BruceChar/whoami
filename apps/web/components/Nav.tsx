@@ -21,9 +21,15 @@ export default function Nav() {
             </Link>
           ))}
         </div>
-        <span className="ml-auto hidden text-xs text-slate-600 sm:block">
-          自我认知 Agent
-        </span>
+        <div className="ml-auto flex items-center gap-4">
+          <span className="hidden text-xs text-slate-600 sm:block">自我认知 Agent</span>
+          <Link
+            href="/settings"
+            className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 transition hover:border-mirror hover:text-mirror"
+          >
+            ⚙️ 设置
+          </Link>
+        </div>
       </nav>
     </header>
   );

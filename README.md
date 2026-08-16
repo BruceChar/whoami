@@ -5,27 +5,30 @@
 
 **delphi** 是一个**自我认知 Agent**：通过分析你的**表达过程**（而非仅内容），帮助你认识自己、看见自己如何思考、发现思维漏洞、追踪认知成长。
 
-本仓库实现了文档 `whoami.md`（完整需求说明 v1）中的 **CLI 本地模式**：完全离线、隐私优先、所有数据本地存储。
+本仓库实现了文档 `whoami.md`（完整需求说明 v1）中的 **CLI 本地模式 + Web 端**：数据本地存储、隐私优先，分析由真实 LLM（pi-ai）驱动（需配置 API Key）。
 
 > 为什么叫 delphi？—— 德尔斐神庙刻着古希腊最著名的箴言：**「认识你自己」(γνῶθι σεαυτόν)**。这正是本项目的使命。
 
 ## 快速开始
 
-要求：Node.js 20+、pnpm 9+
+要求：Node.js 20+、pnpm 9+。**必须配置 LLM API Key（离线模式已取消）**。
 
 ```bash
 pnpm install
 pnpm build                 # 构建 core + cli
-pnpm test                  # 运行核心引擎单元测试（node:test，49 项）
+pnpm test                  # 运行核心引擎单元测试（node:test，50 项）
 
-# CLI：直接运行
-pnpm run delphi
+# 配置 LLM（二选一）：
+export DELPHI_LLM_PROVIDER=deepseek
+export DEEPSEEK_API_KEY=sk-你的密钥
+# 或写入配置文件 <dataDir>/config.json（Web 端「设置」页也会写这里）
+# { "provider": "deepseek", "model": "deepseek-v4-flash", "apiKey": "sk-..." }
 
-# CLI：全局安装命令
-pnpm run link:global       # 之后可以直接敲 delphi
-delphi
+# CLI
+pnpm run delphi            # 未配置 Key 时自动弹出配置帮助
+delphi doctor              # 检查配置状态
 
-# Web：开发 / 构建 / 生产
+# Web：开发 / 构建 / 生产（右上角 ⚙️ 设置 按钮在线配置）
 pnpm web                   # http://localhost:3088
 pnpm web:build
 ```
@@ -33,23 +36,24 @@ pnpm web:build
 数据保存在 `~/.delphi/profile.json`（一个 JSON 文件包含全部认知档案，可随时导出/备份/恢复）。
 可用环境变量 `DELPHI_DATA_DIR` 指定数据目录（便于测试隔离，CLI 与 Web 共享同一档案）。
 
-## LLM Agent（pi-ai 接入）
+## LLM Agent（pi-ai 接入，必需）
 
-delphi 通过 [@earendil-works/pi-ai](https://github.com/earendil-works/pi)（Unified LLM API）接入真实大模型：
+delphi 通过 [@earendil-works/pi-ai](https://github.com/earendil-works/pi)（Unified LLM API）接入真实大模型。
+**离线模式已取消**：未配置 API Key 时，CLI 弹出配置帮助并退出，Web 提示去「设置」页配置。
 
 | 环境变量 | 说明 |
 | --- | --- |
 | `DELPHI_LLM_PROVIDER` | `deepseek` / `openai` / `anthropic` / `openrouter` / `google`；缺省自动探测已配置 Key 的提供商 |
 | `DELPHI_LLM_MODEL` | 模型 id（缺省用各提供商默认模型，如 deepseek-v4-flash） |
 | `<PROVIDER>_API_KEY` | 鉴权（如 `DEEPSEEK_API_KEY`、`OPENROUTER_API_KEY`） |
-| `DELPHI_LLM_DISABLED` | `1` 强制回退规则引擎 |
 | `DELPHI_LLM_DEEP_ANALYZE` | `1` 开启逐条消息 LLM 标记增强（耗 token） |
+
+**配置优先级**：环境变量 > 配置文件 `<dataDir>/config.json`（Web「设置」页写入，`delphi doctor` 可查看）。
 
 **LLM 能力**：
 - 对话回复由真实模型生成（工具调用循环：`get_cognitive_profile` / `search_memory` 读取你的认知档案）
 - 会话结束自动深度分析：摘要 + 自动洞察（⭐）
 - 个人画像六维自然语言叙事、从业分析综合评述
-- 全部 LLM 功能在未配置 Key 时自动回退规则引擎（离线可用）
 
 ## 功能一览（对照文档）
 
@@ -115,7 +119,7 @@ whoami/
 - **迭代进化**：每次档案更新后全量重算 17 项指标、成长阶段、从业分析、画像（`recomputeProfile`）
 - **真实成长**：练习效应校正——前 5 次会话的「表面提升」斜率被标记并从趋势中扣除
 - **反标签**：画像只描述动态模式与变化，绝不贴「你是 XX 型」的固定标签
-- **隐私优先**：完全离线，`~/.delphi/` 一个目录，可导出/备份/删除
+- **隐私优先**：数据本地存储，`~/.delphi/` 一个目录，可导出/备份/删除
 
 ## 与文档的工程取舍（说明）
 

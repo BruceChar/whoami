@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ProfileStore } from "../src/storage/store";
+import { ScriptedLLMProvider } from "../src/llm/scriptedProvider";
 import {
   createEmptyProfile,
   beginSession,
@@ -33,7 +34,7 @@ test("对话 → 会话记录 → 指标重算 → 档案更新", async () => {
   const profile = store.get();
 
   const session = beginSession(profile, "stealth", "测试会话");
-  const engine = new ThinkingEngine("stealth");
+  const engine = new ThinkingEngine("stealth", { llm: new ScriptedLLMProvider([{ text: "我在听。" }, { text: "继续。" }]) });
   const r1 = await engine.process("我总是很焦虑，所有人都觉得我不行");
   appendMessage(session, { role: "user", text: "我总是很焦虑，所有人都觉得我不行", timestamp: new Date().toISOString(), markers: r1.markers });
   const r2 = await engine.process("但后来我发现其实我也可以");

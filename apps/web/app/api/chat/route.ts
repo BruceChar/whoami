@@ -33,9 +33,15 @@ export async function POST(req: NextRequest) {
   const store = getStore();
   const profile = store.get();
   const llm = getAgent();
+  if (!llm) {
+    return NextResponse.json(
+      { error: "未配置 LLM API Key（离线模式已取消）。请前往 /settings 配置或设置环境变量。", helpUrl: "/settings" },
+      { status: 400 }
+    );
+  }
   const mode: AnalysisMode = body.mode || "transparent";
 
-  const engine = new ThinkingEngine(mode, llm ? { llm } : {});
+  const engine = new ThinkingEngine(mode, { llm });
   engine.llmProfile = profile;
   engine.rememberHistory(
     (body.history || []).map((h) => ({ role: h.role === "assistant" ? "agent" : "user", text: h.content }))

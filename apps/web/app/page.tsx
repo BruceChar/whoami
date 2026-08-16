@@ -8,6 +8,7 @@ import {
   PERSONA_STAGE_LABELS,
 } from "@delphi/core";
 import MetricBar from "@/components/MetricBar";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -38,10 +39,26 @@ export default function DashboardPage() {
             {" · "}已积累会话 {profile.sessions.length} 次 · 首次使用 {firstUse}
           </p>
         </div>
-        <span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-400">
-          {llm ? `⚡ LLM Agent: ${llm.id}/${llm.model}` : "规则引擎模式"}
-        </span>
+        {llm ? (
+          <span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-400">
+            ⚡ LLM Agent: {llm.id}/{llm.model}
+          </span>
+        ) : (
+          <Link
+            href="/settings"
+            className="rounded-full border border-rose-500/50 bg-rose-500/10 px-3 py-1 text-xs text-rose-300 transition hover:bg-rose-500/20"
+          >
+            ⚠ 未配置 API Key · 去设置
+          </Link>
+        )}
       </div>
+
+      {!llm && (
+        <div className="rounded-xl border border-rose-500/40 bg-rose-500/5 p-4 text-sm text-rose-200">
+          离线模式已取消：需要配置 LLM API Key 才能使用对话与深度分析。
+          前往 <Link href="/settings" className="underline">⚙️ 设置</Link> 配置，或设置环境变量（DELPHI_LLM_PROVIDER + &lt;PROVIDER&gt;_API_KEY）。
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {upDims.map(([k, label]) => (

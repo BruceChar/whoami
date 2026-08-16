@@ -2,8 +2,8 @@
  * delphi —— 思维分析引擎（三层模式统一入口）
  * 隐式 / 显式 / 引导式 的切换与执行都在这里完成。
  *
- * LLM Agent 模式：pi-ai 接入后，回复由真实模型生成（带工具调用接地档案），
- * 规则引擎仍实时产出认知标记（偏差/归因/情绪等），并在 LLM 失败时兜底。
+ * LLM Agent 必需（离线模式已取消）：回复由真实模型生成（pi-ai，带工具调用接地档案），
+ * 规则引擎仅用于实时产出认知标记（偏差/归因/情绪等）作为 LLM 的提示与快照。
  */
 import { AnalysisMode, ChatMessage, MessageMarkers } from "../models/types";
 import { analyzeMessage, AnalyzeOptions } from "../analyzer/cognitiveMarker";
@@ -12,14 +12,9 @@ import {
   detectCrisis,
   companionResponse,
 } from "./modeSwitcher";
-import { stealthReply } from "./stealth";
-import {
-  TransparentAnalyzer,
-  selectGuideStrategy,
-  guideResponse,
-} from "./transparent";
+import { TransparentAnalyzer } from "./transparent";
 import { LLMAgent, runChatAgent } from "../llm/agent";
-import { LLMError, LLMUsage } from "../llm/types";
+import { LLMUsage } from "../llm/types";
 import { llmExtractMarkers, mergeMarkers } from "../llm/enhancedAnalysis";
 import { BIAS_LABELS } from "../analyzer/biasDetector";
 
@@ -46,9 +41,9 @@ export interface EngineTurnResult {
 
 export interface EngineOptions {
   sensitivity?: AnalyzeOptions["sensitivity"];
-  lightTouch?: boolean; // 隐式模式下第 4 轮起是否轻量标记
-  /** LLM Agent（pi-ai）；缺省时走规则引擎 */
-  llm?: LLMAgent;
+  lightTouch?: boolean;
+  /** LLM Agent（pi-ai）——必需，离线模式已取消 */
+  llm: LLMAgent;
   /** 逐条消息 LLM 标记增强（较耗 token，默认关；会话级深度分析不受此开关影响） */
   deepAnalyze?: boolean;
 }
@@ -112,15 +107,14 @@ export class ThinkingEngine {
   mode: AnalysisMode;
   private analyzer = new TransparentAnalyzer();
   private round = 0;
-  private readonly opts: Required<Omit<EngineOptions, "llm">> & Pick<EngineOptions, "llm">;
+  private readonly opts: Required<EngineOptions>;
   /** 会话历史（用于 LLM 上下文） */
   private history: ChatMessage[] = [];
   /** 供工具调用读取的档案（由 CLI 注入） */
   llmProfile: import("../models/types").UserCognitiveProfile | null = null;
   private lastToolCalls: string[] = [];
-  llmErrorNote: string | null = null;
 
-  constructor(initialMode: AnalysisMode = "stealth", opts: EngineOptions = {}) {
+  constructor(initialMode: AnalysisMode = "stealth", opts: EngineOptions) {
     this.mode = initialMode;
     this.opts = {
       sensitivity: opts.sensitivity || "medium",
@@ -158,7 +152,7 @@ export class ThinkingEngine {
     let markers = analyzeMessage(trimmed, { sensitivity: this.opts.sensitivity });
 
     // 2.1 可选：LLM 逐条标记增强（deepAnalyze 开关）
-    if (this.opts.deepAnalyze && this.opts.llm) {
+    if (this.opts.deepAnalyze) {
       try {
         const llmMarkers = await llmExtractMarkers(this.opts.llm, trimmed);
         if (llmMarkers) markers = mergeMarkers(markers, llmMarkers);
@@ -170,40 +164,27 @@ export class ThinkingEngine {
     this.analyzer.observe(trimmed, markers);
     this.history.push({ role: "user", text: trimmed, timestamp: new Date().toISOString(), markers });
 
-    // 3. 按模式生成回复（LLM 优先，失败回退规则引擎）
+    // 3. 生成回复（LLM 必需：离线模式已取消；LLM 失败时向上抛错，由调用方处理）
     let reply: string;
     let usage: LLMUsage | undefined;
     let llmModel: string | undefined;
-    let llmGenerated = false;
 
     if (companion || detectCrisis(trimmed)) {
       reply = companionResponse();
-    } else if (this.opts.llm) {
-      try {
-        const system = systemPromptFor(this.mode, markers, trimmed);
-        const result = await runChatAgent({
-          provider: this.opts.llm,
-          system,
-          history: this.history,
-          profile: this.llmProfile || emptyProfile(),
-        });
-        reply = result.text;
-        usage = result.usage;
-        llmModel = result.model;
-        llmGenerated = true;
-        if (result.toolCalls.length > 0) {
-          this.lastToolCalls = result.toolCalls;
-        }
-      } catch (err) {
-        if (err instanceof Error) {
-          reply = this.ruleReply(trimmed, markers);
-          this.llmErrorNote = err.message;
-        } else {
-          throw err;
-        }
-      }
     } else {
-      reply = this.ruleReply(trimmed, markers);
+      const system = systemPromptFor(this.mode, markers, trimmed);
+      const result = await runChatAgent({
+        provider: this.opts.llm,
+        system,
+        history: this.history,
+        profile: this.llmProfile || emptyProfile(),
+      });
+      reply = result.text;
+      usage = result.usage;
+      llmModel = result.model;
+      if (result.toolCalls.length > 0) {
+        this.lastToolCalls = result.toolCalls;
+      }
     }
 
     this.round++;
@@ -217,22 +198,8 @@ export class ThinkingEngine {
       isCommand: false,
       usage,
       llmModel,
-      llmGenerated,
+      llmGenerated: !companion && !detectCrisis(trimmed),
     };
-  }
-
-  /** 规则引擎兜底回复（按模式） */
-  private ruleReply(text: string, markers: MessageMarkers): string {
-    if (this.mode === "meta_guide") {
-      const strategy = selectGuideStrategy(text, markers);
-      return strategy ? guideResponse(strategy) : "我在听。你继续说说？";
-    }
-    if (this.mode === "transparent") {
-      const annotation = this.analyzer.render(text, markers, []);
-      const base = "嗯，我听到了。";
-      return annotation ? `${base}\n${annotation}` : stealthReply(markers, this.round, this.opts.lightTouch);
-    }
-    return stealthReply(markers, this.round, this.opts.lightTouch);
   }
 
   /** 当前模式 */
@@ -243,11 +210,6 @@ export class ThinkingEngine {
   /** 本次会话最近执行的工具（供 CLI 展示） */
   getLastToolCalls(): string[] {
     return this.lastToolCalls;
-  }
-
-  /** LLM 失败原因（供 CLI 展示） */
-  getLLMErrorNote(): string | null {
-    return this.llmErrorNote;
   }
 
   /** 注入历史消息（仅用于 LLM 上下文，不重新分析、不重复计数） */

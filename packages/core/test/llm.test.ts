@@ -1,11 +1,27 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import { extractJSON, extractJSONAs } from "../src/llm/json";
 import { ScriptedLLMProvider } from "../src/llm/scriptedProvider";
 import { PiAiProvider } from "../src/llm/piAiProvider";
-import { resolveLLMConfig, resetLLMProvider, getLLMProvider } from "../src/llm/registry";
+import {
+  resolveLLMConfig,
+  resetLLMProvider,
+  getLLMProvider,
+  requireLLMProvider,
+  LLMNotConfiguredError,
+  saveLLMConfigFile,
+  loadLLMConfigFile,
+  getConfigStatus,
+} from "../src/llm/registry";
 import { LLMError } from "../src/llm/types";
 import { dynamicImport } from "../src/llm/dynamicImport";
+
+function tmpDir(): string {
+  return fs.mkdtempSync(path.join(os.tmpdir(), "delphi-llm-"));
+}
 
 // ---------------------------------------------------------------------------
 // JSON 提取
@@ -114,20 +130,60 @@ test("resolveLLMConfig：无 Key 时返回 null", () => {
   delete process.env.GOOGLE_API_KEY;
   delete process.env.DELPHI_LLM_PROVIDER;
   delete process.env.DELPHI_LLM_MODEL;
-  delete process.env.DELPHI_LLM_DISABLED;
-  assert.equal(resolveLLMConfig(), null);
+  assert.equal(resolveLLMConfig(tmpDir()), null);
 });
 
-test("resolveLLMConfig：显式提供商优先；自动探测 API Key", () => {
+test("resolveLLMConfig：显式提供商 + 自动探测；无 Key 时抛错", () => {
   process.env.DELPHI_LLM_PROVIDER = "deepseek";
-  assert.equal(resolveLLMConfig()?.provider, "deepseek");
-  delete process.env.DELPHI_LLM_PROVIDER;
-  delete process.env.DEEPSEEK_API_KEY;
   process.env.DEEPSEEK_API_KEY = "test-key";
   assert.equal(resolveLLMConfig()?.provider, "deepseek");
+  assert.equal(resolveLLMConfig()?.apiKey, "test-key");
+  // 无 Key → 抛 LLMNotConfiguredError
+  delete process.env.DEEPSEEK_API_KEY;
+  assert.throws(() => resolveLLMConfig(), LLMNotConfiguredError);
+  // 自动探测
+  process.env.OPENAI_API_KEY = "sk-test";
+  delete process.env.DELPHI_LLM_PROVIDER;
+  assert.equal(resolveLLMConfig()?.provider, "openai");
+  delete process.env.OPENAI_API_KEY;
+  resetLLMProvider();
 });
 
-test("getLLMProvider：未配置返回 null，配置后返回实例", () => {
+test("配置文件：保存/读取/优先级/脱敏/缓存失效", () => {
+  const dir = tmpDir();
+  saveLLMConfigFile({ provider: "deepseek", model: "deepseek-v4-flash", apiKey: "sk-file-key" }, dir);
+  const file = loadLLMConfigFile(dir);
+  assert.equal(file?.provider, "deepseek");
+
+  const config = resolveLLMConfig(dir);
+  assert.equal(config?.provider, "deepseek");
+  assert.equal(config?.apiKey, "sk-file-key");
+  assert.equal(config?.source, "file");
+
+  // 环境变量覆盖文件
+  process.env.DELPHI_LLM_PROVIDER = "openai";
+  process.env.OPENAI_API_KEY = "sk-env-key";
+  const envConfig = resolveLLMConfig(dir);
+  assert.equal(envConfig?.provider, "openai");
+  assert.equal(envConfig?.source, "env");
+  delete process.env.DELPHI_LLM_PROVIDER;
+  delete process.env.OPENAI_API_KEY;
+
+  const status = getConfigStatus(dir);
+  assert.equal(status.configured, true);
+  assert.ok(status.apiKeyMasked!.includes("****"));
+
+  resetLLMProvider();
+  const p1 = getLLMProvider(dir);
+  assert.ok(p1 instanceof PiAiProvider);
+  saveLLMConfigFile({ provider: "openrouter", model: "openrouter/auto", apiKey: "sk-or-key" }, dir);
+  resetLLMProvider();
+  const p2 = getLLMProvider(dir);
+  assert.equal(p2?.id, "openrouter");
+});
+
+test("requireLLMProvider：未配置抛错（帮助信息），配置后返回实例", () => {
+  const dir = tmpDir();
   delete process.env.DELPHI_LLM_PROVIDER;
   delete process.env.DEEPSEEK_API_KEY;
   delete process.env.OPENAI_API_KEY;
@@ -135,10 +191,14 @@ test("getLLMProvider：未配置返回 null，配置后返回实例", () => {
   delete process.env.OPENROUTER_API_KEY;
   delete process.env.GOOGLE_API_KEY;
   resetLLMProvider();
-  assert.equal(getLLMProvider(), null);
-  process.env.DELPHI_LLM_PROVIDER = "deepseek";
+  assert.throws(() => requireLLMProvider(dir), (err: unknown) => {
+    assert.ok(err instanceof LLMNotConfiguredError);
+    assert.ok((err as Error).message.includes("DEEPSEEK_API_KEY"));
+    return true;
+  });
+  saveLLMConfigFile({ provider: "deepseek", apiKey: "sk-key" }, dir);
   resetLLMProvider();
-  const p = getLLMProvider();
+  const p = requireLLMProvider(dir);
   assert.ok(p instanceof PiAiProvider);
   resetLLMProvider();
 });

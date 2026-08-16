@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 
 interface Msg {
   role: "user" | "assistant";
@@ -22,11 +23,16 @@ export default function Chat() {
   const [mode, setMode] = useState<Mode>("transparent");
   const [busy, setBusy] = useState(false);
   const [llmInfo, setLlmInfo] = useState<string | null>(null);
+  const [configured, setConfigured] = useState<boolean | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("delphi-chat");
     if (saved) setMessages(JSON.parse(saved));
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((s) => setConfigured(s.configured))
+      .catch(() => setConfigured(false));
   }, []);
 
   useEffect(() => {
@@ -70,6 +76,11 @@ export default function Chat() {
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold">🪞 自由对话</h1>
         <div className="flex items-center gap-3 text-sm">
+          {configured === false && (
+            <Link href="/settings" className="rounded-full border border-rose-500/50 bg-rose-500/10 px-3 py-1 text-xs text-rose-300">
+              ⚠ 未配置 API Key · 去设置
+            </Link>
+          )}
           <span className="text-slate-500">{llmInfo || "模式"}</span>
           <select
             value={mode}
@@ -82,6 +93,12 @@ export default function Chat() {
           </select>
         </div>
       </div>
+
+      {configured === false && (
+        <div className="mb-4 rounded-xl border border-rose-500/40 bg-rose-500/5 p-3 text-sm text-rose-200">
+          离线模式已取消：请先在 <Link href="/settings" className="underline">⚙️ 设置</Link> 中配置 LLM API Key，才能开始对话。
+        </div>
+      )}
 
       <div className="flex-1 space-y-4 overflow-y-auto rounded-xl border border-slate-800 bg-ink-900/50 p-5">
         {messages.length === 0 && (

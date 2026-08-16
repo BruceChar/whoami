@@ -17,6 +17,19 @@ export const dynamic = "force-dynamic";
 export default async function PersonaPage() {
   const store = await import("@/lib/server").then((m) => m.getStore());
   const profile = store.get();
+  const llm = getAgent();
+
+  if (!llm) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">🧬 个人画像</h1>
+        <div className="rounded-xl border border-rose-500/40 bg-rose-500/5 p-4 text-sm text-rose-200">
+          离线模式已取消：需要配置 LLM API Key 才能生成画像与分析。
+          前往 <Link href="/settings" className="underline">⚙️ 设置</Link> 配置。
+        </div>
+      </div>
+    );
+  }
 
   if (!canGeneratePersona(profile)) {
     return (

@@ -1,7 +1,7 @@
 {
   "name": "@delphi/cli",
   "version": "0.1.0",
-  "description": "delphi CLI 本地模式 —— 完全离线，隐私优先",
+  "description": "delphi CLI 本地模式 —— 需配置 LLM API Key",
   "bin": {
     "delphi": "dist/index.js"
   },
@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@delphi/core": "workspace:*",
+    "@earendil-works/pi-ai": "^0.84.2",
     "chalk": "^4.1.2",
     "commander": "^11.1.0"
   },

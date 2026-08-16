@@ -9,7 +9,7 @@ import {
   beginSession,
   afterProfileUpdate,
   BIAS_LABELS,
-  getLLMProvider,
+  requireLLMProvider,
   llmAnalyzeSession,
   applySessionDeepAnalysis,
 } from "@delphi/core";
@@ -34,17 +34,13 @@ export const CHAT_HELP = [
 
 export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; quiet?: boolean } = {}): Promise<void> {
   const profile = store.get();
-  const llm = getLLMProvider();
-  const engine = new ThinkingEngine(opts.mode || profile.settings.defaultMode, llm ? { llm } : {});
+  const llm = requireLLMProvider();
+  const engine = new ThinkingEngine(opts.mode || profile.settings.defaultMode, { llm });
   engine.llmProfile = profile;
 
   if (!opts.quiet) {
     console.log(BANNER.join("\n"));
-    if (llm) {
-      console.log(c.green(`⚡ LLM Agent 已接入（${llm.id} / ${llm.model}）——由真实模型驱动，可调用档案工具`));
-    } else {
-      console.log(c.dim("▸ 规则引擎模式（未检测到 LLM 配置。设置 DEEPSEEK_API_KEY 等环境变量 + DELPHI_LLM_PROVIDER 启用）"));
-    }
+    console.log(c.green(`⚡ LLM Agent 已接入（${llm.id} / ${llm.model}）——由真实模型驱动，可调用档案工具`));
     console.log(`当前模式: ${c.cyan(engine.getMode())}  | 输入 /help 查看命令`);
     console.log("");
   }
@@ -72,7 +68,14 @@ export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; 
       continue;
     }
 
-    const result = await engine.process(input);
+    let result;
+    try {
+      result = await engine.process(input);
+    } catch (err) {
+      console.log(c.red(`  ✗ LLM 调用失败: ${(err as Error).message.slice(0, 200)}`));
+      console.log(c.dim("    请检查 API Key / 网络 / 模型配置后重试。"));
+      continue;
+    }
     appendMessage(session, {
       role: "user",
       text: input,
@@ -85,7 +88,7 @@ export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; 
     }
     console.log(`delphi> ${result.reply}`);
 
-    // LLM 元信息（用量 / 工具调用 / 失败回退）
+    // LLM 元信息（用量 / 工具调用）
     if (result.llmGenerated) {
       const parts: string[] = [];
       if (result.usage) parts.push(`${result.usage.totalTokens} tokens · $${result.usage.cost.toFixed(4)}`);
@@ -93,8 +96,6 @@ export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; 
       const tools = engine.getLastToolCalls();
       if (tools.length > 0) parts.push(`工具: ${tools.join(", ")}`);
       console.log(c.dim(`  ↳ [llm-agent ${parts.join(" · ")}]`));
-    } else if (llm && engine.getLLMErrorNote()) {
-      console.log(c.dim(`  ↳ [llm 失败，已回退规则引擎] ${engine.getLLMErrorNote()}`));
     }
 
     // 显式模式下偏差统计（思维快照已由 engine 渲染）
@@ -113,7 +114,7 @@ export async function runChat(store: ProfileStore, opts: { mode?: AnalysisMode; 
   }
 
   // LLM 深度分析（隐式后台分析升级版）：会话摘要 + 自动洞察
-  if (llm && session.messages.some((m) => m.role === "user")) {
+  if (session.messages.some((m) => m.role === "user")) {
     console.log(c.dim("\n⚡ 正在深度分析这次对话（LLM）..."));
     try {
       const deep = await llmAnalyzeSession(llm, profile, session);

@@ -21,29 +21,35 @@ test("情绪崩溃信号 → 隐式+陪伴", () => {
   assert.equal(sw?.companion, true);
 });
 
-test("隐式模式：规则引擎兜底", async () => {
-  const engine = new ThinkingEngine("stealth");
+test("隐式模式：LLM 生成回复，标记由规则引擎产出", async () => {
+  const llm = new ScriptedLLMProvider([{ text: "嗯，我在听。" }]);
+  const engine = new ThinkingEngine("stealth", { llm });
   const r1 = await engine.process("今天工作好累");
   assert.equal(r1.modeAfter, "stealth");
   assert.ok(r1.reply.length > 0);
-  assert.equal(r1.llmGenerated, false);
+  assert.equal(r1.llmGenerated, true);
+  assert.ok(r1.markers);
 });
 
-test("显式模式：输出 metacog 思维快照", async () => {
-  const engine = new ThinkingEngine("transparent");
+test("显式模式：LLM 输出 metacog 思维快照，标记仍由规则引擎产出", async () => {
+  const engine = new ThinkingEngine("transparent", {
+    llm: new ScriptedLLMProvider([
+      { text: "嗯，我听到了。\n\nmetacog:\n  我注意到你用了「总是」——这是你本次对话里第 1 次用到这个词。" },
+    ]),
+  });
   const r1 = await engine.process("他总是这样，所有人都不理解我");
   assert.ok(r1.reply.includes("metacog"), `应包含思维快照，实际: ${r1.reply}`);
   assert.ok(r1.markers.biases.length > 0);
 });
 
 test("引导式模式：输出引导策略", async () => {
-  const engine = new ThinkingEngine("meta_guide");
+  const engine = new ThinkingEngine("meta_guide", { llm: new ScriptedLLMProvider([{ text: "【引导】你刚才说的应该，是谁定的标准？" }]) });
   const r = await engine.process("我应该更努力，必须做到完美");
   assert.ok(r.reply.includes("【引导"));
 });
 
 test("模式切换命令生效", async () => {
-  const engine = new ThinkingEngine("stealth");
+  const engine = new ThinkingEngine("stealth", { llm: new ScriptedLLMProvider([{ text: "我在听。" }]) });
   const r = await engine.process("/guide");
   assert.equal(r.isCommand, true);
   assert.equal(r.modeAfter, "meta_guide");

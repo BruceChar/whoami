@@ -2,18 +2,37 @@
  * delphi —— Commander 命令入口
  */
 import { Command } from "commander";
-import { ProfileStore } from "@delphi/core";
+import { ProfileStore, requireLLMProvider, LLMNotConfiguredError, getConfigStatus, llmConfigHelp, configFilePath } from "@delphi/core";
 import { closeRl } from "./ui/ask";
 import { c } from "./ui/render";
 
 const pkg = require("../package.json");
 
+/** 全局预检：离线模式已取消，除帮助/版本/doctor 外所有命令都需要 LLM */
+function preflight(argv: string[]): void {
+  const args = argv.slice(2);
+  const isHelp = args.includes("--help") || args.includes("-h");
+  const isVersion = args.includes("--version") || args.includes("-V");
+  const isDoctor = args[0] === "doctor" || args[0] === "status";
+  if (isHelp || isVersion || isDoctor) return;
+  try {
+    requireLLMProvider();
+  } catch (err) {
+    if (err instanceof LLMNotConfiguredError) {
+      console.log(err.message);
+      process.exit(1);
+    }
+    throw err;
+  }
+}
+
 export async function main(argv: string[]): Promise<void> {
+  preflight(argv);
   const program = new Command();
 
   program
     .name("delphi")
-    .description("delphi —— 一面照向内心的镜子。自我认知 Agent（CLI 本地模式）")
+    .description("delphi —— 一面照向内心的镜子。自我认知 Agent（CLI 本地模式，需配置 LLM API Key）")
     .version(pkg.version);
 
   // 无参数：进入主菜单（交互）
@@ -252,6 +271,31 @@ export async function main(argv: string[]): Promise<void> {
       console.log(`会话: ${profile.sessions.length} 次 | 洞察: ${profile.insights.length} | 原型: ${profile.prototypes.length}`);
       console.log(`成长阶段: ${profile.growthTracking.growthStage}`);
       console.log(`画像版本: ${profile.currentPersona ? profile.currentPersona.version : "（未生成）"}`);
+      closeRl();
+    });
+
+  // 配置检查（不需要 API Key 也能运行）
+  program
+    .command("doctor")
+    .description("检查 LLM 配置状态（API Key / 提供商 / 模型）")
+    .action(async () => {
+      const store = new ProfileStore();
+      const status = getConfigStatus(store.dataDir);
+      console.log(c.cyan("\n🔍 delphi 配置检查"));
+      console.log(`  数据目录: ${store.dataDir}`);
+      if (!status.configured) {
+        console.log(c.red(`  LLM: 未配置 ✗`));
+        console.log("");
+        console.log(llmConfigHelp());
+      } else {
+        console.log(c.green(`  LLM: 已配置 ✓`));
+        console.log(`  提供商: ${status.provider}`);
+        console.log(`  模型: ${status.model || "（默认）"}`);
+        console.log(`  API Key: ${status.apiKeyMasked}`);
+        console.log(`  配置来源: ${status.source === "env" ? "环境变量" : status.source === "file" ? `配置文件 (${configFilePath(store.dataDir)})` : "—"}`);
+        console.log("");
+        console.log(c.dim("运行 `delphi chat` 开始对话。"));
+      }
       closeRl();
     });
 
