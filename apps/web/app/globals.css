@@ -3,20 +3,30 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
-  background:
-    radial-gradient(1200px 500px at 20% -10%, rgba(125, 211, 252, 0.08), transparent),
-    radial-gradient(900px 400px at 90% 10%, rgba(167, 139, 250, 0.06), transparent),
-    #0a0e14;
+  @apply bg-canvas text-ink-800 antialiased;
+  font-feature-settings: "tnum";
 }
 
 .mirror-card {
-  @apply rounded-xl border border-slate-700/60 bg-ink-900/80 p-5 shadow-lg shadow-black/20;
+  @apply rounded-2xl border border-ink-200/70 bg-surface p-5 shadow-soft;
 }
 
 .mirror-title {
-  @apply text-sm font-medium uppercase tracking-widest text-mirror/90;
+  @apply mb-3 text-xs font-semibold uppercase tracking-widest text-mirror-600;
+}
+
+/* 极简滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-ink-200;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-ink-300;
 }

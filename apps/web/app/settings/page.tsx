@@ -47,6 +47,7 @@ export default function SettingsPage() {
       setStatus(data);
       setApiKey("");
       setMessage("✓ 配置已保存，立即生效");
+      window.dispatchEvent(new Event("delphi:settings-changed"));
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -60,17 +61,18 @@ export default function SettingsPage() {
     setProvider("deepseek");
     setModel("");
     setMessage("已清除配置");
+    window.dispatchEvent(new Event("delphi:settings-changed"));
   }, []);
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
+    <div className="mx-auto max-w-xl space-y-6 px-6 py-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">⚙️ 设置</h1>
+        <h1 className="text-2xl font-bold text-ink-900">⚙️ 设置</h1>
         <span
           className={`rounded-full border px-3 py-1 text-xs ${
             status?.configured
-              ? "border-emerald-500/40 text-emerald-300"
-              : "border-rose-500/40 text-rose-300"
+              ? "border-emerald-300 bg-emerald-50 text-emerald-600"
+              : "border-rose-300 bg-rose-50 text-rose-500"
           }`}
         >
           {status?.configured ? `已配置（${status.apiKeyMasked}）` : "未配置 API Key"}
@@ -79,11 +81,11 @@ export default function SettingsPage() {
 
       <div className="mirror-card space-y-4">
         <div>
-          <label className="mb-1 block text-sm text-slate-400">LLM 提供商</label>
+          <label className="mb-1 block text-sm text-ink-500">LLM 提供商</label>
           <select
             value={provider}
             onChange={(e) => setProvider(e.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-ink-800 px-3 py-2 text-slate-100 focus:outline-none focus:ring-1 focus:ring-mirror"
+            className="w-full rounded-xl border border-ink-200 bg-surface px-3 py-2 text-ink-800 focus:outline-none focus:ring-1 focus:ring-mirror-400"
           >
             {(status?.supportedProviders || ["deepseek", "openai", "anthropic", "openrouter", "google"]).map((p) => (
               <option key={p} value={p}>{p}</option>
@@ -92,51 +94,51 @@ export default function SettingsPage() {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm text-slate-400">模型（可选）</label>
+          <label className="mb-1 block text-sm text-ink-500">模型（可选）</label>
           <input
             value={model}
             onChange={(e) => setModel(e.target.value)}
             placeholder={status?.modelPlaceholder || "deepseek-v4-flash"}
-            className="w-full rounded-lg border border-slate-700 bg-ink-800 px-3 py-2 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-mirror"
+            className="w-full rounded-xl border border-ink-200 bg-surface px-3 py-2 text-ink-800 placeholder:text-ink-300 focus:outline-none focus:ring-1 focus:ring-mirror-400"
           />
-          <p className="mt-1 text-xs text-slate-500">留空使用该提供商的默认模型</p>
+          <p className="mt-1 text-xs text-ink-400">留空使用该提供商的默认模型</p>
         </div>
 
         <div>
-          <label className="mb-1 block text-sm text-slate-400">API Key</label>
+          <label className="mb-1 block text-sm text-ink-500">API Key</label>
           <input
             type="password"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             placeholder={status?.apiKeyMasked || "sk-..."}
-            className="w-full rounded-lg border border-slate-700 bg-ink-800 px-3 py-2 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-mirror"
+            className="w-full rounded-xl border border-ink-200 bg-surface px-3 py-2 text-ink-800 placeholder:text-ink-300 focus:outline-none focus:ring-1 focus:ring-mirror-400"
           />
-          <p className="mt-1 text-xs text-slate-500">
-            保存到本地配置文件（{status?.source === "env" ? "当前由环境变量配置，保存后将优先使用文件配置" : "仅供本地使用，不会上传"}）
+          <p className="mt-1 text-xs text-ink-400">
+            {status?.source === "env" ? "当前由环境变量配置，保存后优先使用文件配置" : "保存到本地配置文件，仅供本地使用"}
           </p>
         </div>
 
-        {message && <p className="text-sm text-emerald-300">{message}</p>}
-        {error && <p className="text-sm text-rose-300">{error}</p>}
+        {message && <p className="text-sm text-emerald-600">{message}</p>}
+        {error && <p className="text-sm text-rose-500">{error}</p>}
 
         <div className="flex gap-3">
           <button
             onClick={save}
             disabled={saving || !provider || !apiKey}
-            className="rounded-lg bg-mirror px-5 py-2 text-sm font-medium text-ink-950 transition hover:brightness-110 disabled:opacity-40"
+            className="rounded-xl bg-mirror-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-mirror-600 disabled:opacity-40"
           >
             {saving ? "保存中…" : "保存配置"}
           </button>
           {status?.source === "file" && (
-            <button onClick={clear} className="rounded-lg border border-slate-600 px-5 py-2 text-sm text-slate-300 hover:border-rose-400 hover:text-rose-300">
+            <button onClick={clear} className="rounded-xl border border-ink-200 px-5 py-2 text-sm text-ink-500 hover:border-rose-300 hover:text-rose-500">
               清除配置
             </button>
           )}
         </div>
       </div>
 
-      <div className="mirror-card text-sm text-slate-400">
-        <h2 className="mirror-title mb-2">离线模式已取消</h2>
+      <div className="mirror-card text-sm text-ink-400">
+        <h2 className="mirror-title">离线模式已取消</h2>
         <p>delphi 需要真实的 LLM API Key 才能运行。配置后立即生效（CLI 与 Web 共享同一份配置）。</p>
       </div>
     </div>

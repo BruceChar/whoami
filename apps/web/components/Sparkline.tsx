@@ -21,8 +21,8 @@ export default function Sparkline({ values, width = 300, height = 40 }: Props) {
   });
   return (
     <svg width={width} height={height} className="w-full" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
-      <polyline points={pts.join(" ")} fill="none" stroke="#7dd3fc" strokeWidth="1.5" strokeLinejoin="round" />
-      <circle cx={pts[pts.length - 1].split(",")[0]} cy={pts[pts.length - 1].split(",")[1]} r="2.5" fill="#7dd3fc" />
+      <polyline points={pts.join(" ")} fill="none" stroke="#3b82f6" strokeWidth="1.5" strokeLinejoin="round" />
+      <circle cx={pts[pts.length - 1].split(",")[0]} cy={pts[pts.length - 1].split(",")[1]} r="2.5" fill="#3b82f6" />
     </svg>
   );
 }

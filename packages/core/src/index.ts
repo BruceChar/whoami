@@ -19,6 +19,7 @@ export * from "./engine/thinkingEngine";
 // 方法论工具库
 export * from "./frameworks/flow";
 export * from "./frameworks/keywordExtract";
+export * from "./frameworks/toolTemplates";
 export * from "./frameworks/dailyFeedback";
 export * from "./frameworks/vtd";
 export * from "./frameworks/sign";

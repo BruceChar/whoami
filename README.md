@@ -28,13 +28,17 @@ export DEEPSEEK_API_KEY=sk-你的密钥
 pnpm run delphi            # 未配置 Key 时自动弹出配置帮助
 delphi doctor              # 检查配置状态
 
-# Web：开发 / 构建 / 生产（右上角 ⚙️ 设置 按钮在线配置）
+# Web：开发 / 构建 / 生产
 pnpm web                   # http://localhost:3088
 pnpm web:build
 ```
 
 数据保存在 `~/.delphi/profile.json`（一个 JSON 文件包含全部认知档案，可随时导出/备份/恢复）。
 可用环境变量 `DELPHI_DATA_DIR` 指定数据目录（便于测试隔离，CLI 与 Web 共享同一档案）。
+
+### Web 界面
+
+极简舒适风格。进入首页即**对话模式**（默认隐式），左侧边栏展示**会话历史**；输入框键入 `/` 弹出**工具模板**（V-T-D / SIGN / SWOT / 成就事件 / 兴趣矩阵 / 每日回馈 / 从业分析 / 人生设计），由 LLM 主持对应流程。**仪表盘 / 画像 / 时间线**合并为「洞察」一页；「⚙️ 设置」页在线配置 API Key。
 
 ## LLM Agent（pi-ai 接入，必需）
 
@@ -104,8 +108,8 @@ whoami/
 │   │       ├── commands/space/       # dashboard/timeline/archive/insights/lab/settings
 │   │       └── ui/                   # 盒式边框/进度条/火花线/输入助手
 │   └── web/                      # Web 端（Next.js 14 App Router + Tailwind）
-│       ├── app/                      # 仪表盘 / 对话 / 画像 / 时间线 + API 路由
-│       ├── components/               # Nav / Chat / MetricBar / Sparkline
+│       ├── app/                      # /（对话）· /insights（洞察）· /settings（设置）+ API
+│       ├── components/               # Sidebar / Chat / MetricBar / Sparkline
 │       └── lib/server.ts             # 服务端共享（core 引擎 + 档案 + LLM）
 ├── tsconfig.base.json
 └── package.json                  # pnpm workspace

@@ -46,6 +46,8 @@ export interface EngineOptions {
   llm: LLMAgent;
   /** 逐条消息 LLM 标记增强（较耗 token，默认关；会话级深度分析不受此开关影响） */
   deepAnalyze?: boolean;
+  /** 工具模板系统提示（输入 / 触发的 VTD/SWOT 等） */
+  toolPrompt?: string;
 }
 
 const COMMANDS = new Set([
@@ -53,12 +55,17 @@ const COMMANDS = new Set([
 ]);
 
 /** 各模式对应的 Agent 系统提示（镜子原则 + 模式行为） */
-function systemPromptFor(mode: AnalysisMode, markers: MessageMarkers, input: string): string {
+function systemPromptFor(mode: AnalysisMode, markers: MessageMarkers, input: string, toolPrompt?: string): string {
   const base =
     "你是 delphi，一面照向内心的镜子——一个自我认知 Agent。\n" +
     "铁律（镜子原则）：永远不说「你应该…」，只描述「我注意到…」；不评判、不下定义、不贴标签。\n" +
     "关注用户「怎么想」而非「想了什么」。用中文回复，保持简洁自然（一般 2-4 句），像朋友一样对话。\n" +
     "你可以调用工具 get_cognitive_profile / search_memory 读取用户的认知档案，让回答真正基于用户的数据。";
+
+  // 工具模板：优先于模式（/vtd 等由 LLM 主持流程）
+  if (toolPrompt) {
+    return base + "\n\n" + toolPrompt;
+  }
 
   const markerHint = buildMarkerHint(markers);
 
@@ -107,7 +114,13 @@ export class ThinkingEngine {
   mode: AnalysisMode;
   private analyzer = new TransparentAnalyzer();
   private round = 0;
-  private readonly opts: Required<EngineOptions>;
+  private readonly opts: {
+    sensitivity: AnalyzeOptions["sensitivity"];
+    lightTouch: boolean;
+    deepAnalyze: boolean;
+    llm: LLMAgent;
+    toolPrompt?: string;
+  };
   /** 会话历史（用于 LLM 上下文） */
   private history: ChatMessage[] = [];
   /** 供工具调用读取的档案（由 CLI 注入） */
@@ -121,6 +134,7 @@ export class ThinkingEngine {
       lightTouch: opts.lightTouch !== undefined ? opts.lightTouch : true,
       llm: opts.llm,
       deepAnalyze: opts.deepAnalyze || false,
+      toolPrompt: opts.toolPrompt,
     };
   }
 
@@ -172,7 +186,7 @@ export class ThinkingEngine {
     if (companion || detectCrisis(trimmed)) {
       reply = companionResponse();
     } else {
-      const system = systemPromptFor(this.mode, markers, trimmed);
+      const system = systemPromptFor(this.mode, markers, trimmed, this.opts.toolPrompt);
       const result = await runChatAgent({
         provider: this.opts.llm,
         system,

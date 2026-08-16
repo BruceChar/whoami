@@ -1,6 +1,7 @@
 /**
  * POST /api/chat —— 对话接口（服务端运行 ThinkingEngine + LLM Agent）
- * 会话持久化：复用最近 6 小时内的 web-chat 会话；跨期自动开新会话。
+ * 会话化：sessionId 复用会话；缺省新建会话（标题取自首条消息）。
+ * toolId 指定工具模板（VTD/SWOT/SIGN/...，输入 / 触发）。
  */
 import { NextRequest, NextResponse } from "next/server";
 import {
@@ -9,6 +10,8 @@ import {
   appendMessage,
   afterProfileUpdate,
   AnalysisMode,
+  getToolTemplate,
+  SessionRecord,
 } from "@delphi/core";
 import { getStore, getAgent } from "@/lib/server";
 
@@ -16,8 +19,9 @@ export const runtime = "nodejs";
 
 export interface ChatTurnRequest {
   message: string;
-  history: Array<{ role: "user" | "assistant"; content: string }>;
   mode?: AnalysisMode;
+  toolId?: string;
+  sessionId?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -39,26 +43,31 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-  const mode: AnalysisMode = body.mode || "transparent";
 
-  const engine = new ThinkingEngine(mode, { llm });
+  const mode: AnalysisMode = body.mode || "stealth";
+  const tool = body.toolId ? getToolTemplate(body.toolId) : undefined;
+
+  // 会话：复用或新建
+  let session: SessionRecord | undefined;
+  if (body.sessionId) {
+    session = profile.sessions.find((s) => s.id === body.sessionId);
+  }
+  if (!session) {
+    session = beginSession(profile, mode, message.slice(0, 24));
+  }
+
+  const engine = new ThinkingEngine(mode, { llm, toolPrompt: tool?.prompt });
   engine.llmProfile = profile;
   engine.rememberHistory(
-    (body.history || []).map((h) => ({ role: h.role === "assistant" ? "agent" : "user", text: h.content }))
+    session.messages.map((m) => ({
+      role: m.role === "agent" ? "agent" : "user",
+      text: m.text,
+    }))
   );
 
   try {
     const result = await engine.process(message);
 
-    // 持久化到 web 会话（复用最近 6 小时内的）
-    const now = Date.now();
-    let session = profile.sessions
-      .filter((s) => s.title === "web-chat")
-      .reverse()
-      .find((s) => now - new Date(s.startedAt).getTime() < 6 * 3600 * 1000);
-    if (!session) {
-      session = beginSession(profile, mode, "web-chat");
-    }
     appendMessage(session, {
       role: "user",
       text: message,
@@ -75,10 +84,11 @@ export async function POST(req: NextRequest) {
     store.save();
 
     return NextResponse.json({
+      sessionId: session.id,
+      title: session.title || message.slice(0, 24),
       reply: result.reply,
       mode: result.modeAfter,
-      modeChanged: result.modeChanged,
-      modeChangeReason: result.modeChangeReason,
+      tool: tool ? { id: tool.id, label: tool.label } : undefined,
       llmGenerated: result.llmGenerated,
       llmModel: result.llmModel,
       usage: result.usage,

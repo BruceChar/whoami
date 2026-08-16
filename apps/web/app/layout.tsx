@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Nav from "@/components/Nav";
+import Sidebar from "@/components/Sidebar";
 
 export const metadata: Metadata = {
   title: "delphi —— 一面照向内心的镜子",
@@ -10,12 +10,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-CN">
-      <body className="min-h-screen bg-ink-950 text-slate-200 antialiased">
-        <Nav />
-        <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
-        <footer className="mx-auto max-w-5xl px-6 pb-10 text-center text-xs text-slate-600">
-          delphi —— 一面照向内心的镜子 · Be water my friend.
-        </footer>
+      <body className="flex h-screen overflow-hidden">
+        <Sidebar />
+        <main className="flex-1 overflow-y-auto">{children}</main>
       </body>
     </html>
   );
