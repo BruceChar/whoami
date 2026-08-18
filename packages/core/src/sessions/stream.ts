@@ -10,8 +10,7 @@ import { EventEmitter } from "events";
 
 export interface SessionEvent {
   ts: string; // ISO 8601
-  sessionId: string;
-  theme: string; // session title / topic
+  sessionId: string; // used for the JSONL filename; not persisted inside the record
   role: "user" | "agent";
   content: string;
   markers?: {

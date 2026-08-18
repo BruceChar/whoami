@@ -87,7 +87,6 @@ export async function POST(req: NextRequest) {
     emitSessionEvent({
       ts: new Date().toISOString(),
       sessionId: session.id,
-      theme: session.title || message.slice(0, 24),
       role: "user",
       content: message,
       markers: {
@@ -104,7 +103,6 @@ export async function POST(req: NextRequest) {
     emitSessionEvent({
       ts: new Date().toISOString(),
       sessionId: session.id,
-      theme: session.title || message.slice(0, 24),
       role: "agent",
       content: result.reply,
     });
