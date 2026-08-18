@@ -5,11 +5,15 @@
  */
 import { cookies } from "next/headers";
 import { cache } from "react";
-import { ProfileStore, getLLMProvider, UserCognitiveProfile, LLMAgent, resolveDataDir } from "@delphi/core";
+import { ProfileStore, getLLMProvider, UserCognitiveProfile, LLMAgent, resolveDataDir, startSessionPipeline } from "@delphi/core";
 import * as path from "path";
 import { SESSION_COOKIE, verifySession } from "./auth";
 import { userDir, findUserById } from "./users";
 import { deployMode } from "./mode";
+
+// start the background session pipeline (JSONL logging + analysis placeholder);
+// idempotent — the chat emits events this consumer drains without blocking it
+startSessionPipeline();
 
 /** Current signed-in user id, or null (always null in local mode). */
 export function currentUserId(): string | null {

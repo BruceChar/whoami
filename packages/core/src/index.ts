@@ -37,6 +37,10 @@ export * from "./services/profileService";
 export * from "./users/auth";
 export * from "./users/users";
 
+// session event stream + background pipeline
+export * from "./sessions/stream";
+export * from "./sessions/logger";
+
 // LLM (pi-ai integration)
 export * from "./llm/types";
 export * from "./llm/json";

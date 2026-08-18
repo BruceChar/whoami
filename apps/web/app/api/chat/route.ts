@@ -14,6 +14,7 @@ import {
   SessionRecord,
   getModelInfo,
   PROVIDER_DEFAULT_CONTEXT,
+  emitSessionEvent,
 } from "@delphi/core";
 import { getStore, getAgent, authRequired } from "@/lib/server";
 
@@ -83,10 +84,29 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
       markers: result.markers,
     });
+    emitSessionEvent({
+      ts: new Date().toISOString(),
+      sessionId: session.id,
+      theme: session.title || message.slice(0, 24),
+      role: "user",
+      content: message,
+      markers: {
+        biases: result.markers.biases.map((b) => b.type),
+        attribution: result.markers.attribution,
+        selfReflection: result.markers.selfReflection,
+      },
+    });
     appendMessage(session, {
       role: "agent",
       text: result.reply,
       timestamp: new Date().toISOString(),
+    });
+    emitSessionEvent({
+      ts: new Date().toISOString(),
+      sessionId: session.id,
+      theme: session.title || message.slice(0, 24),
+      role: "agent",
+      content: result.reply,
     });
 
     afterProfileUpdate(profile);
